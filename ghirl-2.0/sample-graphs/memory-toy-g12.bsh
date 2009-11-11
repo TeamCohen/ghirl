@@ -1,0 +1,5 @@
+// return a memory-based graph loaded from g1.txt and g2.txt
+GraphLoader loader = new GraphLoader(new TextGraph());
+loader.load(new File("g1.txt"));
+loader.load(new File("g2.txt"));
+return loader.getGraph();

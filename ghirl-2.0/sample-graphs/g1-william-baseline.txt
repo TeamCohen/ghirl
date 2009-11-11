@@ -1,0 +1,21 @@
+61.595	$william
+8.609	$charlie
+7.912	$josh
+7.906	$minorthird
+7.906	$secondstring
+2.025	FILE$msg1.txt
+1.552	TEXT$sent1
+1.479	FILE$msg2.txt
+0.259	LABELS$labels1.txt
+0.089	TERM$author
+0.089	TERM$clancy
+0.089	TERM$favorite
+0.089	TERM$my
+0.089	TERM$tom
+0.051	TERM$games
+0.051	TERM$reading
+0.051	TERM$like
+0.033	TERM$i
+0.033	TERM$playing
+0.032	TERM$starwars
+

@@ -1,0 +1,4 @@
+// return a memory-based graph loaded from graph.txt
+GraphLoader loader = new GraphLoader(new TextGraph());
+loader.load(new File("graph.txt"));
+return loader.getGraph();

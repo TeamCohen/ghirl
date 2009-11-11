@@ -1,0 +1,10 @@
+# to add to g1.txt
+
+edge isa vitor person
+edge isa einat person
+edge advises william einat
+edge advises william vitor
+node TEXT$m3ac modules for inferring names and ontological relationships etc
+edge acronym minorthird TEXT$m3ac 
+node FILE$msg3.txt
+edge authored william FILE$msg3.txt

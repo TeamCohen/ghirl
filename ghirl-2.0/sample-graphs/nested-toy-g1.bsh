@@ -1,0 +1,17 @@
+// construct a nested graph loaded from g1.txt and g2.txt
+// where the g1 portion is a frozen disk-based graph
+// and then return the original g1 portion of the graph
+
+// return a disk-based graph loaded from graph.txt
+// create the disk-resident graph
+GraphLoader loader = new GraphLoader(new TextGraph("toy1",'w'));
+loader.load(new File("g1.txt"));
+loader.getGraph().freeze();
+
+// inner graph is frozen version of g1
+Graph inner =  new TextGraph("toy1",'r');
+
+GraphLoader nloader = new GraphLoader(new NestedTextGraph(inner));
+nloader.load(new File("g2.txt"));
+
+return inner;

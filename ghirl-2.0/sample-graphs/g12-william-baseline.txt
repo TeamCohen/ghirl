@@ -1,0 +1,21 @@
+59.211	$william
+8.011	FILE$msg3.txt
+4.895	$einat
+4.241	$minorthird
+3.990	$charlie
+3.908	$josh
+3.908	$secondstring
+3.908	$vitor
+1.482	$dateExtractor
+1.093	FILE$msg1.txt
+0.989	TEXT$m3ac
+0.778	TEXT$sent1
+0.772	FILE$msg2.txt
+0.359	TERM$being
+0.359	TERM$grownup
+0.359	TERM$hard
+0.359	TERM$rough
+0.359	TERM$too
+0.359	TERM$work
+0.172	TERM$i
+

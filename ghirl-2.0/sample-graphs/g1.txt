@@ -1,0 +1,39 @@
+# subset of graph.txt
+
+
+#create ordinary graph nodes named 'william' and 'person'
+#and connect them via an edge labeled 'isa'
+edge isa william person
+#repeat for some more people and relationships
+edge fatherOf william josh
+edge fatherOf william charlie
+edge wrote einat dateExtractor
+edge isa minorthird sw
+edge wrote william minorthird
+edge wrote william secondstring
+
+#create some 'text' nodes, which contain small strings of text
+node TEXT$lswac lego star wars
+node TEXT$sent1 my favorite author is Tom Clancy
+
+#create some relationships involving these nodes
+edge acronym lsw TEXT$lswac
+edge wrote charlie TEXT$sent1
+
+#create some FILE nodes. the file names could 
+#be paths here.
+node FILE$msg1.txt
+node FILE$msg2.txt
+
+#create some relationships involving files
+edge authored josh FILE$msg1.txt
+edge authored charlie FILE$msg2.txt
+
+#create a minorthird 'labels' node that annotates the single file
+#msg2.txt.  This will incidentally create some additional nodes
+#associated with the annotations. For implementation reasons: in the
+#labels.txt file, the documentId argument is always replaced by the
+#string 'somefile' (note that the file annotated is specified below).
+
+node LABELS$labels1.txt FILE$msg2.txt
+

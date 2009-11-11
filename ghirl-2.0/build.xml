@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<project name="GHIRL" default="all" basedir=".">
+
+	<property file="build.properties"/>
+	
+	<description>
+			GHIRL: Graph Hierarchy Information Retrieval Language?
+	</description>
+
+	<target name="init" depends="" description="Initialize environment">
+		<tstamp>
+			<format property="jartime" pattern="MMM-dd-yyyy-HH:mm"/>
+		</tstamp>
+		
+		<!-- Configure paths -->
+		<property name="path.src"   value="src"/>
+		<property name="path.lib"   value="lib"/>
+		<property name="path.build" value="build"/>
+		<property name="path.dist"  value="dist"/>
+		<property name="path.test"  value="test"/>
+		
+		<!-- Configure compilation parameters -->
+		<property name="compile.debug"              value="true"/>
+		<property name="compile.deprecation"        value="true"/>
+		<property name="compile.jdk-version.source" value="1.6"/>
+		<property name="compile.jdk-version.target" value="1.6"/>
+		<property name="compile.optimize"           value="true"/>
+		<property name="compile.compiler"           value="javac1.6"/>
+		
+		<path id="compile.classpath">
+			<fileset dir="${path.lib}">
+				<include name="*.jar"/>
+			</fileset>
+			<pathelement path="${path.src}"/>
+			<pathelement path="${path.build}"/>
+		</path>
+	</target>
+
+	<target name="make_directories" description="Creates all project directories" depends="init">
+		<mkdir dir="${path.dist}"/>
+		<mkdir dir="${path.build}"/>
+		<mkdir dir="${path.lib}"/>
+		<mkdir dir="${path.src}"/>
+	</target>
+
+	<target name="prepare" depends="init, make_directories" description="Prepare build directory"/>
+
+	<target name="compile" depends="prepare" description="Compile Java sources">
+		<javac  debug="${compile.debug}"
+				deprecation="${compile.deprecation}"
+				destdir="${path.build}"
+				optimize="${compile.optimize}"
+				srcdir="${path.src}">
+			<classpath refid="compile.classpath"/>
+		</javac>
+		<copy todir="${path.build}">
+			<fileset dir="${path.src}">
+				<exclude name="**/*.java"/>
+			</fileset>
+		</copy>
+	</target>
+
+	<target name="clean" depends="init" description="Wipe out all generated files">
+	    <delete>
+	    	<fileset dir="${path.build}/">
+	    		<include name="*/"/>
+	    	</fileset>
+	    </delete>
+	</target>
+
+	<target name="all" depends="clean, compile" description="Clean and compile all components"/>
+	
+	<target name="dist-lib-solo" depends="compile" description="Jar up GHIRL for distribution">
+		<jar destfile="${path.dist}/ghirl-${DSTAMP}.jar">
+			<fileset dir="${path.build}"/>
+		  </jar>
+	</target>
+
+	<target name="dist-lib-full" depends="compile" description="Jar up GHIRL for distribution">
+		<jar destfile="${path.dist}/ghirl-full-${DSTAMP}.jar">
+			<fileset dir="${path.build}"/>
+			<!-- This is horrid and gross and has to be updated any time we add/change a library in lib. Ew. -->
+			<zipfileset src="${path.lib}/minorThird-20071114.jar"/>
+			<zipfileset src="${path.lib}/je-3.3.82.jar"/>
+			<zipfileset src="${path.lib}/lucene.jar"/>
+			<!-- (end ew) -->
+		</jar>
+	</target>
+	
+	<target name="dist-custom" depends="compile" description="Create a (huge, sorry) executable jar using a custom Main file (specify using -Dmainclass=package.path.to.class.name)">
+		<jar destfile="${path.dist}/ghirl-custom-${mainclass}.jar">
+			<fileset dir="${path.build}"/>
+			<!-- This is horrid and gross and has to be updated any time we add/change a library in lib. Ew. -->
+			<zipfileset src="${path.lib}/minorThird-20071114.jar"/>
+			<zipfileset src="${path.lib}/je-3.3.82.jar"/>
+			<zipfileset src="${path.lib}/lucene.jar"/>
+			<!-- (end ew) -->
+			<manifest>
+				<attribute name="Built-By" value="${user.name}"/>
+				<attribute name="Main-Class" value="${mainclass}"/>
+				<!-- The way you're *really* supposed to handle external libraries in a .jar file is as follows:
+					OUTSIDE the <jar> element, do:
+						<path id="dist.classpath">
+							<fileset dir="${path.lib}" includes="**/*.jar, **/*.zip" />
+						</path>			
+						<manifestclasspath property="dist.manifest.classpath" jarfile="${path.dist}/ghirl-argh-${mainclass}.jar">
+							<classpath refid="dist.classpath" />
+						</manifestclasspath>
+					then INSIDE the <manifest> element, do:
+						<attribute name="Class-Path" value="${dist.manifest.classpath}"/>
+					This, however, requires you to send your jar along with a lib directory so that the local paths inluded in Class-Path remain the same. There's no all-in-one-file way to do it other than unpacking and repacking as we're doing with zipfileset above.  :(
+				-->
+			</manifest>
+		</jar>
+	</target>
+	
+	<!-- java -Dghirl.dbDir=. -jar ghirl-custom-ghirl.graph.TextUI.jar -graph cache-toy.bsh -query william | tail -21 > output.txt  -->
+	<!-- The following targets need work.  I'm leaving them in, but they're not important to complete at this time. 
+	
+	What I want:
+		(1) Run TextUI on cache-toy.bsh in tests/
+		(2) [tail -21] the output and save to a output-DSTAMP.txt
+		(3) diff output-goldstandard.txt output-DSTAMP.txt
+				* Ant doesn't appear to be able to do this.  It might be an OK place to drop in JUnit.
+				  * IF we drop in JUnit, add an exclude to the jar targets so they don't grab the tests or the junit jar.
+		(4) If there are differences, fail
+		(5) otherwise succeed
+	
+	<target name="dist-textui">
+		<property name="textui-jar" value="${path.dist}/ghirl-custom-ghirl.graph.TextUI.jar"/>
+	</target>
+	<target name="runtime-test" depends="dist-textui">
+		<java jar="${textui-jar}" ouptut="${path.test}/raw-${DSTAMP}.txt">
+			<jvmarg value="-Dghirl.dbDir=${path.test}"/>
+			<arg value="-graph ${path.test}/cache-toy.bsh -query william"/>
+		</java>
+		<copy file="${path.test}/raw-${DSTAMP}.txt" tofile="${path.test}/output-$DSTAMP.txt">
+			<filterchain>
+				<tailfilter lines="21"/>
+			</filterchain>
+		</copy>
+	</target>
+	
+	-->
+</project>

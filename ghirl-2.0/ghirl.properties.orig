@@ -1,0 +1,4 @@
+#persistent data for TextGraph's will be stored here
+ghirl.dbDir=/home/krivard/projects/yeast/ghirl_db
+
+

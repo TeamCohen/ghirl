@@ -1,0 +1,18 @@
+// return an extended disk-based graph loaded from graph.txt
+
+// create the disk-resident graph
+GraphLoader loader = new GraphLoader(new TextGraph("toy",'w'));
+loader.load(new File("graph.txt"));
+loader.getGraph().freeze();
+
+// load the disk-resident graph
+Graph inner = new TextGraph("toy",'r');
+GraphLoader nloader = new GraphLoader(new NestedTextGraph(inner));
+
+nloader.loadLine("node FILE$msg4.txt");
+nloader.loadLine("node LABELS$labels4.txt FILE$msg4.txt");
+
+nloader.getGraph().freeze();
+return nloader.getGraph();
+
+

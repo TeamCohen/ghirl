@@ -1,0 +1,26 @@
+// return an extended disk-based graph loaded from graph.txt
+import edu.cmu.minorthird.text.*;
+import edu.cmu.minorthird.text.mixup.*;
+
+// create the disk-resident graph
+GraphLoader loader = new GraphLoader(new TextGraph("toy",'w'));
+loader.load(new File("graph.txt"));
+loader.getGraph().freeze();
+
+// load the disk-resident graph
+Graph inner = new TextGraph("toy",'r');
+GraphLoader nloader = new GraphLoader(new NestedTextGraph(inner));
+
+String content = "You can make robots out of Lego Mindstorms.";
+MonotonicTextLabels labels = new BasicTextLabels(content);
+MixupProgram prog = new MixupProgram( new String[]{"defSpanType product =: ... ['Lego' 'Mindstorms'] ... "} );
+prog.eval(labels);
+
+System.out.println("labels: "+labels);
+
+nloader.loadLine("node TEXT$msg4.string "+content);
+nloader.getGraph().createLabelsNode(labels,"labels4.obj","TEXT$msg4.string");
+nloader.getGraph().freeze();
+return nloader.getGraph();
+
+
