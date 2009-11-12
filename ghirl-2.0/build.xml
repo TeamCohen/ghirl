@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
-<project name="GHIRL" default="all" basedir=".">
+<project name="GHIRL2" default="all" basedir=".">
 
 	<property file="build.properties"/>
 	
@@ -71,13 +71,13 @@
 	<target name="all" depends="clean, compile" description="Clean and compile all components"/>
 	
 	<target name="dist-lib-solo" depends="compile" description="Jar up GHIRL for distribution">
-		<jar destfile="${path.dist}/ghirl-${DSTAMP}.jar">
+		<jar destfile="${path.dist}/ghirl2-${DSTAMP}.jar">
 			<fileset dir="${path.build}"/>
 		  </jar>
 	</target>
 
 	<target name="dist-lib-full" depends="compile" description="Jar up GHIRL for distribution">
-		<jar destfile="${path.dist}/ghirl-full-${DSTAMP}.jar">
+		<jar destfile="${path.dist}/ghirl2-full-${DSTAMP}.jar">
 			<fileset dir="${path.build}"/>
 			<!-- This is horrid and gross and has to be updated any time we add/change a library in lib. Ew. -->
 			<zipfileset src="${path.lib}/minorThird-20071114.jar"/>
@@ -88,7 +88,7 @@
 	</target>
 	
 	<target name="dist-custom" depends="compile" description="Create a (huge, sorry) executable jar using a custom Main file (specify using -Dmainclass=package.path.to.class.name)">
-		<jar destfile="${path.dist}/ghirl-custom-${mainclass}.jar">
+		<jar destfile="${path.dist}/ghirl2-custom-${mainclass}.jar">
 			<fileset dir="${path.build}"/>
 			<!-- This is horrid and gross and has to be updated any time we add/change a library in lib. Ew. -->
 			<zipfileset src="${path.lib}/minorThird-20071114.jar"/>
@@ -127,7 +127,7 @@
 		(5) otherwise succeed
 	
 	<target name="dist-textui">
-		<property name="textui-jar" value="${path.dist}/ghirl-custom-ghirl.graph.TextUI.jar"/>
+		<property name="textui-jar" value="${path.dist}/ghirl2-custom-ghirl.graph.TextUI.jar"/>
 	</target>
 	<target name="runtime-test" depends="dist-textui">
 		<java jar="${textui-jar}" ouptut="${path.test}/raw-${DSTAMP}.txt">

@@ -7,6 +7,8 @@ import com.sleepycat.je.*;
 import java.io.*;
 import java.util.*;
 
+import org.apache.log4j.Logger;
+
 /**
  * Simpler interface to a sleepy cat database.
  *
@@ -16,8 +18,10 @@ import java.util.*;
 
 public class SleepycatDB
 {
-    private Environment env;
+	private static final Logger log = Logger.getLogger(SleepycatDB.class);
+	private Environment env;
     private DatabaseConfig dbConfig, dbDupConfig;
+    private List<Database> openDBs = new ArrayList<Database>();
 
     /** Initialize a database "environment", which will hold multiple
      * 'databases'.  Each database is a persistant hashtable that maps
@@ -43,19 +47,39 @@ public class SleepycatDB
 	}
 	env = new Environment(envDir,envConfig);
     }
+    
+    public void finalize() {
+    	this.closeDBs();
+    }
+    
+    /** Close all open databases. 
+     * @throws DatabaseException */
+    public void closeDBs() {
+    	for (Database db : openDBs) {
+    		try { db.close(); } catch (DatabaseException e) { 
+    			try { log.error("Trouble closing database "+db.getDatabaseName(), e); } catch (DatabaseException f) {
+    				log.error("Trouble closing a database that is so hosed I can't even get the name", f);
+    			}
+    		}
+    	}
+    }
 
     /** Open a "DB", which will map keys to values.
      */
     public Database openDB(String dbName) throws DatabaseException
     {
-	return env.openDatabase(null,dbName,dbConfig);
+    	Database db = env.openDatabase(null,dbName,dbConfig);
+    	openDBs.add(db);
+	return db;
     }
 
     /** Open a "DB", which will map keys to sets of values.
      */
     public Database openDupDB(String dbName) throws DatabaseException
     {
-	return env.openDatabase(null,dbName,dbDupConfig);
+    	Database db = env.openDatabase(null,dbName,dbDupConfig);
+    	openDBs.add(db);
+	return db;
     }
 
     /** Write any buffers out to disk.
