@@ -4,6 +4,8 @@ package ghirl.graph;
 import java.io.*;
 import java.util.*;
 
+import org.apache.log4j.Logger;
+
 import edu.cmu.minorthird.util.*;
 
 /**
@@ -55,6 +57,7 @@ import edu.cmu.minorthird.util.*;
 
 public class GraphLoader
 {
+	private static final Logger log = Logger.getLogger(GraphLoader.class);
 	public static final StringEncoder ENCODER = new StringEncoder('%',"\t\n ");
 
 	private Map isaRules; // applied defineIsa rules, as given in the header of graph file.
@@ -76,7 +79,7 @@ public class GraphLoader
 	{ 
 		this.graph = graph;
 		this.isaRules = new HashMap();
-		System.out.println("created GraphLoader for "+graph);
+		log.info("created GraphLoader for "+graph);
 	}
 
 	/** Return the graph */
@@ -85,7 +88,7 @@ public class GraphLoader
 	/** Load some stuff from a file */
 	public void load(File file) throws IOException, FileNotFoundException
 	{
-		System.err.println("loading graph from "+file+"...");
+		log.info("loading graph from "+file+"...");
 		LineNumberReader in = new LineNumberReader(new FileReader(file));
 		String line = null;
 		int numLines = 0;
@@ -93,11 +96,11 @@ public class GraphLoader
 		while ((line = in.readLine())!=null) {
 			numLines++;
 			if (linesBetweenStatusMessage>0 && numLines%linesBetweenStatusMessage==0) 
-				System.err.println("loaded "+numLines+" lines");
+				log.info("loaded "+numLines+" lines");
 			if (!line.startsWith("#") && line.trim().length()>0) {
 				boolean status = loadLine(line);
 				if (!status) {
-					if (printWarnings) System.err.println("illegal line "+in.getLineNumber()+": "+line);
+					if (printWarnings) log.warn("illegal line "+in.getLineNumber()+": "+line);
 					if (throwErrors) throw new IllegalArgumentException("illegal line "+in.getLineNumber()+": "+line);
 				}
 			}
