@@ -72,7 +72,7 @@ public class QueryGUI extends MessageViewer
 	Walker walker = new BasicWalker();
 	public int getTotalSteps() { return tot; }
 	public void setTotalSteps(int i) { tot=i; }
-	public void setWalker(BasicWalker walker) { this.walker=walker; }
+	public void setWalker(Walker walker) { this.walker=walker; }
 	public Walker getWalker() { return walker; }
 	public String getStopList() { return stoplist; }
 	public void setStopList(String s) { 
