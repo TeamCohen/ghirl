@@ -44,6 +44,9 @@ public class PersistantGraph extends SleepycatDB implements MutableGraph, Serial
 		System.err.println("db error "+ex);
 	}
 
+	// TODO: Trapping startup errors in this way makes it impossible 
+	// to tell whether the DB started up properly or not.  At least add
+	// an "initialized" flag, or something. :(
 	public PersistantGraph(String dbName,char mode)
 	{ 
 		try { 

@@ -177,8 +177,8 @@ public class SoftDictEntitySearcherV1 extends ProgrammableSearcher
     public Set normalizedIdsFor(TextLabels labels)
     {
 	Set result = new HashSet();
-	for (Span.Looper i = labels.instanceIterator(spanType); i.hasNext(); ) {
-	    Span span = i.nextSpan();
+	for (Iterator<Span> i = labels.instanceIterator(spanType); i.hasNext(); ) {
+	    Span span = i.next();
 	    String entity = span.asString();
 	    StringWrapper w = (StringWrapper)softDict.lookup( entity );
 	    GraphId nid = (GraphId)normalIdMap.get(w.unwrap());

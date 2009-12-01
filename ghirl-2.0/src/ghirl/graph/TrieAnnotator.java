@@ -82,10 +82,10 @@ public class TrieAnnotator extends GraphAnnotator
 	public Distribution search(GraphId fromId)
 	{
 	    BasicTextLabels labels = new BasicTextLabels( graph.getTextContent(fromId) );
-	    Span contentSpan = labels.getTextBase().documentSpanIterator().nextSpan();
+	    Span contentSpan = labels.getTextBase().documentSpanIterator().next();
 	    Distribution dist = new TreeDistribution();
-	    for (Trie.ResultLooper i = trie.lookup(contentSpan); i.hasNext(); ) {
-		Span match = i.nextSpan();
+	    for (Trie.ResultIterator i = trie.lookup(contentSpan); i.hasNext(); ) {
+		Span match = i.next();
 		List ids = i.getAssociatedIds();
 		for (Iterator j=ids.iterator(); j.hasNext(); ) {
 		    String toIdName = (String)j.next();  

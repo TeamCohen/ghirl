@@ -54,8 +54,8 @@ public class RankingBoostedLearner extends BatchBinaryClassifierLearner
     public Map splitIntoRankings(Dataset data)
 	{
 		Map map = new HashMap();
-		for (Example.Looper i=data.iterator(); i.hasNext(); ) {
-            Example ex = i.nextExample();
+		for (Iterator<Example> i=data.iterator(); i.hasNext(); ) {
+            Example ex = i.next();
             List list = (List)map.get( ex.getSubpopulationId() );
             if (list==null) map.put( ex.getSubpopulationId(), (list = new ArrayList()) );
             list.add( ex );

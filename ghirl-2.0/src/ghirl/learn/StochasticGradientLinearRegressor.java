@@ -1,6 +1,8 @@
 package ghirl.learn;
 
 import java.io.*;
+import java.util.Iterator;
+
 import ghirl.graph.*;
 import edu.cmu.minorthird.util.*;
 import edu.cmu.minorthird.classify.*;
@@ -34,8 +36,8 @@ public class StochasticGradientLinearRegressor
 	    for (int i=0; i<epochs; i++) {
 		dataset.shuffle();
 		onlineRegressor.setLearningRate( 1.0/(i+1.0) );
-		for (Example.Looper j=dataset.iterator(); j.hasNext(); ) {
-		    Example ex = j.nextExample();
+		for (Iterator<Example> j=dataset.iterator(); j.hasNext(); ) {
+		    Example ex = j.next();
 		    onlineRegressor.addExample(ex);
 		}
 		theHyperplane = onlineRegressor.getHyperplane();
@@ -118,8 +120,8 @@ public class StochasticGradientLinearRegressor
 	    */
 
 	    //System.out.println("y = "+y_t+" yhat = "+predicted_y_t);
-	    for (Feature.Looper i=example.featureIterator(); i.hasNext(); ) {
-		Feature f = i.nextFeature();
+	    for (Iterator<Feature> i=example.featureIterator(); i.hasNext(); ) {
+		Feature f = i.next();
 		double w_f = w_t.featureScore(f);
 		double e_f = example.getWeight(f); // was divided by exampleNormSquared;
 		double delta = error * e_f;
@@ -156,8 +158,8 @@ public class StochasticGradientLinearRegressor
     {
 	double sum = 0;
 	double tot = 0;
-	for (Example.Looper i=d.iterator(); i.hasNext(); ) {
-	    Example ex = i.nextExample();
+	for (Iterator<Example> i=d.iterator(); i.hasNext(); ) {
+	    Example ex = i.next();
 	    double y = ex.getLabel().posWeight();
 	    double predicted = w.score(ex.asInstance());
 	    sum += (y-predicted)*(y-predicted);

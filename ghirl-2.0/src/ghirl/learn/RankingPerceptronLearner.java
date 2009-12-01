@@ -183,11 +183,12 @@ public class RankingPerceptronLearner extends BatchBinaryClassifierLearner
 		public LogTransformInstance(Instance inner) { this.inner=inner; }
 		public Object getSource() { return inner.getSource(); }
 		public String getSubpopulationId() { return inner.getSubpopulationId(); }
-		public Feature.Looper featureIterator() { return inner.featureIterator(); }
-		public Feature.Looper binaryFeatureIterator() { return inner.binaryFeatureIterator(); }
-		public Feature.Looper numericFeatureIterator() { return inner.numericFeatureIterator(); }
+		public Iterator<Feature> featureIterator() { return inner.featureIterator(); }
+		public Iterator<Feature> binaryFeatureIterator() { return inner.binaryFeatureIterator(); }
+		public Iterator<Feature> numericFeatureIterator() { return inner.numericFeatureIterator(); }
 		public double getWeight(Feature f) { return Math.log(inner.getWeight(f)); }
 		public Viewer toGUI() { return new GUI.InstanceViewer(this); }
 		public String toString() { return "[LogTransform "+inner+"]"; }
+		public int numFeatures() { return inner.numFeatures(); }
 	}
 }
