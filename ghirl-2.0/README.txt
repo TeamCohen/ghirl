@@ -1,21 +1,32 @@
-GHIRL 1.0: A Brief Dusting Off
+GHIRL 2.0: Moving Forward
 November 2009 - Katie Rivard krivard@andrew.cmu.edu katie@rivard.org
 
-If you need to use GHIRL as-is, this is probably the distribution for you.  It works the same way the NIES, Hexastore, and archived versions did.
-
-Changes:
- - Includes all necessary libraries
-    * minorThird-20071114.jar
-    * je-3.3.82 (this may be significantly newer than you're used to.  It requires more memory but doesn't have buggy file locks)
-    * lucene.jar
- - Shiny new build file.  Targets you probably want are:
-    * compile
-    * all (clean,compile)
-    * dist-lib-solo (ghirl-dstamp.jar, just GHIRL)
-    * dist-lib-full (ghirl-full-dstamp.jar, GHIRL and m3rd and lucene and sleepycat)
-    * dist-custom -Dmainclass=YOUR.DESIRED.MAIN.CLASS.HERE (executable ghirl-custom-mainclass.jar)
-       - Be forewarned; this is an all-in-one jar (about 8MB)
+If you need to use cutting-edge GHIRL features such as Hexastore (TBA) or a 
+current copy of Minorthird, or you are adding new features to GHIRL, this is 
+probably the distribution for you.
 
 Requirements:
  - Java 1.6, although it can probably run in 1.5 if you care to tweak build.xml
 
+Troubleshooting:
+If you are building ghirl2 and seeing this error:
+
+> bash-3.2$ ant clean
+> Buildfile: build.xml
+>
+> init:
+>  [taskdef] Could not load definitions from resource
+> net/sf/antcontrib/antcontrib.properties. It could not be found.
+
+Then you do not have the ant-contrib package installed with your version of 
+ant. ant-contrib defines a looping target which is being used in ghirl2's 
+buildfile to package the external libraries.  To install ant-contrib to your 
+own system, go to
+
+http://sourceforge.net/projects/ant-contrib/
+
+And click the big green button.  I think the current version is 1.0b3, which 
+has been stable since November 2006.  Copy the ant-contrib JAR to the lib 
+directory of your ant install, or, if using Eclipse, go to your preferences and
+ do Ant -> Runtime -> Classpath -> Global Entries, click the "Add External 
+JARs..." button and select the ant-contrib JAR.
