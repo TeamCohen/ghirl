@@ -19,6 +19,23 @@ public class CompactImmutableDistribution extends Distribution
     private float totalWeight;
 
     /**
+     * @param objectIndex - array objects in the distribution, named by
+     * their positions in the sortedObjectArray.
+     * @param weightSoFar - parallel arrat of the cumulative weight of all objects 
+     * in the distribution up to the corresponding point in the objectIndices array.
+     * @param sortedObjectArray - sorted array that contains all objects in the distribution
+     * 
+     * The arrays passed in are not copied.
+     */
+    public CompactImmutableDistribution(int[] objectIndex, float[] totalWeightSoFar, Object[] sortedObjectArray)
+    {
+        this.sortedObjectArray = sortedObjectArray;
+        this.totalWeightSoFar = totalWeightSoFar;
+        this.objectIndex = objectIndex;
+        this.totalWeight = totalWeightSoFar[totalWeightSoFar.length - 1];
+    }
+
+    /**
      * @param dist - is a distribution of objects
      * @param sortedObjectArray - sorted array that contains all objects in the distribution
      */
