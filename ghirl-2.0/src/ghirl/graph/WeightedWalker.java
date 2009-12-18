@@ -103,7 +103,9 @@ public class WeightedWalker extends BasicWalker implements CommandLineProcessor.
 	}
 
 	public double getEdgeWeight(String edge){
-		return ((Double)edgeWeights.get(edge)).doubleValue();
+		if (edge != null && edgeWeights.containsKey(edge))
+			return ((Double)edgeWeights.get(edge)).doubleValue();
+		throw new IllegalArgumentException("Bad edge weight for edge ("+edge+")");
 	}
 
 	public Map getWeights(){

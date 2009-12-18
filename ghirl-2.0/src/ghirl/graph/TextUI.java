@@ -118,9 +118,11 @@ public class TextUI extends MessageViewer
 
 	public static void main(String[] args)
 	{
-		// log4j setup, since we probably don't have a log4j.properties
-		BasicConfigurator.configure(); // go to the console
-		Logger.getRootLogger().setLevel(Level.INFO); // only print warnings or worse
+		// log4j setup if we don't have a log4j.properties
+		if (!Logger.getRootLogger().getAllAppenders().hasMoreElements()) {
+			BasicConfigurator.configure(); // go to the console
+			Logger.getRootLogger().setLevel(Level.INFO); // only print warnings or worse
+		}
 		// end log4j setup
 
 		TextUI gui = null;

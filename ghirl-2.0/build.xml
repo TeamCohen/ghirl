@@ -16,12 +16,13 @@
 		<taskdef resource="net/sf/antcontrib/antcontrib.properties"/>
 		
 		<!-- Configure paths -->
-		<property name="path.src"   value="src"/>
-		<property name="path.lib"   value="lib"/>
-		<property name="path.build" value="build"/>
-		<property name="path.dist"  value="dist"/>
-		<property name="path.tmp"   value="tmp"/>
-		<property name="path.test"  value="test"/>
+		<property name="path.src"    value="src"/>
+		<property name="path.lib"    value="lib"/>
+		<property name="path.devlib" value="dev-lib"/>
+		<property name="path.build"  value="build"/>
+		<property name="path.dist"   value="dist"/>
+		<property name="path.tmp"    value="tmp"/>
+		<property name="path.test"   value="test"/>
 		
 		<!-- Configure compilation parameters -->
 		<property name="compile.debug"              value="true"/>
@@ -35,6 +36,9 @@
 			<fileset dir="${path.lib}">
 				<include name="*.jar"/>
 			</fileset>
+			<fileset dir="${path.devlib}">
+				<include name="*.jar"/>
+			</fileset>
 			<pathelement path="${path.src}"/>
 			<pathelement path="${path.build}"/>
 		</path>
@@ -45,6 +49,7 @@
 		<mkdir dir="${path.tmp}"/>
 		<mkdir dir="${path.build}"/>
 		<mkdir dir="${path.lib}"/>
+		<mkdir dir="${path.devlib}"/>
 		<mkdir dir="${path.src}"/>
 	</target>
 
@@ -61,6 +66,10 @@
 		<copy todir="${path.build}">
 			<fileset dir="${path.src}">
 				<exclude name="**/*.java"/>
+				<exclude name="**/*.cpp"/>
+				<exclude name="**/*.h"/>
+				<exclude name="**/*.c"/>
+				<exclude name="**/*.cc"/>
 			</fileset>
 		</copy>
 	</target>
@@ -70,14 +79,24 @@
 	    	<fileset dir="${path.build}/">
 	    		<include name="*/"/>
 	    	</fileset>
+	    	<fileset dir="${path.tmp}/">
+	    		<include name="*/"/>
+	    	</fileset>
 	    </delete>
 	</target>
 
 	<target name="all" depends="clean, compile" description="Clean and compile all components"/>
 	
-	<target name="dist-lib-solo" depends="compile" description="Jar up GHIRL for distribution (NO dependencies, just GHIRL)">
+	<target name="test"><echo>Not yet implemented :(</echo></target>
+	
+	<target name="dist-lib-solo" depends="compile" description="Jar up GHIRL for distribution (NO dependencies, just GHIRL; does not include tests)">
 		<jar destfile="${path.dist}/ghirl2-${DSTAMP}.jar">
-			<fileset dir="${path.build}"/>
+			<fileset dir="${path.build}">
+				<patternset id="no-tests">
+					<exclude name="**/test/*.*"/> <!-- leave test cases behind -->
+					<exclude name="**/test"/>
+				</patternset>
+			</fileset>
 		  </jar>
 	</target>
 
@@ -95,16 +114,16 @@
 		</foreach>
 		<echo>Lib packing complete.</echo>
 	</target>
-	<target name="dist-lib-full" depends="compile,pack-all-libs" description="Jar up GHIRL for distribution (includes all dependencies)">
+	<target name="dist-lib-full" depends="compile,pack-all-libs" description="Jar up GHIRL for distribution (includes all dependencies; does not include tests)">
 		<jar destfile="${path.dist}/ghirl2-full-${DSTAMP}.jar">
-			<fileset dir="${path.build}"/>
+			<fileset dir="${path.build}"><patternset refid="no-tests"/></fileset>
 			<zipfileset src="${path.tmp}/lib.zip"/>
 		</jar>
 	</target>
 	
-	<target name="dist-custom" depends="compile" description="Create an executable jar using a custom Main file (specify using -Dmainclass=package.path.to.class.name)">
+	<target name="dist-custom" depends="compile" description="Like dist-lib-full but create an executable jar using a custom Main file (specify using -Dmainclass=package.path.to.class.name)">
 		<jar destfile="${path.dist}/ghirl2-custom-${mainclass}.jar">
-			<fileset dir="${path.build}"/>
+			<fileset dir="${path.build}"><patternset refid="no-tests"/></fileset>
 			<zipfileset src="${path.tmp}/lib.zip"/>
 			<manifest>
 				<attribute name="Built-By" value="${user.name}"/>
@@ -123,6 +142,38 @@
 				-->
 			</manifest>
 		</jar>
+	</target>
+	
+	<target name="jnilibs" depends="bdbstore,memstore"/>
+	
+	<target name="bbdb" depends="init" description="Compile the BB DB components (CPP)">
+		<exec executable="${cxx.compiler}" failonerror="true">
+			<arg line="${cxx.cflags}"/>
+			<arg line="${cxx.includes}"/>
+			<arg line="-o ${path.build}/ghirl/persistance/mydb.o"/>
+			<arg line="-c ${path.src}/ghirl/persistance/bdbhash/BDB/mydb.cpp"/>
+		</exec>
+	</target>
+	
+	<target name="bdbstore" depends="bbdb" description="Compile the BDB store CPP components">
+		<exec executable="${cxx.compiler}" failonerror="true">
+			<arg line="${cxx.cflags}"/>
+			<arg line="${cxx.includes}"/>
+			<arg line="${cxx.lflags}"/>
+			<arg line="${cxx.ldflags}"/>
+			<arg value="${path.build}/ghirl/persistance/mydb.o"/>
+			<arg line="-o ${path.build}/ghirl/persistance/libhexastore.${cxx.libext}"/>
+			<arg value="${path.src}/ghirl/persistance/hexastore.cc"/>
+		</exec>
+	</target>
+	
+	<target name="memstore" depends="init" description="Compile the memstore CPP components">
+		<exec executable="${cxx.compiler}" failonerror="true">
+			<arg line="${cxx.cflags}"/>
+			<arg line="${cxx.includes}"/>
+			<arg line="-o ${path.build}/ghirl/persistance/libmemstore.${cxx.libext}"/>
+			<arg value="${path.src}/ghirl/persistance/memstore.cc"/>
+		</exec>
 	</target>
 	
 	<!-- java -Dghirl.dbDir=. -jar ghirl-custom-ghirl.graph.TextUI.jar -graph cache-toy.bsh -query william | tail -21 > output.txt  -->

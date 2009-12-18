@@ -23,6 +23,7 @@ import ghirl.util.*;
 import java.util.*;
 import java.io.*;
 import java.util.zip.*;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.net.MalformedURLException;
 import org.apache.log4j.*;
@@ -38,23 +39,55 @@ import org.apache.log4j.*;
  * links from text nodes to terms, and terms to text nodes, which are
  * maintained by using a lucene index.
  *
- * Special nodes maintained by this, along with the GraphLoader line that
- * creates them:
+ *
+ * <h2>Declaring Graphs</h2>
+ * <p>Special nodes maintained by this class, along with the GraphLoader line that
+ * creates them:</p>
  *
  * <ul>
- * <li>node FILE$filename: a text node containing all the text in the file.
- * <li>node TEXT$id word1 ... wordK: a text node containing the text "word1 ... wordK".
- * <li>node LABELS$file1 FILE$file2: creates a new "labels" node.  file1 is a minorthird .labels
- * file which annotates file2 (and no other file). The document id's in file1 should all
- * be "someFile". 
+ * <li><code>node FILE$filename</code> - a text node containing all the text in the file.
+ * <li><code>node TEXT$id word1 ... wordK</code> - a text node containing the text "word1 ... wordK".
+ * <li><code>node LABELS$file1 FILE$file2</code> - creates a new "labels" node.  
+ * <code>file1</code> is a minorthird <code>.labels</code>
+ * file which annotates <code>file2</code> (and no other file). 
+ * The document ids in <code>file1</code> should all
+ * be "someFile". <i>(Do you mean the literal string, or that the ids should all be the same in
+ * any given <code>file1</code>?)</i>
  *
- * <p>If LABELS$file1 asserts that there is a span of spanType type1
- * containing the text TEXT$text1 = "span text 1", then the relations created are
- * as follows: LABELS$file1 _annotates FILE$file2, LABELS$file1
- * _hasSpanType file2//type1, file2//type1 _hasSpan text1,
- * and LABELS$file1 hasType1 text1.
+ * <p>If <code>LABELS$file1</code> asserts that there is a span of spanType <i>type1</i>
+ * containing the text <code>TEXT$text1 = "span text 1", then the relations created are
+ * as follows: <ul>
+ * <li><code>LABELS$file1 _annotates FILE$file2</code>
+ * <li><code> LABELS$file1 _hasSpanType file2//type1</code>
+ * <li><code> file2//type1 _hasSpan text1</code>
+ * <li><code>LABELS$file1 hasType1 text1</code>
+ * </ul>
+ * <i>(This should be checked to make sure it's still true!)</i>
+ *</ul>
  *
- </ul>
+ * <h2>Configuration</h2>
+ * <p>Properties read by this class include:</p><ul>
+ * <li><code>ghirl.dbDir</code> - REQUIRED - the absolute or relative path where the 
+ * persistance should be stored (unused for a memory-resident TextGraph).
+ * <li><code>ghirl.persistanceClass</code> - OPTIONAL - the fully-qualified classname
+ * to use for the <code>innerGraph</code>.  Defaults to PersistantGraphSleepycat at present.
+ * </ul>
+ *
+ * <h2>For TextGraph developers:</h2>
+ * <p><s>TextGraph maintains a list of all valid GraphId's and all valid
+ * edge labels.  Each of these are stored in two places: a file,
+ * and a TreeSet.  Things are added to the TreeSet when they are
+ * created, and inserted in the file after a freeze().</s> TextGraph node and
+ * edge caching for the <code>getOrderedEdgeLabels</code> and <code>
+ * getOrderedIds</code> methods is handled by its <code>innerGraph</code>.  
+ * TextGraph-specific
+ * edges are appended at request time.</p>
+ * 
+ * <p>The methods <code>freeze()</code> and <code>melt()</code> are used to make 
+ * sure that everything is added to the
+ * index before it's ever accessed.  The first access forces a
+ * 'freeze' operation, and after that no text files can be added
+ * without throwing an error.</p>
  */
 public class TextGraph implements MutableGraph, TextGraphExtensions
 {
@@ -76,14 +109,20 @@ public class TextGraph implements MutableGraph, TextGraphExtensions
 	public static final String TERM_TYPE = "TERM";
 
 	private static final StringEncoder ENCODER = GraphLoader.ENCODER;
+	/** Used to instantiate <code>innerGraph</code> if no 
+	 * <code>ghirl.persistanceClass</code> property is specified. */
+	private static final Class DEFAULT_PERSISTANTGRAPH = PersistantGraphSleepycat.class;
 
 	boolean frozenFlag = false;
-
+	/** Holds the path of a data file */
 	private String indexFileName, dbFileName;
+	/** Specified by Lucene. */
 	private IndexWriter writer = null;
+	/** Specified by Lucene. */
 	private IndexReader index = null;
+	/** Specified by Lucene. */
 	private Searcher searcher = null;
-	// used instead of indexFileName if writer is memory-resident
+	/** Used instead of indexFileName if writer is memory-resident */
 	private RAMDirectory writerDirectory = null;
 
 	// TextGraph maintains a list of all valid GraphId's and all valid
@@ -91,8 +130,8 @@ public class TextGraph implements MutableGraph, TextGraphExtensions
 	// and a TreeSet.  Things are added to the TreeSet when they are
 	// created, and inserted in the file after a freeze().
 
-	private Set newIds = new HashSet(), newLabels = new HashSet();
-	private String idFileName, labelFileName;
+//	private Set newIds = new HashSet();//, newLabels = new HashSet();
+//	private String idFileName, labelFileName;
 
 	//private Analyzer analyzer = new StandardAnalyzer();
 	private Analyzer analyzer = new TextGraphLexer();
@@ -114,18 +153,45 @@ public class TextGraph implements MutableGraph, TextGraphExtensions
 			}
 		});
 
-	/* Create a text graph.  Data wil be stored under the directory named by
+	/**
+	 * Grabs the persistance classname from <code>ghirl.persistanceClass</code>.
+	 * Checks that the specified class implements MutableGraph.
+	 * Only applicable when using the persistant constructor TextGraph(name,mode).
+	 * @return A Class object representing the class of the graph to be instantiated.
+	 */
+	private Class configurePersistantGraphClass() {
+		String pgraphclassname = Config.getProperty("ghirl.persistanceClass");
+		if (null != pgraphclassname) {
+			try {
+				Class temp = Class.forName(pgraphclassname);
+				if (MutableGraph.class.isAssignableFrom(temp))
+					return temp;
+				else
+					log.error("\""+pgraphclassname+"\" doesn't implement MutableGraph and is an invalid selection for ghirl.persistanceClass. Using default.");
+			} catch (ClassNotFoundException e1) {
+				log.error("Couldn't get specified ghirl.persistanceClass \""+pgraphclassname+"\"; using default");
+				return DEFAULT_PERSISTANTGRAPH;
+			}
+		} else log.info("No ghirl.persistanceClass specified.  Using default...");
+		if (MutableGraph.class.isAssignableFrom(DEFAULT_PERSISTANTGRAPH))
+			return DEFAULT_PERSISTANTGRAPH;
+		log.error("Shoot the programmer.  The default PersistanceGraph class must implement MutableGraph.");
+		throw new IllegalStateException("Can't make a PersistanceGraph");
+	}
+	
+	/** Create a text graph.  Data wil be stored under the directory named by
 	 * the property ghirl.dbDir (in the properties file ghirl.properties).
 	 *
-	 * @param mode 'w' for write, 'r' for read
+	 * @param mode 'w' for write, 'r' for read, 'a' for append.
 	 */
 	public TextGraph(String fileStem, char mode)
 	{
 		String baseDir = Config.getProperty("ghirl.dbDir");
-		if (baseDir==null) {
-			throw new IllegalArgumentException("The property ghirl.dbDir must be defined!");
-		}
-
+		if (baseDir==null) throw new IllegalArgumentException("The property ghirl.dbDir must be defined!");
+		
+		Class pgraphclass = configurePersistantGraphClass(); 
+		log.info("Configured "+pgraphclass.getCanonicalName());
+		
 		File baseDirFile = new File(baseDir);
 		if (!baseDirFile.exists() || !baseDirFile.isDirectory()) {
 			throw new IllegalArgumentException("The directory "+baseDirFile+" must exist");
@@ -133,8 +199,8 @@ public class TextGraph implements MutableGraph, TextGraphExtensions
 
 		indexFileName = baseDir + File.separatorChar + fileStem+"_lucene.index";
 		dbFileName    = baseDir + File.separatorChar + fileStem+"_db";
-		idFileName    = baseDir + File.separatorChar + fileStem+"_nodeIds.txt.gz";
-		labelFileName = baseDir + File.separatorChar + fileStem+"_edgeLabels.txt.gz";
+//		idFileName    = baseDir + File.separatorChar + fileStem+"_nodeIds.txt.gz";
+//		labelFileName = baseDir + File.separatorChar + fileStem+"_edgeLabels.txt.gz";
 
 		// check that the mode is valid
 		if ("war".indexOf((int) mode) < 0) {
@@ -142,17 +208,22 @@ public class TextGraph implements MutableGraph, TextGraphExtensions
 		}
 		// open the db, optionally clearing beforehand
 		if ('w'==mode) rm_r(new File(dbFileName));
-		innerGraph = new PersistantGraph(dbFileName,mode);
+		try {
+			innerGraph = (MutableGraph) pgraphclass.getConstructor(String.class, char.class)
+						.newInstance(dbFileName,mode);
+		} catch (InvocationTargetException e) {
+			log.error("Problem occurred inside PersistanceGraph constructor: ",e);
+		} catch (Exception e) {
+			log.error("Problem getting constructor for PersistanceGraph: ",e);
+		}
+		if (null == innerGraph) throw new IllegalStateException("Cannot proceed without PersistanceGraph.");
 
 		if (mode=='w') {
-			//    		// clear and re-open the database
-			//    		rm_r(new File(dbFileName));
-			//    		innerGraph = new PersistantGraph(dbFileName,mode);
 			// clear the saved label and graphId files, and retouch
-			File idFile=new File(idFileName), labelFile=new File(labelFileName);
+//			File idFile=new File(idFileName), labelFile=new File(labelFileName);
 
-			rm_r(idFile);    //idFile.createNewFile();
-			rm_r(labelFile); //labelFile.createNewFile();
+//			rm_r(idFile);    //idFile.createNewFile();
+//			rm_r(labelFile); //labelFile.createNewFile();
 			// clear and re-open the text index
 			rm_r(new File(indexFileName));
 			try {
@@ -161,7 +232,6 @@ public class TextGraph implements MutableGraph, TextGraphExtensions
 				throw new IllegalArgumentException("can't create lucene writer: "+ex);
 			}
 		} else if (mode=='a') {
-			//    		innerGraph = new PersistantGraph(dbFileName,'a');
 			innerGraph.melt();
 			try {
 				writer = new IndexWriter(indexFileName, analyzer, false);
@@ -169,7 +239,6 @@ public class TextGraph implements MutableGraph, TextGraphExtensions
 				throw new IllegalArgumentException("can't create lucene writer: "+ex);
 			}
 		} else if (mode=='r') {
-			//    		innerGraph = new PersistantGraph(dbFileName,mode);
 			if (!new File(indexFileName).exists()) {
 				throw new IllegalArgumentException("lucene index doesn't exist");
 			}
@@ -178,11 +247,11 @@ public class TextGraph implements MutableGraph, TextGraphExtensions
 
 	}
 
-	/* Create a memory-resident text graph.
+	/** Create a memory-resident text graph.
 	 */
 	public TextGraph()
 	{
-		indexFileName = dbFileName = idFileName = labelFileName = null;
+		indexFileName = dbFileName = /*idFileName = labelFileName =*/ null;
 		innerGraph = new BasicGraph();
 		try {
 			writerDirectory = new RAMDirectory();
@@ -193,7 +262,7 @@ public class TextGraph implements MutableGraph, TextGraphExtensions
 		}
 	}
 
-	/* Create a memory-resident text graph and initialize it with data
+	/** Create a memory-resident text graph and initialize it with data
 	 * from files readable by GraphLoader.
 	 */
 	public TextGraph(String graphFileName)
@@ -201,7 +270,7 @@ public class TextGraph implements MutableGraph, TextGraphExtensions
 		this(new String[]{graphFileName});
 	}
 
-	/* Create a memory-resident text graph and initialize it with data
+	/** Create a memory-resident text graph and initialize it with data
 	 * from files readable by GraphLoader
 	 */
 	public TextGraph(String[] graphFileNames)
@@ -294,72 +363,77 @@ public class TextGraph implements MutableGraph, TextGraphExtensions
 			}
 			searcher = new IndexSearcher(index);
 
-			if (idFileName==null || labelFileName==null) {
-				log.info("skipping caching of nodes and labels");
-				frozenFlag = true;
-				return;
-			}
+//			if (idFileName==null || labelFileName==null) {
+//				log.info("skipping caching of nodes and labels");
+//				frozenFlag = true;
+//				return;
+//			}
 
 			// cache out new list of nodes and labels
-			if (newIds.size()>0 || newLabels.size()>0) { 
-				// read out all the previously-stored ids, except the
-				// ones of the form TERM$glob
-				TreeSet idSet = new TreeSet();
-				File idFile = new File(idFileName);
-				if (idFile.exists()) {
-					List tmp = getListFromFile(idFile,true);
-					for (Iterator i=tmp.iterator(); i.hasNext(); ) {
-						GraphId id = (GraphId)i.next();
-						if (!TERM_TYPE.equals(id.getFlavor())) {
-							idSet.add( id );
-						}
-					}
-				}
-				// now add all TERM$xxx's, old or new
-				for (Iterator i=new TermNodeIterator(); i.hasNext(); ) {
-					GraphId id = (GraphId)i.next();
-					idSet.add( id );
-				}
-				// now add any new ids
-				idSet.addAll(newIds);
-
-				// read all previously-stored labels
-				Set labelSet = new TreeSet();
-				File labelFile = new File(labelFileName);
-				if (labelFile.exists()) {
-					List tmp = getListFromFile(labelFile,false);
-					labelSet.addAll( tmp );
-				}
-				// add the special ones for text graphs
-				labelSet.add( INFILE_EDGE_LABEL );
-				labelSet.add( HASTERM_EDGE_LABEL );
-				labelSet.add( HASSPANTYPE_EDGE_LABEL );
-				labelSet.add( HASSPAN_EDGE_LABEL );
-				labelSet.add( ANNOTATES_TEXT_EDGE_LABEL );
-				// add the new edge labels
-				//System.out.println("adding "+newLabels+"to: "+labelSet);
-				labelSet.addAll( newLabels );
-
-				// write out the new sets
-				PrintStream out = new PrintStream(new GZIPOutputStream(new FileOutputStream(new File(idFileName))));
-				for (Iterator i = idSet.iterator(); i.hasNext(); ) {
-					GraphId id = (GraphId) i.next();
-					out.println( id.toString() );
-				}
-				out.close();
-				out = new PrintStream(new GZIPOutputStream(new FileOutputStream(new File(labelFileName))));
-				for (Iterator i = labelSet.iterator(); i.hasNext(); ) {
-					String s = (String)i.next();
-					out.println( s );
-				}
-				out.close();
-			}
+//			if (newIds.size()>0) { // || newLabels.size()>0) { 
+//				// read out all the previously-stored ids, except the
+//				// ones of the form TERM$glob
+////				TreeSet idSet = new TreeSet();
+////				File idFile = new File(idFileName);
+////				if (idFile.exists()) {
+////					List tmp = getListFromFile(idFile,true);
+////					for (Iterator i=tmp.iterator(); i.hasNext(); ) {
+////						GraphId id = (GraphId)i.next();
+////						if (!TERM_TYPE.equals(id.getFlavor())) {
+////							idSet.add( id );
+////						}
+////					}
+////				}
+//				// now add all TERM$xxx's, old or new
+////				for (Iterator i=new TermNodeIterator(); i.hasNext(); ) {
+////					GraphId id = (GraphId)i.next();
+////					idSet.add( id );
+////				}
+////				// now add any new ids
+////				idSet.addAll(newIds);
+//
+//				// read all previously-stored labels
+////				Set labelSet = new TreeSet();
+////				File labelFile = new File(labelFileName);
+////				if (labelFile.exists()) {
+////					List tmp = getListFromFile(labelFile,false);
+////					labelSet.addAll( tmp );
+////				}
+////				// add the special ones for text graphs
+////				addTextgraphLabels(labelSet);
+////				// add the new edge labels
+////				//System.out.println("adding "+newLabels+"to: "+labelSet);
+////				labelSet.addAll( newLabels );
+//
+//				// write out the new sets
+////				PrintStream out = new PrintStream(new GZIPOutputStream(new FileOutputStream(new File(idFileName))));
+////				for (Iterator i = idSet.iterator(); i.hasNext(); ) {
+////					GraphId id = (GraphId) i.next();
+////					out.println( id.toString() );
+////				}
+////				out.close();
+////				out = new PrintStream(new GZIPOutputStream(new FileOutputStream(new File(labelFileName))));
+////				for (Iterator i = labelSet.iterator(); i.hasNext(); ) {
+////					String s = (String)i.next();
+////					out.println( s );
+////				}
+////				out.close();
+//			}
 			frozenFlag = true;
 		} catch (IOException ex) {
 //			ex.printStackTrace();
 			throw new IllegalArgumentException("can't open file",ex);
 		}
 	}
+	
+	private void addTextgraphLabels(Set labelSet) {
+		labelSet.add( INFILE_EDGE_LABEL );
+		labelSet.add( HASTERM_EDGE_LABEL );
+		labelSet.add( HASSPANTYPE_EDGE_LABEL );
+		labelSet.add( HASSPAN_EDGE_LABEL );
+		labelSet.add( ANNOTATES_TEXT_EDGE_LABEL );
+	}
+	
 
 	// disallow creation of term nodes, and make sure file nodes are
 	// indexed.
@@ -394,7 +468,7 @@ public class TextGraph implements MutableGraph, TextGraphExtensions
 			//System.out.println(id+" exists");
 			return id;
 		} else {
-			newIds.add( id );
+//			newIds.add( id );
 			if (FILE_TYPE.equals(flavor)) {
 				try {
 					indexDocument(flavor,shortName,IOUtil.readFile(new File(shortName)));
@@ -422,7 +496,10 @@ public class TextGraph implements MutableGraph, TextGraphExtensions
 	{
 		//System.err.println("createLabelsNode '"+shortName+"' '"+textFileIdString+"'");
 
-		String labelFileName = shortName;
+		// dec 2009 refactored use of labelFileName as a local variable to use 
+		// the name from the method argument instead.  labelFileName is a
+		// member variable and should not be used as a local name.
+//		String labelFileName = shortName;
 
 		// the spec is the id of the document being annotated. note
 		// that the file corresponding to textFileIdString may not
@@ -441,11 +518,11 @@ public class TextGraph implements MutableGraph, TextGraphExtensions
 		TextLabels textLabels = null;
 		try {
 			TextBase textBase = textBaseFor( new File(textFileId.getShortName()) );
-			textLabels = new TextLabelsLoader().loadOps( textBase, new File(labelFileName) );
+			textLabels = new TextLabelsLoader().loadOps( textBase, new File(shortName) );
 		} catch (IOException ex) {
-			throw new IllegalArgumentException("can't read file "+labelFileName);
+			throw new IllegalArgumentException("can't read file "+shortName);
 		}
-		return createLabelsNode(textLabels,labelFileName,textFileId);
+		return createLabelsNode(textLabels,shortName,textFileId);
 	}
 
 	/** Create a new node in the graph of flavor LABELs with short
@@ -459,7 +536,7 @@ public class TextGraph implements MutableGraph, TextGraphExtensions
 		// link the textFile to the labelFile
 		//System.err.println("creating inner node "+LABELS_TYPE+" $ "+labelIdShortName);
 		GraphId labelFileId =  innerGraph.createNode(LABELS_TYPE,labelIdShortName);
-		newIds.add( labelFileId );
+//		newIds.add( labelFileId );
 
 		//System.err.println("labels node "+labelFileId+" "+textFileId+": adding edges");
 		addEdge(ANNOTATES_TEXT_EDGE_LABEL, labelFileId, textFileId );
@@ -471,7 +548,7 @@ public class TextGraph implements MutableGraph, TextGraphExtensions
 			String typeIdShortName = docName+"//"+type;
 			String typeEdgeLabel = "has"+type.substring(0,1).toUpperCase()+type.substring(1);
 			GraphId typeId = innerGraph.createNode( GraphId.DEFAULT_FLAVOR, typeIdShortName );
-			newIds.add( typeId );
+//			newIds.add( typeId );
 			addEdge(HASSPANTYPE_EDGE_LABEL, labelFileId, typeId );
 			addEdge(HASSPANTYPE_EDGE_LABEL+"Inverse", typeId, labelFileId );
 			//System.err.println(" - adding type "+type);
@@ -535,7 +612,7 @@ public class TextGraph implements MutableGraph, TextGraphExtensions
 		if (isFrozen()) {
 			throw new IllegalStateException("adding edge "+linkLabel+" "+from+" -> "+to+" to frozen graph "+this);
 		}
-		newLabels.add( linkLabel );
+//		newLabels.add( linkLabel );
 		innerGraph.addEdge(linkLabel,from,to);
 	}
 
@@ -547,7 +624,7 @@ public class TextGraph implements MutableGraph, TextGraphExtensions
 		else {
 			Set accum = new HashSet();
 			accum.addAll(innerGraph.getEdgeLabels(from));
-			if (FILE_TYPE.equals(flavor) || TEXT_TYPE.equals(flavor)) 
+			if (FILE_TYPE.equals(flavor) || TEXT_TYPE.equals(flavor))
 				accum.add( HASTERM_EDGE_LABEL );
 			return accum;
 		}
@@ -648,29 +725,53 @@ public class TextGraph implements MutableGraph, TextGraphExtensions
 	public GraphId[] getOrderedIds()
 	{
 		checkFrozen();
-		try {
-			File idFile = new File(idFileName);
-			if (idFile.exists()) {
-				List idList = getListFromFile(idFile,true);
-				return (GraphId[]) idList.toArray(new GraphId[idList.size()]);
-			} else return new GraphId[0];
-		} catch (IOException ex) {
-			throw new IllegalStateException("error "+ex);
-		}
+//		try {
+//			if (idFileName != null) {
+//				File idFile = new File(idFileName);
+//				if (idFile.exists()) {
+//					List idList = getListFromFile(idFile,true);
+//					return (GraphId[]) idList.toArray(new GraphId[idList.size()]);
+//				} else return new GraphId[0];
+//			} else {
+//				log.warn("No id file -- restricting IDs to inner graph!");
+				return innerGraph.getOrderedIds();
+//			}
+//		} catch (IOException ex) {
+//			throw new IllegalStateException("error "+ex);
+//		}
 	}
 
 	public String[] getOrderedEdgeLabels()
 	{
 		checkFrozen();
-		try {
-			File labelFile = new File(labelFileName);
-			if (labelFile.exists()) {
-				List labelList = getListFromFile(labelFile,false);
-				return (String[]) labelList.toArray(new String[labelList.size()]);
-			} else return new String[0];
-		} catch (IOException ex) {
-			throw new IllegalStateException("error "+ex);
-		} 
+//		try {
+//			if (labelFileName != null) {
+//				File labelFile = new File(labelFileName);
+//				if (labelFile.exists()) {
+//					List labelList = getListFromFile(labelFile,false);
+//					return (String[]) labelList.toArray(new String[labelList.size()]);
+//				} else return new String[0];
+//			} else {
+//				log.warn("No label file -- restricting labels to inner graph!");
+				Set labels = new HashSet();
+				for(String label: innerGraph.getOrderedEdgeLabels()) {
+					labels.add(label);
+				}
+				addTextgraphLabels(labels);
+				return (String[]) labels.toArray(new String[labels.size()]); 
+//				String[] innerLabels = innerGraph.getOrderedEdgeLabels();
+//				Set textlabelsSet = new HashSet(); addTextgraphLabels(textlabelsSet);
+//				String[] allLabels = new String[innerLabels.length+textlabelsSet.size()];
+//				int i=0;
+//				for(; i<innerLabels.length; i++) allLabels[i]=innerLabels[i];
+//				for(String label : (String[]) textlabelsSet.toArray(new String[textlabelsSet.size()])) {
+//					allLabels[i++] = label;
+//				}
+				
+//			}
+//		} catch (IOException ex) {
+//			throw new IllegalStateException("error "+ex);
+//		} 
 	}
 
 	private List getListFromFile(File fileName,boolean convertToGraphId) throws IOException

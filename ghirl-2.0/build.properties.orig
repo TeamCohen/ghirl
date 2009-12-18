@@ -1,0 +1,22 @@
+# MacOSX:
+special.javainclude=/System/Library/Frameworks/JavaVM.framework/Versions/1.6.0/Headers
+# FedoraCore:
+#special.javainclude=/opt/jdk1.6.0_04/include
+
+
+special.bdbhome=/usr/local/BerkeleyDB.4.7
+cxx.compiler=/usr/bin/g++
+
+# MacOSX:
+cxx.cflags=-dynamiclib -arch i386 -arch x86_64
+# FedoraCore:
+#cxx.cflags=-shared -fPIC
+
+cxx.includes=-I${special.javainclude}/ -I${special.javainclude}/linux/ -I${special.bdbhome}/include/
+cxx.lflags=-L${special.bdbhome}/lib/
+cxx.ldflags=-ldb-4.7 -ldb_cxx-4.7
+
+# MacOSX:
+cxx.libext=jnilib
+# FedoraCore:
+#cxx.libext=so

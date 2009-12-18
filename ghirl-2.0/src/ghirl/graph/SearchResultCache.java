@@ -9,6 +9,7 @@ import com.sleepycat.bind.tuple.*;
 import com.sleepycat.je.*;
 
 import edu.cmu.minorthird.util.*;
+import ghirl.persistance.SleepycatDB;
 import ghirl.util.*;
 
 /** Save results of a GraphSearcher.

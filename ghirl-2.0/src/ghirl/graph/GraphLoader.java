@@ -123,8 +123,11 @@ public class GraphLoader
 		} else if ("edge".equals(parts[0]) && parts.length>=4) {
 			// syntax "edge r x y" == "x r y", eg "isa william person"
 			String linkLabel = parts[1];
+			log.debug("Looking up field 1 "+parts[2]);
 			GraphId from = lookupNode(parts[2]);  // id of field 1
+			log.debug("Looking up field 2 "+parts[3]);
 			GraphId to = lookupNode(parts[3]);    // id of field 2
+			log.debug("Adding edge");
 			graph.addEdge( linkLabel, from, to );
 			if (invertLinks) graph.addEdge( linkLabel+"Inverse", to, from );
 			// also, check if an 'isa' rule is applied
@@ -166,12 +169,15 @@ public class GraphLoader
 	private GraphId lookupNode(String s,String content) 
 	{
 		GraphId id = GraphId.fromString(s);
+		log.debug("Checking containment of "+s);
 		if (graph.contains(id)) {
 			//System.err.println("looking up node "+id);
 			return id;
 		} else {
+			log.debug("creating node "+id.toString());
 			id = graph.createNode(id.getFlavor(),id.getShortName(),content);
 			if ((s.split("\\$")).length>1){
+				log.debug("specifying node type");
 				graph.addEdge("isa",id,GraphId.fromString(id.getFlavor()));
 			}
 			return id;
