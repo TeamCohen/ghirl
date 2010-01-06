@@ -23,6 +23,7 @@
 		<property name="path.dist"   value="dist"/>
 		<property name="path.tmp"    value="tmp"/>
 		<property name="path.test"   value="test"/>
+		<property name="path.javadoc" value="doc"/>
 		
 		<!-- Configure compilation parameters -->
 		<property name="compile.debug"              value="true"/>
@@ -204,4 +205,11 @@
 	</target>
 	
 	-->
+	
+	<target name="javadoc" depends="init" description="build javadoc API documentation">
+		<delete dir="${path.javadoc}"/>
+		<mkdir dir="${path.javadoc}"/>
+		<javadoc sourcepath="${path.src}" destdir="${path.javadoc}" classpathref="compile.classpath"  packagenames="*">
+		</javadoc>
+	</target>
 </project>

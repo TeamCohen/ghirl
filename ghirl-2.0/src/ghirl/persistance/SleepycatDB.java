@@ -27,7 +27,8 @@ public class SleepycatDB
 	 * 'databases'.  Each database is a persistant hashtable that maps
 	 * strings to strings, or strings to sets of strings.
 	 *
-	 * @param dbName directory to contain the database
+	 * @param dbDirName directory to contain the database
+	 * @param mode If 'w', will create (overwrite) the database in the specified directory.
 	 */
 	public void initDBs(String dbDirName,char mode) throws DatabaseException
 	{

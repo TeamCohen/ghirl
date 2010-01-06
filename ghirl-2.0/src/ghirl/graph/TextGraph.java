@@ -24,16 +24,8 @@ import java.util.*;
 import java.io.*;
 import java.util.zip.*;
 import java.lang.reflect.InvocationTargetException;
-import java.net.URL;
-import java.net.MalformedURLException;
 import org.apache.log4j.*;
 
-//
-// notes: new IndexWriter(new RAMDirectory(), analyzer, true ) will
-// create a memory-based index. Can be used with
-// IndexReader.open(indexWriter.getDirectory()).
-//
-// status: memory-resident textgraph is now complete
 
 /** A graph structure that can contain "text nodes".  There are implicit
  * links from text nodes to terms, and terms to text nodes, which are
@@ -125,14 +117,6 @@ public class TextGraph implements MutableGraph, TextGraphExtensions
 	/** Used instead of indexFileName if writer is memory-resident */
 	private RAMDirectory writerDirectory = null;
 
-	// TextGraph maintains a list of all valid GraphId's and all valid
-	// edge labels.  Each of these are stored in two places: a file,
-	// and a TreeSet.  Things are added to the TreeSet when they are
-	// created, and inserted in the file after a freeze().
-
-//	private Set newIds = new HashSet();//, newLabels = new HashSet();
-//	private String idFileName, labelFileName;
-
 	//private Analyzer analyzer = new StandardAnalyzer();
 	private Analyzer analyzer = new TextGraphLexer();
 
@@ -141,7 +125,7 @@ public class TextGraph implements MutableGraph, TextGraphExtensions
 	// if true, weight graph so that sum of all edges of each link type are uniform
 	private boolean equalWeightLinkTypes = true;
 
-	// the graph that holds non-text links
+	/** the graph that holds non-text links */
 	private MutableGraph innerGraph; 
 
 	private TFIDFWeighter weighter = 
@@ -362,66 +346,8 @@ public class TextGraph implements MutableGraph, TextGraphExtensions
 				index = IndexReader.open(writerDirectory);
 			}
 			searcher = new IndexSearcher(index);
-
-//			if (idFileName==null || labelFileName==null) {
-//				log.info("skipping caching of nodes and labels");
-//				frozenFlag = true;
-//				return;
-//			}
-
-			// cache out new list of nodes and labels
-//			if (newIds.size()>0) { // || newLabels.size()>0) { 
-//				// read out all the previously-stored ids, except the
-//				// ones of the form TERM$glob
-////				TreeSet idSet = new TreeSet();
-////				File idFile = new File(idFileName);
-////				if (idFile.exists()) {
-////					List tmp = getListFromFile(idFile,true);
-////					for (Iterator i=tmp.iterator(); i.hasNext(); ) {
-////						GraphId id = (GraphId)i.next();
-////						if (!TERM_TYPE.equals(id.getFlavor())) {
-////							idSet.add( id );
-////						}
-////					}
-////				}
-//				// now add all TERM$xxx's, old or new
-////				for (Iterator i=new TermNodeIterator(); i.hasNext(); ) {
-////					GraphId id = (GraphId)i.next();
-////					idSet.add( id );
-////				}
-////				// now add any new ids
-////				idSet.addAll(newIds);
-//
-//				// read all previously-stored labels
-////				Set labelSet = new TreeSet();
-////				File labelFile = new File(labelFileName);
-////				if (labelFile.exists()) {
-////					List tmp = getListFromFile(labelFile,false);
-////					labelSet.addAll( tmp );
-////				}
-////				// add the special ones for text graphs
-////				addTextgraphLabels(labelSet);
-////				// add the new edge labels
-////				//System.out.println("adding "+newLabels+"to: "+labelSet);
-////				labelSet.addAll( newLabels );
-//
-//				// write out the new sets
-////				PrintStream out = new PrintStream(new GZIPOutputStream(new FileOutputStream(new File(idFileName))));
-////				for (Iterator i = idSet.iterator(); i.hasNext(); ) {
-////					GraphId id = (GraphId) i.next();
-////					out.println( id.toString() );
-////				}
-////				out.close();
-////				out = new PrintStream(new GZIPOutputStream(new FileOutputStream(new File(labelFileName))));
-////				for (Iterator i = labelSet.iterator(); i.hasNext(); ) {
-////					String s = (String)i.next();
-////					out.println( s );
-////				}
-////				out.close();
-//			}
 			frozenFlag = true;
 		} catch (IOException ex) {
-//			ex.printStackTrace();
 			throw new IllegalArgumentException("can't open file",ex);
 		}
 	}
@@ -468,7 +394,6 @@ public class TextGraph implements MutableGraph, TextGraphExtensions
 			//System.out.println(id+" exists");
 			return id;
 		} else {
-//			newIds.add( id );
 			if (FILE_TYPE.equals(flavor)) {
 				try {
 					indexDocument(flavor,shortName,IOUtil.readFile(new File(shortName)));
@@ -536,7 +461,6 @@ public class TextGraph implements MutableGraph, TextGraphExtensions
 		// link the textFile to the labelFile
 		//System.err.println("creating inner node "+LABELS_TYPE+" $ "+labelIdShortName);
 		GraphId labelFileId =  innerGraph.createNode(LABELS_TYPE,labelIdShortName);
-//		newIds.add( labelFileId );
 
 		//System.err.println("labels node "+labelFileId+" "+textFileId+": adding edges");
 		addEdge(ANNOTATES_TEXT_EDGE_LABEL, labelFileId, textFileId );
@@ -548,7 +472,6 @@ public class TextGraph implements MutableGraph, TextGraphExtensions
 			String typeIdShortName = docName+"//"+type;
 			String typeEdgeLabel = "has"+type.substring(0,1).toUpperCase()+type.substring(1);
 			GraphId typeId = innerGraph.createNode( GraphId.DEFAULT_FLAVOR, typeIdShortName );
-//			newIds.add( typeId );
 			addEdge(HASSPANTYPE_EDGE_LABEL, labelFileId, typeId );
 			addEdge(HASSPANTYPE_EDGE_LABEL+"Inverse", typeId, labelFileId );
 			//System.err.println(" - adding type "+type);
@@ -570,10 +493,7 @@ public class TextGraph implements MutableGraph, TextGraphExtensions
 				addEdge(typeEdgeLabel, labelFileId, spanId );
 				addEdge(typeEdgeLabel+"Inverse", spanId, labelFileId );
 			}
-		} 
-		//GraphId innerId = innerGraph.createNode("",labelIdShortName);
-		//newIds.add( innerId );
-		//return innerId;
+		}
 		return labelFileId;
 	}
 
@@ -612,7 +532,6 @@ public class TextGraph implements MutableGraph, TextGraphExtensions
 		if (isFrozen()) {
 			throw new IllegalStateException("adding edge "+linkLabel+" "+from+" -> "+to+" to frozen graph "+this);
 		}
-//		newLabels.add( linkLabel );
 		innerGraph.addEdge(linkLabel,from,to);
 	}
 
@@ -725,53 +644,18 @@ public class TextGraph implements MutableGraph, TextGraphExtensions
 	public GraphId[] getOrderedIds()
 	{
 		checkFrozen();
-//		try {
-//			if (idFileName != null) {
-//				File idFile = new File(idFileName);
-//				if (idFile.exists()) {
-//					List idList = getListFromFile(idFile,true);
-//					return (GraphId[]) idList.toArray(new GraphId[idList.size()]);
-//				} else return new GraphId[0];
-//			} else {
-//				log.warn("No id file -- restricting IDs to inner graph!");
-				return innerGraph.getOrderedIds();
-//			}
-//		} catch (IOException ex) {
-//			throw new IllegalStateException("error "+ex);
-//		}
+		return innerGraph.getOrderedIds();
 	}
 
 	public String[] getOrderedEdgeLabels()
 	{
 		checkFrozen();
-//		try {
-//			if (labelFileName != null) {
-//				File labelFile = new File(labelFileName);
-//				if (labelFile.exists()) {
-//					List labelList = getListFromFile(labelFile,false);
-//					return (String[]) labelList.toArray(new String[labelList.size()]);
-//				} else return new String[0];
-//			} else {
-//				log.warn("No label file -- restricting labels to inner graph!");
-				Set labels = new HashSet();
-				for(String label: innerGraph.getOrderedEdgeLabels()) {
-					labels.add(label);
-				}
-				addTextgraphLabels(labels);
-				return (String[]) labels.toArray(new String[labels.size()]); 
-//				String[] innerLabels = innerGraph.getOrderedEdgeLabels();
-//				Set textlabelsSet = new HashSet(); addTextgraphLabels(textlabelsSet);
-//				String[] allLabels = new String[innerLabels.length+textlabelsSet.size()];
-//				int i=0;
-//				for(; i<innerLabels.length; i++) allLabels[i]=innerLabels[i];
-//				for(String label : (String[]) textlabelsSet.toArray(new String[textlabelsSet.size()])) {
-//					allLabels[i++] = label;
-//				}
-				
-//			}
-//		} catch (IOException ex) {
-//			throw new IllegalStateException("error "+ex);
-//		} 
+		Set labels = new HashSet();
+		for(String label: innerGraph.getOrderedEdgeLabels()) {
+			labels.add(label);
+		}
+		addTextgraphLabels(labels);
+		return (String[]) labels.toArray(new String[labels.size()]); 
 	}
 
 	private List getListFromFile(File fileName,boolean convertToGraphId) throws IOException
@@ -802,7 +686,6 @@ public class TextGraph implements MutableGraph, TextGraphExtensions
 				if (!termDocs.next()) {
 					throw new IllegalStateException("can't retrieve text: no documents for term "+t.text()); 
 				}
-				//return null; //TODO: illegal response -- throw illegalstateexception or something
 				Document doc = index.document( termDocs.doc() );
 				Field contentField = doc.getField(CONTENTS_FIELD);
 				String tmp = contentField.stringValue();

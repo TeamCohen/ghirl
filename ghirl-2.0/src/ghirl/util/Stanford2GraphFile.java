@@ -15,7 +15,7 @@ import java.util.regex.Pattern;
  * Both/DT the0AFL-CIO/JJ and/CC the0National0Association0of0Manufacturers/JJ are/VBP calling/VBG for/IN measures/NNS to/TO control/VB rising/VBG costs/NNS ,/, improve/VB quality/NN and/CC provide/VB care/NN to/TO the/DT 31/CD million/CD Americans/NNPS who/WP currently/RB lack/VBP health/NN insurance/NN ./.
  * [dep(the0AFL-2, Both-1), nsubj(calling-6, the0AFL-2), conj_and(the0AFL-2, the0National0Association0of0Manufacturers-4), aux(calling-6, are-5), prep_for(calling-6, measures-8), aux(control-10, to-9), xcomp(calling-6, control-10), amod(costs-12, rising-11), dobj(control-10, costs-12), conj_and(control-10, improve-14), dobj(improve-14, quality-15), conj_and(control-10, provide-17), dobj(provide-17, care-18), det(Americans-23, the-20), num(Americans-23, 31-21), number(31-21, million-22), prep_to(provide-17, Americans-23), nsubj(lack-26, who-24), advmod(lack-26, currently-25), rcmod(Americans-23, lack-26), nn(insurance-28, health-27), dobj(lack-26, insurance-28)]
  *
- * @Author: Einat Minkov
+ * @author: Einat Minkov
  */
 
 public class Stanford2GraphFile

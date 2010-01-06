@@ -22,7 +22,7 @@ import ghirl.graph.GraphId;
  * Note: the weights below are calculated in a default way -- you may want
  * update this.
  *
- * @Author: Einat Minkov
+ * @author: Einat Minkov
  */
 
 public class DB2Matlab

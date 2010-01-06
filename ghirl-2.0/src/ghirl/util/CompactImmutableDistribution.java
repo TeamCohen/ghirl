@@ -21,7 +21,7 @@ public class CompactImmutableDistribution extends Distribution
     /**
      * @param objectIndex - array objects in the distribution, named by
      * their positions in the sortedObjectArray.
-     * @param weightSoFar - parallel arrat of the cumulative weight of all objects 
+     * @param totalWeightSoFar - parallel array of the cumulative weight of all objects 
      * in the distribution up to the corresponding point in the objectIndices array.
      * @param sortedObjectArray - sorted array that contains all objects in the distribution
      * 

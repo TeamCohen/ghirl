@@ -40,7 +40,7 @@ public class SoftDictEntitySearcherV1 extends ProgrammableSearcher
      * @param normalizedIdType the type associated the normalized
      * identifiers -- eg for each GraphId x for a normalized
      * identifier, there is an edge "x isa normalizedIdType".
-     * @param normalizedIdType for each GraphId x that is a normalized
+     * @param normalizedId2Synonym for each GraphId x that is a normalized
      * identifier, there are some edges "x normalizedId2Synonym yi"
      * where yi is a synonym for x.
      *
@@ -139,7 +139,7 @@ public class SoftDictEntitySearcherV1 extends ProgrammableSearcher
 	private SoftDictionary softDict;
 	private Map normalIdMap;
 	/**
-	 * @param the normalIdMap maps strings that are entries in the softDict
+	 * @param normalIdMap maps strings that are entries in the softDict
 	 * to either GraphId's, or strings which are the shortName() of 
 	 * a GraphId.
 	 */

@@ -11,7 +11,7 @@ import com.wcohen.ss.tokens.*;
 import com.wcohen.ss.api.*;
 
 
-/*
+/**
  * Add links to a graph based on a SoftTFIDFDictionary. 
  *
  */
@@ -19,7 +19,7 @@ import com.wcohen.ss.api.*;
 public class SoftDictAnnotator extends GraphAnnotator
 {
     /**
-     * @option softDictSaveFile must be a 'saveFile' created with the SoftTFIDFDictionary.saveAs method.
+     * @param softDictSaveFile must be a 'saveFile' created with the SoftTFIDFDictionary.saveAs method.
      */
     public SoftDictAnnotator(String linkLabel,String precondition,String softDictSaveFile,double minScore)
         throws IOException,FileNotFoundException

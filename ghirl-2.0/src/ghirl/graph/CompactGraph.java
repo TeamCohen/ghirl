@@ -10,25 +10,25 @@ import edu.cmu.minorthird.util.*;
 import edu.cmu.minorthird.util.gui.*;
 
 /** A compact non-text graph that can be loaded
- * from three files.
- *
- * nodeNameFile: each line is the name of a node, where the 'integer
+ * from three files:
+ *<ul>
+ * <li> <code>nodeNameFile</code>: each line is the name of a node, where the 'integer
  *  id' of a node is line number, starting from one.  Lines are sorted
- *  lexigraphically.
+ *  lexigraphically.</li>
  * 
- * linkNameFile: each line is the name of a link label, where the
- *  'integer id' is the line number.
+ * <li><code>linkNameFile</code>: each line is the name of a link label, where the
+ *  'integer id' is the line number.</li>
  *
- * walkFile: each line has the form 
- *
+ * <li><code>walkFile</code>: each line has the form: 
+ *<pre>
  *   srcId <space> linkId <space> numDestinations <space> destId1:w1 <space> ... <space> destIdN:wN"
- *
+ *</pre>
  * where the id's are all appropriate integers, and wi is a number.  The numbers need not be 
- * normalized to sum to one.
+ * normalized to sum to one.</li>
  *
- * sizeFile: the number of lines in the first two files.
+ * <li><code>sizeFile</code>: the number of lines in the first two files.</li>
+ * </ul>
  */
-
 public class CompactGraph implements Graph
 {
     private static final Logger log = Logger.getLogger(CompactGraph.class);

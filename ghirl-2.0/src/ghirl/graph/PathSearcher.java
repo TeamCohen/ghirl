@@ -8,21 +8,23 @@ import ghirl.util.*;
 
 public class PathSearcher extends ProgrammableSearcher
 {
-    public PathSearcher(String path,boolean traceFlag)
-    {
-	this(path);
-	setTrace(traceFlag);
-    }
-
-    /** @options path is a space-separated list of edge labels.
-     */
-    public PathSearcher(String path)
-    {
-	String[] linkLabels = path.split("\\s+");
-	ProgrammableSearcher.SearchStep[] steps = new ProgrammableSearcher.SearchStep[linkLabels.length];
-	for (int i=0; i<linkLabels.length; i++) {
-	    steps[i] = new ProgrammableSearcher.LinkStep(linkLabels[i]);
+	public PathSearcher(String path,boolean traceFlag)
+	{
+		this(path);
+		setTrace(traceFlag);
 	}
-	setSteps(steps);
-    }
+
+	/**
+	 * Create a new PathSearcher for the specified path.
+	 * @param path is a space-separated list of edge labels.
+	 */
+	public PathSearcher(String path)
+	{
+		String[] linkLabels = path.split("\\s+");
+		ProgrammableSearcher.SearchStep[] steps = new ProgrammableSearcher.SearchStep[linkLabels.length];
+		for (int i=0; i<linkLabels.length; i++) {
+			steps[i] = new ProgrammableSearcher.LinkStep(linkLabels[i]);
+		}
+		setSteps(steps);
+	}
 }

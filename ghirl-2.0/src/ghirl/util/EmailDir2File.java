@@ -26,7 +26,7 @@ import java.util.*;
  * This code doesn't explicitly model relations between date expressions. However, it includes the infra-structure
  * required to add this to the graph file (addDateEdges method).
  *
- * @Author: Einat Minkov
+ * @author: Einat Minkov
  *
  */
 
