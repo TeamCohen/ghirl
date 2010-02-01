@@ -31,7 +31,7 @@ public class TrainGraphSearch
 
 
     public class MyCLP extends BasicCommandLineProcessor {
-        public void graph(String s) {graph = new TextGraph(s,'r'); }
+        public void graph(String s) {graph = new TextGraph(s); }
         public void cache(String s) { graph = new CachingGraph(graph,StringUtil.atoi(s)); }
         public void annotate(String s)
         {

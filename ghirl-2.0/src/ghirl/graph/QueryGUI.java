@@ -28,7 +28,7 @@ public class QueryGUI extends MessageViewer
 
 	public QueryGUI(String file) 
 	{ 
-		this(new TextGraph(file,'r')); 
+		this(new TextGraph(file)); 
 	}
 	public QueryGUI(Graph graph) 
 	{ 

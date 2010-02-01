@@ -44,7 +44,7 @@ public class IncrementalGraphLoader implements CommandLineProcessor.Configurable
     {
         if (graphName!=null) {
             char mode = (clearBeforeLoading) ? 'w' : 'a';
-            MutableGraph g = new TextGraph(graphName, mode);
+            MutableGraph g = new MutableTextGraph(graphName, mode);
             GraphLoader gloader = new GraphLoader(g);
             for (Iterator i=filesToLoad.iterator(); i.hasNext(); ) {
                 File f = (File)i.next();

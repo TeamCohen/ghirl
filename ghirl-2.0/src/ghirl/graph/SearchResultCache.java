@@ -126,7 +126,7 @@ public class SearchResultCache extends SleepycatDB
 
     public static void cacheGeneIdSearchMain(String[] args) throws IOException
     {
-	Graph graph = new TextGraph("mouse",'r');
+	Graph graph = new TextGraph("mouse");
 	BasicWalker walker = new BasicWalker();
 	walker.setGraph( graph );
 	//walker.setNumSteps(3000);

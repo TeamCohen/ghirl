@@ -24,7 +24,8 @@ import edu.cmu.minorthird.util.gui.*;
  *   srcId <space> linkId <space> numDestinations <space> destId1:w1 <space> ... <space> destIdN:wN"
  *</pre>
  * where the id's are all appropriate integers, and wi is a number.  The numbers need not be 
- * normalized to sum to one.</li>
+ * normalized to sum to one.  In <code>scripts/cvt_graph.pl</code>, this file is referred to
+ * as the "row" file.</li>
  *
  * <li><code>sizeFile</code>: the number of lines in the first two files.</li>
  * </ul>

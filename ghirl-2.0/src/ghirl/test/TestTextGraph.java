@@ -7,6 +7,10 @@ import static org.junit.Assert.*;
 
 import java.io.File;
 
+import ghirl.graph.GraphId;
+import ghirl.graph.GraphLoader;
+import ghirl.graph.MutableGraph;
+import ghirl.graph.MutableTextGraph;
 import ghirl.graph.TextGraph;
 import ghirl.util.Config;
 
@@ -23,16 +27,23 @@ public class TestTextGraph extends BasicGraphTest {
 
 	protected static String DBDIR = "tests/testTextGraph";
 	
+	public void loadGraph() {
+		GraphLoader loader = new GraphLoader((MutableGraph)graph);
+		loader.invertLinks = false; // only put in what we tell it
+		loader.loadLine("node TEXT$loremipsum lorem ipsum dolor sit amet");
+		super.loadGraph();
+	}
+	
 	@Before 
 	public void setUp() {
 		Config.setProperty("ghirl.dbDir", DBDIR);
 		new File(DBDIR).mkdir();
-		graph = new TextGraph(DBDIR.split("/")[1],'w');
+		graph = new MutableTextGraph(DBDIR.split("/")[1],'w');
 		loadGraph();
 	}
 	
 	public void reset() {
-		graph = new TextGraph(DBDIR.split("/")[1],'r');
+		graph = new TextGraph(DBDIR.split("/")[1]);
 	}
 
 	/**
@@ -40,7 +51,12 @@ public class TestTextGraph extends BasicGraphTest {
 	 */
 	@Test
 	public void testGetOrderedIds() {
-		super.testGetOrderedIds();
+
+		GraphId[] nodes = graph.getOrderedIds();
+		for(int i=0; i<nodes.length; i++) {
+			System.err.println(nodes[i].toString());
+		}
+		super.testGetOrderedIds(DEFAULT_IDS + 6);
 	}
 
 	/**

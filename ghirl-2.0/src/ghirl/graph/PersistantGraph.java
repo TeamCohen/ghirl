@@ -6,6 +6,8 @@ import org.apache.log4j.Logger;
 
 import com.sleepycat.je.*;
 
+import edu.cmu.minorthird.util.StringUtil;
+
 import ghirl.util.*;
 
 /**
@@ -142,16 +144,18 @@ public abstract class PersistantGraph implements MutableGraph
 	}
 
 	public String[] getOrderedEdgeLabels() { 
-		logger.debug("ensuring cache for getOrderedEdgeLabels...");
+//		logger.debug("ensuring cache for getOrderedEdgeLabels...");
 		ensureEdgeCache();
-		String[] labels = (String[]) edgeCache.toArray(new String[edgeCache.size()]);
+		String[] labels = edgeCache.toArray(new String[0]);
 		Arrays.sort(labels);
+
+	    logger.debug("returning: "+StringUtil.toString(labels));
 		return labels;
 	}
 
 	public GraphId[] getOrderedIds() {
 		ensureNodeCache();
-		GraphId[] result = (GraphId[]) nodeCache.toArray(new GraphId[nodeCache.size()]);
+		GraphId[] result = nodeCache.toArray(new GraphId[nodeCache.size()]);
 		Arrays.sort(result);
 		return result;
 	}

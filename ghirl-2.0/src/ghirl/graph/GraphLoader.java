@@ -83,7 +83,7 @@ public class GraphLoader
 	}
 
 	/** Return the graph */
-	public Graph getGraph() { return this.graph; }
+	public MutableGraph getGraph() { return this.graph; }
 
 	/** Load some stuff from a file */
 	public void load(File file) throws IOException, FileNotFoundException
@@ -178,7 +178,8 @@ public class GraphLoader
 			id = graph.createNode(id.getFlavor(),id.getShortName(),content);
 			if ((s.split("\\$")).length>1){
 				log.debug("specifying node type");
-				graph.addEdge("isa",id,GraphId.fromString(id.getFlavor()));
+//				graph.addEdge("isa",id,GraphId.fromString(id.getFlavor()));
+				graph.addEdge("isa",id,lookupNode(id.getFlavor()));
 			}
 			return id;
 		}
@@ -190,9 +191,9 @@ public class GraphLoader
 			throw new IllegalArgumentException("usage: INDEXFILE GRAPHFILE1 [GRAPHFILE2...] ");
 		}
 
-		new TextGraph(args[0],'w').freeze(); // clear args[0]
+		new MutableTextGraph(args[0],'w').freeze(); // clear args[0]
 		for (int i=1; i<args.length; i++) {
-			TextGraph g = new TextGraph(args[0],'a');
+			MutableGraph g = new MutableTextGraph(args[0],'a');
 			GraphLoader loader = new GraphLoader(g);
 			loader.load(new File(args[i]));
 			g.freeze();

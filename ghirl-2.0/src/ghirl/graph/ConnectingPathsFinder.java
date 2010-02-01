@@ -206,7 +206,7 @@ public class ConnectingPathsFinder
         ConnectingPathsFinder cpf = null;
         try{
             //graph = new CachingGraph(new TextGraph(args[0],'r'));
-            graph = new TextGraph(args[0],'r');
+            graph = new TextGraph(args[0]);
             cpf = new ConnectingPathsFinder(graph,new HashSet());
             sourceDist = CommandLineUtil.parseNodeOrNodeSet(args[1],graph);
             targetDist = CommandLineUtil.parseNodeOrNodeSet(args[2],graph);

@@ -1,0 +1,3 @@
+GraphLoader loader = new GraphLoader(new MutableTextGraph("testCompactGraph", 'w', new NullGraph()));
+loader.load(new File("graph.txt"));
+return loader.getGraph();

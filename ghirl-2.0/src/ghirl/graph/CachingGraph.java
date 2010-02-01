@@ -1,6 +1,9 @@
 package ghirl.graph;
 
 import java.util.*;
+
+import org.apache.log4j.Logger;
+
 import ghirl.util.*;
 import edu.cmu.minorthird.util.*;
 import edu.cmu.minorthird.util.gui.*;
@@ -10,6 +13,7 @@ import edu.cmu.minorthird.util.gui.*;
 
 public class CachingGraph implements Graph
 {
+	private static final Logger log = Logger.getLogger(CachingGraph.class);
     private static final Distribution EMPTY_DIST = new TreeDistribution();
 
     private Graph innerGraph;
@@ -40,12 +44,12 @@ public class CachingGraph implements Graph
 
     public CachingGraph(Graph innerGraph,int cacheSize) 
     { 
-        System.out.println("creating new CachingGraph: innerGraph="+innerGraph.getClass());
+        log.info("creating new CachingGraph: innerGraph="+innerGraph.getClass());
         this.innerGraph = innerGraph; 
         this.cacheSize = cacheSize;
         graphIds = innerGraph.getOrderedIds();
         linkLabels = innerGraph.getOrderedEdgeLabels();
-        //System.out.println("for CachingGraph, "+graphIds.length+" ids, linkLabels="+StringUtil.toString(linkLabels));
+        log.debug("for CachingGraph, "+graphIds.length+" ids, linkLabels="+StringUtil.toString(linkLabels));
         walkInfo = new CompactImmutableDistribution[ graphIds.length ][ linkLabels.length ];
         if (cacheSize>0) {
 	    lruQueue = new int[ cacheSize ];
@@ -118,44 +122,44 @@ public class CachingGraph implements Graph
     {
         int k = Arrays.binarySearch( array, o );
         if (k<0) {
-	    //System.out.println("searching: "+StringUtil.toString(array));
-	    throw new IllegalStateException(whatItIs+": "+o+" not found");
+	    log.debug("searching: "+StringUtil.toString(array));
+	    throw new IllegalStateException(whatItIs+": "+o+" not found (would be at "+k+")");
         }
         return k;
     }
 
     final private Distribution getCachedDist(int fromIndex,int linkIndex)
     {
-        CompactImmutableDistribution cd = walkInfo[fromIndex][linkIndex];
-        if (cd==null) {
-	    if (lruQueue!=null) {
-                // a non-zero entry means the ptr has wrapped around once,
-                // and the current entry was added a long time ago..
-                int oldestGraphId = lruQueue[ lruQueuePtr ];
-                if (oldestGraphId!=0) {
-                    // clear all information about this ancient cache entry
-                    //System.out.println("erasing walks for "+graphIds[oldestGraphId]);
-                    for (int i=0; i<linkLabels.length; i++) {
-                        walkInfo[ oldestGraphId ][i] = null;
-                    }
-                }
-                // record that we will add info about this graph index
-                lruQueue[ lruQueuePtr++ ] = fromIndex;
-                // if the ptr points beyond the queue, reset it
-                if (lruQueuePtr>=lruQueue.length) lruQueuePtr = 0;
-	    }
-	    // add all information about this index to the cache
-	    //System.out.println("caching walks for "+graphIds[fromIndex]);
-	    for (int i=0; i<linkLabels.length; i++) {
-                Distribution d = innerGraph.walk1(graphIds[fromIndex],linkLabels[i]);
-                //if (d.size()>0) System.out.println("inner dist for "+graphIds[fromIndex]+","+linkLabels[i]+" = "+d);
-                cd = new CompactImmutableDistribution(d, graphIds);
-                //if (cd.size()>0) System.out.println("compact dist = "+cd);
-                walkInfo[fromIndex][i] = cd;
-                walkInfoSize += cd.sizeInBytes();
-	    }
-        }
-        return walkInfo[fromIndex][linkIndex];
+    	CompactImmutableDistribution cd = walkInfo[fromIndex][linkIndex];
+    	if (cd==null) {
+    		if (lruQueue!=null) {
+    			// a non-zero entry means the ptr has wrapped around once,
+    			// and the current entry was added a long time ago..
+    			int oldestGraphId = lruQueue[ lruQueuePtr ];
+    			if (oldestGraphId!=0) {
+    				// clear all information about this ancient cache entry
+    				//System.out.println("erasing walks for "+graphIds[oldestGraphId]);
+    				for (int i=0; i<linkLabels.length; i++) {
+    					walkInfo[ oldestGraphId ][i] = null;
+    				}
+    			}
+    			// record that we will add info about this graph index
+    			lruQueue[ lruQueuePtr++ ] = fromIndex;
+    			// if the ptr points beyond the queue, reset it
+    			if (lruQueuePtr>=lruQueue.length) lruQueuePtr = 0;
+    		}
+    		// add all information about this index to the cache
+    		//System.out.println("caching walks for "+graphIds[fromIndex]);
+    		for (int i=0; i<linkLabels.length; i++) {
+    			Distribution d = innerGraph.walk1(graphIds[fromIndex],linkLabels[i]);
+    			//if (d.size()>0) System.out.println("inner dist for "+graphIds[fromIndex]+","+linkLabels[i]+" = "+d);
+    			cd = new CompactImmutableDistribution(d, graphIds);
+    			//if (cd.size()>0) System.out.println("compact dist = "+cd);
+    			walkInfo[fromIndex][i] = cd;
+    			walkInfoSize += cd.sizeInBytes();
+    		}
+    	}
+    	return walkInfo[fromIndex][linkIndex];
     }
 
     //
@@ -277,7 +281,7 @@ public class CachingGraph implements Graph
 
     static public void main(String[] args)
     {
-        Graph graph = new TextGraph(args[0],'r');
+        Graph graph = new TextGraph(args[0]);
         CachingGraph cg = new CachingGraph(graph,1000);
         QueryGUI gui = new QueryGUI(cg);
         new ViewerFrame("QueryGUI", gui );

@@ -24,12 +24,12 @@ import edu.cmu.minorthird.text.TextLabels;
 
 public class NestedTextGraph implements MutableGraph,TextGraphExtensions
 {
-    private TextGraph outer, inner;
-    public NestedTextGraph(TextGraph inner)
+    private MutableTextGraph outer, inner;
+    public NestedTextGraph(MutableTextGraph inner)
     {
         this.inner = inner;
         // "outer" graph is memory-resident
-        this.outer = new TextGraph();
+        this.outer = new MutableTextGraph();
         TextGraph.mergeDocFrequencies(inner,outer);
         outer.melt();
     }
@@ -174,7 +174,7 @@ public class NestedTextGraph implements MutableGraph,TextGraphExtensions
 
     static public void main(String[] args) throws IOException
     {
-        TextGraph g1 = new TextGraph(args[0]);
+        MutableTextGraph g1 = new MutableTextGraph(args[0]);
         g1.freeze();
         NestedTextGraph g2 = new NestedTextGraph(g1);
         GraphLoader loader = new GraphLoader(g2);

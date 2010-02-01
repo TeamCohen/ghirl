@@ -40,7 +40,7 @@ public class ExperimentAuthorGenename extends MessageViewer
 
     public ExperimentAuthorGenename(String file)
     {
-        this(new CachingGraph(new TextGraph(file,'r')));
+        this(new CachingGraph(new TextGraph(file)));
     }
 
     public ExperimentAuthorGenename(Graph graph)

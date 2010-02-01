@@ -18,12 +18,12 @@ public class CommandLineUtil
                 return (Graph)BshUtil.toObject(s,Graph.class);
             } catch (Exception ex) {
                 System.out.println("can't parse bsh script '"+s+"': will try to lookup existing graph named "+s);
-                return new TextGraph(s,'r');
+                return new TextGraph(s);
             }
         } else {
             try {
             	log.info("trying new: " + s);
-                return new TextGraph(s,'r');
+                return new TextGraph(s);
             } catch (Exception ex) {
             	log.info("couldn't find: " + ex.getMessage());
                 System.out.println("can't find existing graph '"+s+"': will try using bean shell");

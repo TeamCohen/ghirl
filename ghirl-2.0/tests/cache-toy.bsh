@@ -1,9 +1,9 @@
 // return a disk-based graph loaded from graph.txt
 
 // create the disk-resident graph
-GraphLoader loader = new GraphLoader(new TextGraph("toy",'w'));
+GraphLoader loader = new GraphLoader(new MutableTextGraph("toy",'w'));
 loader.load(new File("graph.txt"));
 loader.getGraph().freeze();
 
 // return a caching version of it 
-return new CachingGraph(new TextGraph("toy",'r'));
+return new CachingGraph(new TextGraph("toy"));

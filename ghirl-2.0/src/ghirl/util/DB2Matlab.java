@@ -98,7 +98,7 @@ public class DB2Matlab
 
 
     public static void main(String[] args) throws IOException{
-        Graph graph = new TextGraph(args[0],'r');
+        Graph graph = new TextGraph(args[0]);
         DB2Matlab dbm = new DB2Matlab(graph);
 
         System.out.println("=======================================================");

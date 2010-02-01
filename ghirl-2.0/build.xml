@@ -43,6 +43,11 @@
 			<pathelement path="${path.src}"/>
 			<pathelement path="${path.build}"/>
 		</path>
+		
+		<patternset id="no-tests">
+			<exclude name="**/test/*.*"/> <!-- leave test cases behind -->
+			<exclude name="**/test"/>
+		</patternset>
 	</target>
 
 	<target name="make_directories" description="Creates all project directories" depends="init">
@@ -93,10 +98,7 @@
 	<target name="dist-lib-solo" depends="compile" description="Jar up GHIRL for distribution (NO dependencies, just GHIRL; does not include tests)">
 		<jar destfile="${path.dist}/ghirl2-${DSTAMP}.jar">
 			<fileset dir="${path.build}">
-				<patternset id="no-tests">
-					<exclude name="**/test/*.*"/> <!-- leave test cases behind -->
-					<exclude name="**/test"/>
-				</patternset>
+				<patternset refid="no-tests"/>
 			</fileset>
 		  </jar>
 	</target>

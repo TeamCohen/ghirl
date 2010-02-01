@@ -197,7 +197,7 @@ public class SoftDictEntitySearcherV1 extends ProgrammableSearcher
 	    System.exit(0);
 	}
 
-	TextGraph g = new TextGraph(args[0],'r');
+	TextGraph g = new TextGraph(args[0]);
 	SoftDictEntitySearcherV1 s = new SoftDictEntitySearcherV1(g,args[1],args[2],args[3]);
 	String textFileContents = IOUtil.readFile(new File(args[4]));
 	BasicTextBase textBase = new BasicTextBase();

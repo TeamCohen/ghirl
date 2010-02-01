@@ -1,6 +1,7 @@
 package ghirl.test;
 
 import static org.junit.Assert.assertEquals;
+import ghirl.graph.Graph;
 import ghirl.graph.GraphId;
 import ghirl.graph.GraphLoader;
 import ghirl.graph.MutableGraph;
@@ -24,7 +25,7 @@ public abstract class BasicGraphTest {
 	protected static String DBDIR;
 	protected static final int DEFAULT_IDS = 3;
 	protected static final int DEFAULT_EDGES = 2;
-	MutableGraph graph;
+	Graph graph;
 	
 	/** Initialize graph for writing to disk */
 	public abstract void setUp(); 
@@ -45,12 +46,12 @@ public abstract class BasicGraphTest {
 	 * DEFAULT_IDS and DEFAULT_EDGES.
 	 */
 	public void loadGraph() {
-		GraphLoader loader = new GraphLoader(graph);
+		GraphLoader loader = new GraphLoader((MutableGraph)graph);
 		loader.invertLinks = false; // only put in what we tell it
 		logger.debug("Adding an edge");
 		loader.loadLine("edge isa  puppy pet");
 		loader.loadLine("edge eats puppy dogfood");
-		graph.freeze();
+		((MutableGraph)graph).freeze();
 	}
 	
 	/**

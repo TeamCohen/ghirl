@@ -20,7 +20,7 @@ public class TrainTestGraphSearch
     private boolean removeDups = false;
 
     public class MyCLP extends BasicCommandLineProcessor {
-        public void graph(String s) { graph = new TextGraph(s,'r'); }
+        public void graph(String s) { graph = new TextGraph(s); }
         public void annotate(String s)
         {
             graph = AnnotatableGraph.addAnnotator( graph, (GraphAnnotator)BshUtil.toObject(s,GraphAnnotator.class) );

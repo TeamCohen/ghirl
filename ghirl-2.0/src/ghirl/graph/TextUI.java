@@ -44,7 +44,7 @@ public class TextUI extends MessageViewer
 
 	public TextUI(String file)
 	{
-		this(new CachingGraph(new TextGraph(file,'r')));
+		this(new CachingGraph(new TextGraph(file)));
 	}
 
 	public TextUI(Graph graph)
@@ -120,6 +120,7 @@ public class TextUI extends MessageViewer
 	{
 		// log4j setup if we don't have a log4j.properties
 		if (!Logger.getRootLogger().getAllAppenders().hasMoreElements()) {
+			System.err.println("Configuring a default Log4J system...");
 			BasicConfigurator.configure(); // go to the console
 			Logger.getRootLogger().setLevel(Level.INFO); // only print warnings or worse
 		}

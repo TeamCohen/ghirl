@@ -561,7 +561,7 @@ public class GraphSearchEval implements Visible, Saveable
     //
 
     public class MyCLP extends BasicCommandLineProcessor {
-        public void graph(String s) { graph=new TextGraph(s,'r'); }
+        public void graph(String s) { graph=new TextGraph(s); }
         public void gui() { guiFlag = true; }
         public void loadFrom(String s) {
             loadedFile=s;
