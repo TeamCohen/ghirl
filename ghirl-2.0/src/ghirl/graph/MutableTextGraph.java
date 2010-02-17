@@ -35,10 +35,11 @@ import org.apache.log4j.*;
  * file which annotates <code>file2</code> (and no other file). 
  * The document ids in <code>file1</code> should all
  * be "someFile". <i>[Do you mean the literal string, or that the ids should all be the same in
- * any given <code>file1</code>? -ed]</i>
+ * any given <code>file1</code>, or that every id in <code>file1</code> should 
+ * be a valid file id elsewhere in the graph? -ed]</i>
  *
  * <p>If <code>LABELS$file1</code> asserts that there is a span of spanType <i>type1</i>
- * containing the text <code>TEXT$text1 = "span text 1", then the relations created are
+ * containing the text <code>TEXT$text1 = "span text 1"</code>, then the relations created are
  * as follows: <ul>
  * <li><code>LABELS$file1 _annotates FILE$file2</code>
  * <li><code> LABELS$file1 _hasSpanType file2//type1</code>
@@ -66,10 +67,10 @@ import org.apache.log4j.*;
  * <p><s>MutableTextGraph maintains a list of all valid GraphId's and all valid
  * edge labels.  Each of these are stored in two places: a file,
  * and a TreeSet.  Things are added to the TreeSet when they are
- * created, and inserted in the file after a freeze().</s> TextGraph node and
+ * created, and inserted in the file after a freeze().</s>   TextGraph node and
  * edge caching for the <code>getOrderedEdgeLabels</code> and <code>
  * getOrderedIds</code> methods is handled by its <code>innerGraph</code>.  
- * MutableTextGraph-specific edges are appended at request time.</p>
+ * TextGraph-specific edges are appended at request time.</p>
  * 
  * <p>The methods <code>freeze()</code> and <code>melt()</code> are used to make 
  * sure that everything is added to the
@@ -209,10 +210,10 @@ public class MutableTextGraph extends TextGraph implements MutableGraph {
 		if (writer==null) {
 			try {
 				if (indexFileName!=null) {
-					writer = new IndexWriter(indexFileName, analyzer, true);
+					writer = new IndexWriter(indexFileName, analyzer, false);
 				} else {
 					log.info("opening memory-resident index for directory "+writerDirectory);
-					writer = new IndexWriter(writerDirectory, analyzer, true);
+					writer = new IndexWriter(writerDirectory, analyzer, false);
 				}
 			} catch (IOException ex) {
 				throw new IllegalArgumentException("can't create lucene writer: "+ex);

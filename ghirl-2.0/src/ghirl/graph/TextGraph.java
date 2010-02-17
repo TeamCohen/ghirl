@@ -355,10 +355,18 @@ public class TextGraph implements Graph, TextGraphExtensions
 		// copy ids
 		int i=0;
 		for (; i<innerids.length; i++) ids.add(innerids[i]);
-		Iterator it = new TermNodeIterator();
+		// Since TermNodeIterator includes terms, filenames, and flavors,
+		// but returns everything as a TERM_TYPE flavored GraphId,
+		// we do some filtering here to drop the flavors (TERM$TEXT, etc)
+		TermNodeIterator it = new TermNodeIterator();
+		// it would be nice if we didn't have to hardcode this "flavor" here
+		// but Lucene doesn't provide a constant for it?
+		String flavorfield = "flavor";
 		for (GraphId node=null; it.hasNext();) {
-			ids.add((GraphId) it.next());
-			i++;
+			if (!flavorfield.equals(it.field())) {
+				ids.add((GraphId) it.next());
+				i++;
+			} else { it.next(); }
 		}
 		this.nTermNodes = Math.max(nTermNodes,i);
 		// switch to array and sort
@@ -618,6 +626,7 @@ public class TextGraph implements Graph, TextGraphExtensions
 		{ 
 			return hadNext; 
 		}
+		public String field() { return term.field(); }
 		private void advance() 
 		{ 
 			try {

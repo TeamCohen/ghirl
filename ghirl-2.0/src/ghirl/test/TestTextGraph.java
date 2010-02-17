@@ -6,6 +6,7 @@ package ghirl.test;
 import static org.junit.Assert.*;
 
 import java.io.File;
+import java.util.Iterator;
 
 import ghirl.graph.GraphId;
 import ghirl.graph.GraphLoader;
@@ -56,7 +57,34 @@ public class TestTextGraph extends BasicGraphTest {
 		for(int i=0; i<nodes.length; i++) {
 			System.err.println(nodes[i].toString());
 		}
-		super.testGetOrderedIds(DEFAULT_IDS + 6);
+		// 8 new nodes:
+		//TEXT$loremipsum
+		//$TEXT
+		//TERM$loremipsum
+		//TERM$lorem
+		//TERM$ipsum
+		//TERM$dolor
+		//TERM$sit
+		//TERM$amet
+		super.testGetOrderedIds(DEFAULT_IDS + 8);
+	}
+	
+	@Test
+	public void testReadonlyMutableGraph() {
+		MutableGraph foo = new MutableTextGraph(DBDIR.split("/")[1],'r'); 
+		graph = foo;
+		testGetOrderedIds();
+		graph = foo;
+		testGetOrderedEdgeLabels();
+	}
+	
+	@Test
+	public void testAppendMutableGraph() {
+		MutableGraph foo = new MutableTextGraph(DBDIR.split("/")[1],'a');
+		graph = foo;
+		testGetOrderedIds();
+		graph = foo;
+		testGetOrderedEdgeLabels();
 	}
 
 	/**
@@ -72,4 +100,18 @@ public class TestTextGraph extends BasicGraphTest {
 		Logger.getLogger(BasicGraphTest.class).info("Cleaning up test directory "+DBDIR+"...");
 		rm_r(new File(DBDIR));
 	}
+	
+	@Test
+	public void testFlavorTermsProhibited() {
+		GraphId no = new GraphId("TERM","TEXT");
+		for (GraphId node : graph.getOrderedIds()) {
+//			System.err.println(node.toString());
+			assertFalse("Node "+node.toString()+" is not allowed!", no.equals(node));
+		}
+		for(Iterator it=graph.getNodeIterator(); it.hasNext(); ) { GraphId node=(GraphId) it.next();
+			assertFalse("Node "+node.toString()+" is not allowed!", no.equals(node));
+		}
+	}
+	
+
 }
