@@ -15,7 +15,7 @@ public class GoldStandard {
 
 	public String getGoldStandard() throws IOException {
 		StringBuilder b = new StringBuilder();
-		BufferedReader in = new BufferedReader(new FileReader("output-goldstandard.txt"));
+		BufferedReader in = new BufferedReader(new FileReader("tests/output-goldstandard.txt"));
 		String read;
 		while ( (read=in.readLine()) != null) {
 			b.append("\n");

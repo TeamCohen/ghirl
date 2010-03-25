@@ -4,6 +4,8 @@ import com.sleepycat.bind.serial.*;
 import com.sleepycat.bind.tuple.*;
 import com.sleepycat.je.*;
 
+import ghirl.util.FilesystemUtil;
+
 import java.io.*;
 import java.util.*;
 
@@ -22,6 +24,7 @@ public class SleepycatDB
 	private Environment env;
 	private DatabaseConfig dbConfig, dbDupConfig;
 	private List<Database> openDBs = new ArrayList<Database>();
+	private List<Cursor> openCursors = new ArrayList<Cursor>();
 
 	/** Initialize a database "environment", which will hold multiple
 	 * 'databases'.  Each database is a persistant hashtable that maps
@@ -38,24 +41,69 @@ public class SleepycatDB
 		dbDupConfig.setSortedDuplicates(true);
 		File envDir = new File(dbDirName);
 		if (mode=='w') {
-			if (!envDir.exists()) envDir.mkdir();
+			if (envDir.exists()) {
+				// remove old copies of databases rooted here.  This is sortof
+				// a hack -- if a different db was rooted here than
+				// the one which is currently running, we won't remove the
+				// right databases, and we'll still end up with old data
+				// in the db.  There ought to be a better way to do this but
+				// I don't know what it is.  Deleting the files at runtime
+				// isn't enough.
+				cleanEnvironment(envDir); 
+			}
+			envDir.mkdir();
 			if (!envDir.isDirectory() || !envDir.canWrite()) {
 				throw new IllegalArgumentException("can't write to env directory "+envDir);
 			}
 			envConfig.setAllowCreate(true);
+			// exclusiveCreate: will complain if a db is opened which already exists
+			dbConfig.setExclusiveCreate(true); 
 			dbConfig.setAllowCreate(true);
+			dbDupConfig.setExclusiveCreate(true); 
 			dbDupConfig.setAllowCreate(true);
 		}
 		env = new Environment(envDir,envConfig);
 	}
-
+	
+	protected void cleanEnvironment(File envDir) throws DatabaseException {
+		log.info("Cleaning environment: removing all database contents rooted at "+envDir.getPath());
+		EnvironmentConfig tmpconfig = new EnvironmentConfig();
+		Environment tmpenv = new Environment(envDir, tmpconfig);
+		for (String dbname : getDatabaseNames()) {
+			log.info("Cleaning "+dbname);
+			tmpenv.removeDatabase(null, dbname);
+		}
+		FilesystemUtil.rm_r(envDir);
+	}
+	protected List<String> getDatabaseNames() { return new ArrayList<String>(); }
+	
+	private boolean isclosed=false;
 	public void finalize() {
-		this.closeDBs();
+		if (isclosed) return;
+		try {
+			this.closeDBs();
+		} catch (DatabaseException ex) {
+			log.error("Problem closing DB at finalization time",ex);
+		}
 	}
 
-	/** Close all open databases. 
-	 * @throws DatabaseException */
-	public void closeDBs() {
+	/** Close all open databases.
+	 * @throws DatabaseException 
+	 */
+	public void closeDBs() throws DatabaseException {
+		if (isclosed) {
+			log.info("Database is already closed.");
+			return;
+		}
+		log.info("Closing SleepycatDB...");
+		for(Cursor c : openCursors) {
+			try {
+				c.close();
+			} catch (DatabaseException e) {
+				log.error("BADNESS 10000 Couldn't close open cursor");
+				throw new IllegalStateException("Database could not be closed properly");
+			}
+		}
 		for (Database db : openDBs) {
 			try { db.close(); } catch (DatabaseException e) { 
 				try { log.error("Trouble closing database "+db.getDatabaseName(), e); } catch (DatabaseException f) {
@@ -63,6 +111,8 @@ public class SleepycatDB
 				}
 			}
 		}
+		env.close();
+		isclosed = true;
 	}
 
 	/** Open a "DB", which will map keys to values.
@@ -207,6 +257,9 @@ public class SleepycatDB
 		cursor.close();
 		//tx.commit();
 	}
+	
+	private Cursor addCursor(Cursor c) { this.openCursors.add(c); return c; }
+	private void removeCursor(Cursor c) { this.openCursors.remove(c); }
 
 	/** An iterator over all keys in a database.
 	 */
@@ -219,7 +272,7 @@ public class SleepycatDB
 		public KeyIteratorDB( Database db ) throws DatabaseException
 		{
 			try {
-				cursor = db.openCursor(null,null);
+				cursor = addCursor(db.openCursor(null,null));
 				keyEntry = new DatabaseEntry("".getBytes("UTF-8"));
 				valEntry = new DatabaseEntry();
 				status = cursor.getSearchKeyRange(keyEntry,valEntry,LockMode.DEFAULT);
@@ -248,6 +301,7 @@ public class SleepycatDB
 		protected void finalize() throws Throwable
 		{
 			cursor.close();
+			removeCursor(cursor);
 		}
 	}
 }

@@ -26,8 +26,8 @@ using namespace std;
 
 class MyDb { 
 public: // Constructor requires a path to the database database name. 
- MyDb() : mydb(NULL, 0) {}; 
- MyDb(string dbname): mydb(NULL,0), dbFileName(dbname){ dbopen(); };
+MyDb() : mydb(NULL, 0) { is_closed = true; is_open = false; }; 
+MyDb(string dbname): mydb(NULL,0), dbFileName(dbname){ is_closed = true; is_open = false;};
 
 // Our destructor just calls our private close method. 
   ~MyDb() { close(); }; 
@@ -43,13 +43,19 @@ public: // Constructor requires a path to the database database name.
 	void delrec(Dbt& key);
 
 	inline Db &getDb() {return mydb;} 
+	
+	int close(); 
+	string getLastErrorMessage();
+	int hasError();
 
-private: 
+private:
+	bool is_open; 
+	bool is_closed;
+	string lastErrorMessage;
+	int hasError_flag;
 	Db mydb; 
 	string dbFileName; 
 	u_int32_t cFlags; 
-
-	void close(); 
 };
 
 #endif

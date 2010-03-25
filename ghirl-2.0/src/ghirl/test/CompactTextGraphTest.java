@@ -12,10 +12,12 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.HashMap;
+import java.util.Iterator;
 
 import ghirl.graph.CommandLineUtil;
 import ghirl.graph.CompactGraph;
 import ghirl.graph.Graph;
+import ghirl.graph.GraphId;
 import ghirl.graph.GraphLoader;
 import ghirl.graph.MutableGraph;
 import ghirl.graph.MutableTextGraph;
@@ -36,15 +38,49 @@ import org.junit.Test;
  *
  */
 public class CompactTextGraphTest {
-	protected static String DBDIR = "testCompactGraph";
+	protected static String DBNAME = "testCompactGraph";
+	protected static String TESTROOT = "tests";
 	/**
 	 * @throws java.lang.Exception
 	 */
 	@Before
 	public void setUp() throws Exception {
-		ghirl.util.Config.setProperty("ghirl.dbDir", DBDIR);
+		ghirl.util.Config.setProperty("ghirl.dbDir", TESTROOT);
 	}
 	
+	public String enDir(String name) {
+		return TESTROOT + File.separatorChar + DBNAME + File.separatorChar + name;
+	}
+	
+	@Test
+	public void testNNodes() throws Exception {
+		Graph g = load();
+		int i=0;
+		for(Iterator it=g.getNodeIterator(); it.hasNext(); ) {
+			System.out.println(it.next()); 
+			i++;
+		}
+		assertEquals("modules for inferring names and ontological relationships etc",
+				g.getTextContent(GraphId.fromString("TEXT$m3ac")));
+	}
+	
+	public Graph load() throws Exception {
+		Logger.getRootLogger().setLevel(Level.INFO);
+		Graph graph = (MutableGraph) CommandLineUtil.makeGraph("compact-loader.bsh");
+		((MutableGraph)graph).freeze();
+		((TextGraph)graph).close();
+		
+		File link, node, walk, size;
+		link = new File(enDir("graphLink.pct"));
+		node = new File(enDir("graphNode.pct"));
+		walk = new File(enDir("graphRow.pct"));
+		size = new File(enDir("graphSize.pct"));
+		
+		CompactGraph cgraph = new CompactGraph();
+		cgraph.load(size, link, node, walk);
+		graph = new TextGraph(DBNAME+File.separatorChar+DBNAME, cgraph);
+		return graph;
+	}
 
 	/**
 	 * Test method for {@link ghirl.graph.CompactGraph#load(java.io.File, java.io.File, java.io.File, java.io.File)}.
@@ -53,32 +89,17 @@ public class CompactTextGraphTest {
 	 */
 	@Test
 	public void testLoad() throws Exception {
-		Logger.getRootLogger().setLevel(Level.INFO);
-		try {
-			((MutableGraph) CommandLineUtil.makeGraph("compact-loader.bsh")).freeze();
-		} catch (Exception e) {
-			e.printStackTrace();
-			throw e;
-		}
-		
-		File link, node, walk, size;
-		link = new File(DBDIR+"/graphLink.pct");
-		node = new File(DBDIR+"/graphNode.pct");
-		walk = new File(DBDIR+"/graphRow.pct");
-		size = new File(DBDIR+"/graphSize.pct");
-		
-		CompactGraph cgraph = new CompactGraph();
-		cgraph.load(size, link, node, walk);
-		Graph graph = new TextGraph(DBDIR, cgraph);
+		Graph graph = load();
 		
 		GoldStandard gold = new GoldStandard();
 		Distribution resdist = gold.queryGraph(graph);
 		String test = resdist.copyTopN(20).format();
-		assertTrue(resdist.size() >= 20);
+		assertTrue("Must have at least 20 items; only has "+resdist.size(),resdist.size() >= 20);
 		System.err.println("Top 20:\n"+test);
 		
 		weightTest(test,gold);
 //		this.lineByLineTest(test, gold);
+		((TextGraph)graph).close();
 	}
 	
 	public void weightTest(String test, GoldStandard gold) throws IOException {

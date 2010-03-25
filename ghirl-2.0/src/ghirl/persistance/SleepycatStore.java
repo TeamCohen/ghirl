@@ -1,36 +1,49 @@
 package ghirl.persistance;
 
-import ghirl.graph.GraphId;
-
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
+
+import org.apache.log4j.Logger;
 
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseException;
 
 public class SleepycatStore extends SleepycatDB implements IGraphStore {
+	private static final Logger logger = Logger.getLogger(SleepycatStore.class);
 	private Database 
 	nodeMap,  // maps nodeId -> uniq nodeName
 	propMap,  // maps makeKey(nodeName,prop) -> uniq value
 	edgeMap,  // maps makeKey(nodeName,label) -> multiple GraphId
 	labelSet; // maps maps nodeName -> multiple labels
+	private static final String NAME_NODEMAP="_node",
+	                            NAME_PROPMAP="_prop",
+	                            NAME_EDGEMAP="_edges",
+	                            NAME_LABELSET="_labels";
 	
 	public SleepycatStore(String dbName,char mode) {
 		try { 
 			initDBs(dbName,mode); 
-			nodeMap = openDB("_node");
-			propMap = openDB("_prop");
-			edgeMap = openDupDB("_edges");
-			labelSet = openDupDB("_labels");
+			nodeMap = openDB(NAME_NODEMAP);
+			propMap = openDB(NAME_PROPMAP);
+			edgeMap = openDupDB(NAME_EDGEMAP);
+			labelSet = openDupDB(NAME_LABELSET);
 		} catch (DatabaseException ex) {
 			handleDBError(ex);
 		}
 	}
+	
+	protected List<String> getDatabaseNames() { 
+		List<String> ret = new ArrayList<String>();
+		Collections.addAll(ret, NAME_NODEMAP, NAME_PROPMAP, NAME_EDGEMAP, NAME_LABELSET);
+		return ret;
+	}
 
 	protected void handleDBError(DatabaseException ex) 
 	{
-		System.err.println("db error "+ex);
+		logger.error("db error ",ex);
 	}
 	
 	@Override
@@ -146,5 +159,11 @@ public class SleepycatStore extends SleepycatDB implements IGraphStore {
 	@Override
 	public void writeToDB() {
 		this.sync();
+	}
+	
+	public void close() {
+		try {
+			this.closeDBs();
+		} catch (DatabaseException ex) { throw new RuntimeException(ex); }
 	}
 }

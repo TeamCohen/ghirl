@@ -3,6 +3,7 @@ package ghirl.graph;
 import ghirl.persistance.Hexastore;
 import ghirl.persistance.IGraphStore;
 import ghirl.persistance.Memstore;
+import ghirl.util.Config;
 
 import java.io.File;
 import java.util.Collections;
@@ -15,9 +16,11 @@ import org.apache.log4j.Logger;
 public class PersistantGraphHexastore extends PersistantGraph {
 	private static final Logger logger = Logger.getLogger(PersistantGraphHexastore.class);
 	IGraphStore hs;  // the interface to the C code
+	boolean canWrite;
 	
 	public PersistantGraphHexastore(String dbName,char mode)
 	{ 
+		canWrite=true;
 		if (dbName.equals(""))
 			hs = new Memstore(dbName);
 		else {
@@ -25,21 +28,36 @@ public class PersistantGraphHexastore extends PersistantGraph {
 			// provided name.  For compliance with TextGraph's method of
 			// wiping databases, we need to wrap these in an enclosing
 			// directory.
-			File enclosing = new File(dbName);
-			if (!enclosing.exists()) enclosing.mkdir();
-			String[] parts = dbName.split(File.separator);
-			hs = new Hexastore(dbName+File.separatorChar+parts[parts.length-1]);
+
+			String basedir = Config.getProperty("ghirl.dbDir");
+			if (basedir == null) throw new IllegalArgumentException("The property ghirl.dbDir must be defined!");
+			String dbpath = basedir + File.separatorChar + dbName;
+			File enclosing = new File(dbpath);
+			if (!enclosing.exists()) {
+				logger.warn("Hexastore directory \""+dbpath+"\" not present -- creating...");
+				enclosing.mkdir();
+			}
+			String[] parts = dbpath.split(File.separator);
+			hs = new Hexastore(dbpath+File.separatorChar+parts[parts.length-1],mode);
 		}
-		if ('r'==mode) freeze();
+		if ('r'==mode) {
+			canWrite = false;
+			freeze();
+		}
 	}
 	
 	public void freeze() {
-		if(!this.isFrozen) {
-			logger.debug("Cache size before writing: "+(null != this.edgeCache ? this.edgeCache.size() : "null"));
-			hs.writeToDB();
-			logger.debug("Cache size after  writing: "+(null != this.edgeCache ? this.edgeCache.size() : "null"));
+		if(canWrite && !this.isFrozen) {
+			if (this.edgeCache != null) { 
+				logger.debug("Writing "+this.edgeCache.size()+" elts to the hexastore...");
+				hs.writeToDB();
+			} else logger.debug("No cache write necessary.");
 		}
 		super.freeze();
+	}
+	
+	public void close() {
+		hs.close();
 	}
 	
 	public void checkMelted() {

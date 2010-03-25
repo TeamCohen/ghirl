@@ -6,112 +6,265 @@ package ghirl.test;
 import static org.junit.Assert.*;
 
 import java.io.File;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 
+import ghirl.graph.Closable;
+import ghirl.graph.Graph;
 import ghirl.graph.GraphId;
 import ghirl.graph.GraphLoader;
 import ghirl.graph.MutableGraph;
 import ghirl.graph.MutableTextGraph;
+import ghirl.graph.PersistantGraph;
+import ghirl.graph.PersistantGraphSleepycat;
 import ghirl.graph.TextGraph;
 import ghirl.util.Config;
+import ghirl.util.FilesystemUtil;
 
+import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
  * @author katie
  *
  */
-public class TestTextGraph extends BasicGraphTest {
-
-	protected static String DBDIR = "tests/testTextGraph";
+public class TestTextGraph { //extends BasicGraphTest {
+	protected static final Logger logger= Logger.getLogger(TestTextGraph.class);
+	protected static String DBDIR = "tests";
+	protected static String DBNAME = "testTextGraph/testTextGraph";
+	protected static String CLEANUPDIR = "tests/testTextGraph";
+	protected static int N_EDGE_LABELS = 7;
+	protected static int N_NODES = 11;
+	Graph graph;
 	
-	public void loadGraph() {
-		GraphLoader loader = new GraphLoader((MutableGraph)graph);
+	public static void setUpLogger() {
+		Logger.getRootLogger().removeAllAppenders();
+		BasicConfigurator.configure();
+		Logger.getRootLogger().setLevel(Level.DEBUG); 
+		Logger.getLogger("ghirl.graph.GraphLoader").setLevel(Level.INFO);
+		logger.debug("Set up logger.");
+	}
+	
+	public void loadGraphText(MutableGraph g) {
+		logger.info("TestTextGraph loader:");
+		GraphLoader loader = new GraphLoader(g);
 		loader.invertLinks = false; // only put in what we tell it
 		loader.loadLine("node TEXT$loremipsum lorem ipsum dolor sit amet");
-		super.loadGraph();
+		loadGraphGhirl(g);
+	}
+		
+	public void loadGraphGhirl(MutableGraph g) {	
+		GraphLoader loader = new GraphLoader(g);
+		loader.invertLinks = false; // only put in what we tell it
+		logger.debug("Adding an edge");
+		loader.loadLine("edge isa  puppy pet");
+		loader.loadLine("edge eats puppy dogfood");
 	}
 	
-	@Before 
-	public void setUp() {
+	public static File testhome;
+	@BeforeClass
+	public static void setAllUp() {
+		setUpLogger();
 		Config.setProperty("ghirl.dbDir", DBDIR);
-		new File(DBDIR).mkdir();
-		graph = new MutableTextGraph(DBDIR.split("/")[1],'w');
-		loadGraph();
-	}
-	
-	public void reset() {
-		graph = new TextGraph(DBDIR.split("/")[1]);
-	}
-
-	/**
-	 * Test method for {@link ghirl.graph.TextGraph#getOrderedIds()}.
-	 */
-	@Test
-	public void testGetOrderedIds() {
-
-		GraphId[] nodes = graph.getOrderedIds();
-		for(int i=0; i<nodes.length; i++) {
-			System.err.println(nodes[i].toString());
+		testhome = new File(CLEANUPDIR);
+		if (testhome.exists()) {
+			FilesystemUtil.rm_r(testhome);
+			fail("Test home wasn't cleaned up -- run again.");
 		}
-		// 8 new nodes:
-		//TEXT$loremipsum
-		//$TEXT
-		//TERM$loremipsum
-		//TERM$lorem
-		//TERM$ipsum
-		//TERM$dolor
-		//TERM$sit
-		//TERM$amet
-		super.testGetOrderedIds(DEFAULT_IDS + 8);
+		testhome.mkdir();
 	}
-	
-	@Test
-	public void testReadonlyMutableGraph() {
-		MutableGraph foo = new MutableTextGraph(DBDIR.split("/")[1],'r'); 
-		graph = foo;
-		testGetOrderedIds();
-		graph = foo;
-		testGetOrderedEdgeLabels();
-	}
-	
-	@Test
-	public void testAppendMutableGraph() {
-		MutableGraph foo = new MutableTextGraph(DBDIR.split("/")[1],'a');
-		graph = foo;
-		testGetOrderedIds();
-		graph = foo;
-		testGetOrderedEdgeLabels();
-	}
-
-	/**
-	 * Test method for {@link ghirl.graph.TextGraph#getOrderedEdgeLabels()}.
-	 */
-	@Test
-	public void testGetOrderedEdgeLabels() {
-		super.testGetOrderedEdgeLabels(DEFAULT_EDGES + 5);
-	}
-	
 	@AfterClass
 	public static void tearAllDown() {
-		Logger.getLogger(BasicGraphTest.class).info("Cleaning up test directory "+DBDIR+"...");
-		rm_r(new File(DBDIR));
+		logger.info("*********** TEARING DOWN...");
+		FilesystemUtil.rm_r(testhome);
+	}
+
+	@After
+	public void tearDown() {
+		logger.info("********** CLOSING GRAPH...");
+		((Closable)graph).close();
 	}
 	
 	@Test
-	public void testFlavorTermsProhibited() {
-		GraphId no = new GraphId("TERM","TEXT");
-		for (GraphId node : graph.getOrderedIds()) {
-//			System.err.println(node.toString());
-			assertFalse("Node "+node.toString()+" is not allowed!", no.equals(node));
+	public void writeableTest() {
+		logger.info("*************************** STARTING W-MODE TEST");
+		graph = new MutableTextGraph(DBNAME,'w');
+		loadGraphText(((MutableGraph)graph));
+		((MutableGraph)graph).freeze();
+		((Closable)graph).close();
+		graph = new TextGraph(DBNAME);
+	}
+	
+	@Test
+	public void appendableTest() {
+		logger.info("*************************** STARTING A-MODE TEST");
+		graph = new MutableTextGraph(DBNAME,'a');
+		((Closable)graph).close();
+		graph = new TextGraph(DBNAME);
+	}
+	
+	@Test
+	public void readableTest() {
+		logger.info("*************************** STARTING R-MODE TEST");
+		graph = new MutableTextGraph(DBNAME,'r');
+		((Closable)graph).close();
+		graph = new TextGraph(DBNAME);
+	}
+	
+	@Test
+	public void overwriteTest() {
+		logger.info("*************************** STARTING OVERWRITE TEST");
+		graph = new MutableTextGraph(DBNAME,'w');
+		loadGraphText(((MutableGraph)graph));
+		((MutableGraph)graph).freeze();
+		((Closable)graph).close();
+		graph = new TextGraph(DBNAME);
+	}
+	
+	@Test
+	public void memorygraphTest() {
+		logger.info("*************************** STARTING MEMORYGRAPH TEST");
+		graph = new MutableTextGraph();
+		loadGraphText(((MutableGraph)graph));
+		((MutableGraph)graph).freeze();
+		checkNumbers("written in memory:");
+		((Closable)graph).close();
+	}
+	
+	/** Tests getNodeIterator(), getOrderedIds(), getOrderedEdgeLabels(),
+	 * PersistantGraphSleepycat.loadCache()
+	 * 
+	 */
+	@Test
+	public void verifyContents() {
+		logger.info("*************************** VERIFYING GRAPH CONTENTS");
+		graph = new MutableTextGraph(DBNAME,'w');
+		assertEquals("Overwritten graph should be empty:",0,getIteratorNodecount(graph));
+		((MutableGraph)graph).melt();
+		loadGraphText(((MutableGraph)graph));
+		((MutableGraph)graph).freeze();
+//		assertEquals("Nodes written:", N_NODES, getIteratorNodecount(graph));
+//		assertEquals("Nodes written:", N_NODES, getOrderedNodecount(graph));
+//		assertEquals("Edges labels used:", N_EDGE_LABELS, graph.getOrderedEdgeLabels().length);
+		checkNumbers("written:");
+		
+		PersistantGraph innerGraph;
+		String innerGraphName = DBNAME+"_db";
+		
+		// check they're still there in a TextGraph (basic way to read a graph)
+		((Closable)graph).close();
+		innerGraph = new PersistantGraphSleepycat(innerGraphName,'r');
+		innerGraph.loadCache();
+		graph = new TextGraph(DBNAME, innerGraph);
+//		assertEquals("Nodes remaining after close and reopen:", N_NODES, getIteratorNodecount(graph));
+//		assertEquals("Nodes remaining after close and reopen:", N_NODES, getOrderedNodecount(graph));
+//		assertEquals("Edges labels after close and reopen:", N_EDGE_LABELS, graph.getOrderedEdgeLabels().length);
+		checkNumbers("remaining after close and reopen:");
+		
+		// check they're still there in a read-only Mutable
+		((Closable)graph).close();
+		innerGraph = new PersistantGraphSleepycat(innerGraphName,'r');
+		innerGraph.loadCache();
+		graph = new MutableTextGraph(DBNAME,'r', innerGraph);
+//		assertEquals("Nodes remaining after close and reopen:", N_NODES, getIteratorNodecount(graph));
+//		assertEquals("Nodes remaining after close and reopen:", N_NODES, getOrderedNodecount(graph));
+//		assertEquals("Edges labels after close and reopen:", N_EDGE_LABELS, graph.getOrderedEdgeLabels().length);
+		checkNumbers("remaining after close and reopen:");
+		
+		// check they're still there in an appendable Mutable
+		((Closable)graph).close();
+		innerGraph = new PersistantGraphSleepycat(innerGraphName,'a');
+		innerGraph.loadCache();
+		graph = new MutableTextGraph(DBNAME,'a', innerGraph);
+//		assertEquals("Nodes remaining after close and reopen:", N_NODES, getIteratorNodecount(graph));
+//		assertEquals("Nodes remaining after close and reopen:", N_NODES, getOrderedNodecount(graph));
+//		assertEquals("Edges labels after close and reopen:", N_EDGE_LABELS, graph.getOrderedEdgeLabels().length);
+		checkNumbers("remaining after close and reopen:");
+	}
+	
+	public void checkNumbers(String msg) {
+
+		assertEquals("Nodes (iterator) "+msg, N_NODES, getIteratorNodecount(graph));
+		assertEquals("Nodes (ordered)  "+msg, N_NODES, getOrderedNodecount(graph));
+		assertEquals("Edges labels "+msg, N_EDGE_LABELS, graph.getOrderedEdgeLabels().length);
+	}
+	
+	@Test
+	public void verifyContentsInDetail() {
+		Set<String> masterNodeList = new HashSet<String>();
+		Collections.addAll(masterNodeList, "$TEXT",
+									   "$puppy",
+									   "$pet",
+									   "$dogfood",
+									   "TERM$lorem",
+									   "TERM$ipsum",
+									   "TERM$dolor",
+									   "TERM$sit",
+									   "TERM$amet",
+									   "TEXT$loremipsum",
+									   "TERM$loremipsum");
+		logger.info("*************************** VERIFYING GRAPH CONTENTS");
+		
+		Set<String> masterEdgeList = new HashSet<String>();
+		Collections.addAll(masterEdgeList, "isa",
+				                            "eats",
+				                            "_annotates",
+				                            "_hasSpan",
+				                            "_hasSpanType",
+				                            "_hasTerm",
+				                            "_inFile");
+		graph = new MutableTextGraph(DBNAME,'w');
+		assertEquals("Overwritten graph should be empty:",0,getIteratorNodecount(graph));
+		((MutableGraph)graph).melt();
+		loadGraphText(((MutableGraph)graph));
+		((MutableGraph)graph).freeze();
+		// check nodes
+		int i=0;
+		for (Iterator it=graph.getNodeIterator(); it.hasNext(); i++) {
+			String s= it.next().toString();
+			assertTrue("Graph contains illegal node "+s,masterNodeList.contains(s));
 		}
-		for(Iterator it=graph.getNodeIterator(); it.hasNext(); ) { GraphId node=(GraphId) it.next();
-			assertFalse("Node "+node.toString()+" is not allowed!", no.equals(node));
+		assertEquals(N_NODES,i);
+		// check edges
+		i=0; System.out.println("Labels:");
+		for (String label : graph.getOrderedEdgeLabels()) {
+			i++;
+			assertTrue("Graph contains illegal edge "+label,masterEdgeList.contains(label));
 		}
+		assertEquals(N_EDGE_LABELS,i);
+
+		PersistantGraph innerGraph;
+		String innerGraphName = DBNAME+"_db";
+		
+		((Closable)graph).close();
+		innerGraph = new PersistantGraphSleepycat(innerGraphName,'a');
+		innerGraph.loadCache();
+		graph = new TextGraph(DBNAME, innerGraph);
+		for (GraphId id: graph.getOrderedIds()) {
+			assertTrue("After reopen, graph should NOT contain "+id.toString(),masterNodeList.remove(id.toString()));
+		}
+		for (String s: masterNodeList) System.out.println(s);
+		assertEquals("Nodes missing from graph after reopen:",0,masterNodeList.size());
+		assertEquals("Nodes in graph after close and reopen:", N_NODES, getIteratorNodecount(graph));
+		assertEquals("Edges labels after close and reopen:", N_EDGE_LABELS, graph.getOrderedEdgeLabels().length);
 	}
 	
 
+	public int getIteratorNodecount(Graph g) {
+		int i=0;
+		for(Iterator it=g.getNodeIterator(); it.hasNext(); it.next()) i++;
+		return i;
+	}
+	public int getOrderedNodecount(Graph g) {
+		return g.getOrderedIds().length;
+	}
 }

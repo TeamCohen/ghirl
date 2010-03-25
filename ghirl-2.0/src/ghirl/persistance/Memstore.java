@@ -98,7 +98,11 @@ public class Memstore implements IGraphStore {
 		// nothing
 	}
 	
-	@Override
+	public void close() {
+		throw new UnsupportedOperationException("Not yet implemented");
+	}
+	
+
 	public Iterator getNodesIterator() {
 		String []nodes = getNodesArray();
 		Set s = new HashSet<String>();
@@ -106,7 +110,7 @@ public class Memstore implements IGraphStore {
 			s.add(nodes[i]);
 		return s.iterator();
 	}
-	@Override
+
 	public Set getResultSet(String from, String linkLabel) {
 		String []idStrings = getResultSetArray(from, linkLabel);
 		if (idStrings == null)

@@ -11,10 +11,14 @@ import edu.cmu.minorthird.util.StringUtil;
 import ghirl.util.*;
 
 /**
- * A persistant version of a graph.  
+ * A persistant version of a graph. 
+ * 
+ *  Dev note: Currently there is no way to get the ordered edges or nodes without
+ *  caching all the desired items into memory first.  This could be problematic for large
+ *  graphs which might benefit from an alternate solution.
  */
 
-public abstract class PersistantGraph implements MutableGraph 
+public abstract class PersistantGraph implements MutableGraph, Closable 
 {
 	private static final Logger logger = Logger.getLogger(PersistantGraph.class);
 	protected boolean isFrozen=false;
@@ -30,6 +34,7 @@ public abstract class PersistantGraph implements MutableGraph
 	public abstract void addEdge(String linkLabel,GraphId from,GraphId to);
 	public abstract Set followLink(GraphId from,String linkLabel);
 	public abstract Set getEdgeLabels(GraphId from);
+	public abstract void close();
 
 	private boolean throwAFit=false;
 	/**
@@ -72,10 +77,13 @@ public abstract class PersistantGraph implements MutableGraph
 		logger.debug("Cached node "+id.toString());
 	}
 	
-	/** Warning: The first call to freeze() after opening an existing graph will be a bit slow. */
 	public void freeze()  { 
 		if (isFrozen) return;
 		isFrozen=true;
+	}
+	
+	/** Warning: This method should ONLY be run on small graphs i.e. those which fit in memory. **/
+	public void loadCache() {
 		logger.debug("Cache size before freezing: "+(null == this.edgeCache ? "null" : this.edgeCache.size()));
 		logger.debug("Freezing...");
 		boolean doEdges = ensureEdgeCache();
@@ -89,8 +97,10 @@ public abstract class PersistantGraph implements MutableGraph
 				if (doEdges) edgeCache.addAll( getEdgeLabels(id) );
 				if (doNodes) nodeCache.add( id );
 			}
+			logger.debug("Updated cache: "+edgeCache.size()+" edges and "+nodeCache.size()+" nodes.");
 		}
 	}
+	
 
 	public void melt() { isFrozen=false; }
 
@@ -143,25 +153,22 @@ public abstract class PersistantGraph implements MutableGraph
 		return CommandLineUtil.parseNodeOrNodeSet(queryString,this);
 	}
 
-	public String[] getOrderedEdgeLabels() { 
-//		logger.debug("ensuring cache for getOrderedEdgeLabels...");
-		ensureEdgeCache();
+	public String[] getOrderedEdgeLabels() {
+		if(ensureEdgeCache()) logger.warn("Edge cache empty -- call loadCache() before getOrderedEdgeLabels()");
 		String[] labels = edgeCache.toArray(new String[0]);
 		Arrays.sort(labels);
 
-	    logger.debug("returning: "+StringUtil.toString(labels));
+	    logger.debug("returning edge labels: "+StringUtil.toString(labels));
 		return labels;
 	}
 
 	public GraphId[] getOrderedIds() {
-		ensureNodeCache();
+		if(ensureNodeCache()) logger.warn("Node cache empty -- call loadCache() before getORderedIds()");
 		GraphId[] result = nodeCache.toArray(new GraphId[nodeCache.size()]);
 		Arrays.sort(result);
 		return result;
 	}
 	
-
-
 	protected String makeKey(String flavor,String shortName,String label)
 	{
 		//return makeKey(new GraphId(flavor,shortName),label);

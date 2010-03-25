@@ -13,6 +13,8 @@ import edu.cmu.minorthird.text.TextBase;
 import edu.cmu.minorthird.text.TextLabels;
 import edu.cmu.minorthird.text.TextLabelsLoader;
 import edu.cmu.minorthird.text.Span;
+import ghirl.util.Config;
+import ghirl.util.FilesystemUtil;
 
 import java.io.*;
 import org.apache.log4j.*;
@@ -111,13 +113,14 @@ public class MutableTextGraph extends TextGraph implements MutableGraph {
 		}
 		
 //		 open the db, optionally clearing beforehand
-		if ('w'==mode) 
-			rm_r(new File(dbFileName));
+		if ('w'==mode) {
+			//FilesystemUtil.rm_r(new File(dbFileName));
+			FilesystemUtil.rm_r(new File(indexFileName));
+		}
 		setupInnerGraph(mode, MutableGraph.class);
 
 		if (mode=='w') {
-			// clear and re-open the text index
-			rm_r(new File(indexFileName));
+			// re-open the text index
 			setupWriteableIndex(true);
 		} else if (mode=='a') {
 			innerGraph.melt();
@@ -187,6 +190,7 @@ public class MutableTextGraph extends TextGraph implements MutableGraph {
 		if (indexFileName!=null) return super.toString();
 		else return "[TextGraph RAMDir:"+writerDirectory+"]";
 	} 
+	
 	
 	@Override
 	public boolean isFrozen() { return frozenFlag; }
@@ -283,13 +287,20 @@ public class MutableTextGraph extends TextGraph implements MutableGraph {
 			return id;
 		} else {
 			if (FILE_TYPE.equals(flavor)) {
-				try {
-					indexDocument(flavor,shortName,IOUtil.readFile(new File(shortName)));
-				} catch (IOException ex) {
-					//throw new IllegalArgumentException("can't read file "+shortName);
-					log.error("can't read file "+shortName);
-					indexDocument(flavor,shortName,"file error:"+ex.toString());
-				}
+//				try {
+//					indexDocument(flavor,shortName,IOUtil.readFile(new File(shortName)));
+//				} catch (IOException ex) {
+					try {
+						indexDocument(flavor,shortName,IOUtil.readFile(disambiguateFile(shortName, true)));
+					} catch (IOException ex2) {
+						//throw new IllegalArgumentException("can't read file "+shortName);
+						log.error("can't read file "+shortName+" in "
+								+new File(shortName).getAbsolutePath()
+								+" or "
+								+new File(inBaseDir(shortName)).getAbsolutePath());
+						indexDocument(flavor,shortName,"file error:"+ex2.toString());
+					}
+//				}
 				//System.out.println("indexed file "+shortName);
 			} else if (TEXT_TYPE.equals(flavor)) {
 				//System.out.println("indexing TEXT "+obj);
@@ -303,6 +314,17 @@ public class MutableTextGraph extends TextGraph implements MutableGraph {
 			}
 			return innerGraph.createNode(flavor,shortName);
 		}
+	}
+	
+	private File disambiguateFile(String name, boolean throwException) {
+		File f = new File(name);
+		if (!f.exists()) f = new File(inBaseDir(name));
+		if (!f.exists()) {
+			String err = "No file exists for "+name+" in JVM direcotry or in ghirl.dbDir!";
+			if (throwException) throw new IllegalArgumentException(err);
+			log.error(err);
+		}
+		return f;
 	}
 	
 	private GraphId createLabelsNode(String shortName,String textFileIdString)
@@ -325,12 +347,31 @@ public class MutableTextGraph extends TextGraph implements MutableGraph {
 
 		// create the textbase/labels
 		TextLabels textLabels = null;
-		try {
-			TextBase textBase = textBaseFor( new File(textFileId.getShortName()) );
-			textLabels = new TextLabelsLoader().loadOps( textBase, new File(shortName) );
-		} catch (IOException ex) {
-			throw new IllegalArgumentException("can't read file "+shortName);
-		}
+		TextBase textBase = null;
+//		try {
+//			textBase = textBaseFor( new File(textFileId.getShortName()) );
+//		} catch (IOException ex) {
+			try {
+				textBase = textBaseFor( disambiguateFile(textFileId.getShortName(), true));
+			} catch (IOException ex2) {
+				throw new IllegalArgumentException("can't read file "+textFileId.getShortName()+" in "
+						+new File("").getAbsolutePath()
+						+" or "
+						+new File(inBaseDir("")).getAbsolutePath());
+			}
+//		}
+//		try {
+//			textLabels = new TextLabelsLoader().loadOps( textBase, new File(shortName) );
+//		} catch (IOException ex) {
+			try {
+				textLabels = new TextLabelsLoader().loadOps( textBase, disambiguateFile(shortName, true) );
+			} catch (IOException ex2) {
+				throw new IllegalArgumentException("can't read file "+shortName+" in "
+						+new File("").getAbsolutePath()
+						+" or "
+						+new File(inBaseDir("")).getAbsolutePath());
+			}
+//		}
 		return createLabelsNode(textLabels,shortName,textFileId);
 	}
 	
@@ -435,20 +476,6 @@ public class MutableTextGraph extends TextGraph implements MutableGraph {
 		// tokenize and store the term vector as well
 		doc.add(new Field(CONTENTS_FIELD, new String(content), true, true, true, true)); 
 		return doc;
-	}
-	
-	/** Recursively delete files anchored at <code>f</code>
-	 * 
-	 * @param f Directory or file to delete.
-	 */
-	private static void rm_r(File f)
-	{
-		if (f.isDirectory()) {
-			File[] g = f.listFiles();
-			for (int i=0; i<g.length; i++) rm_r(g[i]);
-		}
-		boolean deleted = f.delete();
-		log.info("deleting: "+f+" "+(deleted?"-done":"-not present!"));
 	}
 	
 	/** convenience method - summarize the graph, optionally display some nodes

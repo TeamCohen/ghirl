@@ -74,6 +74,10 @@ using namespace std;
 
 	JNIEXPORT void JNICALL Java_ghirl_persistance_Hexastore_setBase(JNIEnv *env, jobject obj, jstring bname);
 
+	JNIEXPORT void JNICALL Java_ghirl_persistance_Hexastore_open(JNIEnv *env, jobject obj, jstring mode);
+	
+	JNIEXPORT void JNICALL Java_ghirl_persistance_Hexastore_close(JNIEnv *env, jobject obj);
+	
 #ifdef __cplusplus
 }
 #endif

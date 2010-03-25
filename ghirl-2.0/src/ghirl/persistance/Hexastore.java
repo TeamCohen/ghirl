@@ -37,16 +37,27 @@ public class Hexastore implements IGraphStore {
 	private native void writeAll();
 	private native int containsNode(String a);
 	private native void setBase(String a);
+	private native int dbclose();
+	private native String getErrorMessage();
+	private native void open(String mode);
 
 	static {
 		System.loadLibrary("hexastore");
     }
 	
-	public Hexastore() {
+	private boolean r_only;
+	public Hexastore(){
+		r_only = false;
 	}
 	
 	public Hexastore(String basename) {
 		setBase(basename);
+		r_only = false;
+	}
+	
+	public Hexastore(String basename, char mode) {
+		setBase(basename);
+		r_only = (mode == 'r') ? true : false;
 	}
 	
 	public void add_Edge(String a, String b, String c) {
@@ -74,7 +85,8 @@ public class Hexastore implements IGraphStore {
 	}
 	
 	public String[] getNodesArray() {
-		return getNodes();
+		throw new UnsupportedOperationException("Getting the full node list is not allowed on a Hexastore.  Use a memory graph instead.");
+//		return getNodes();
 	}
 		
 	public Set get_Labels(String a) {
@@ -92,25 +104,32 @@ public class Hexastore implements IGraphStore {
 	}
 	
 	public void writeToDB(){
-		writeAll();
+		if (r_only) {
+			System.out.println("[DB WARNING] DB is opened read-only. Write not possible.");
+			
+		} else {
+			writeAll();
+		}
 	}
 	
-	@Override
+	public void close() { 
+		if (dbclose() == 0) return;
+		throw new RuntimeException(getErrorMessage());
+	}
+	
 	public Iterator getNodesIterator() {
-		String []nodes = getNodesArray();
-		Set s = new HashSet<String>();
-		for (int i = 0 ; i < nodes.length; i++)
-			s.add(nodes[i]);
+		Set<String> s = new HashSet<String>();
+		Collections.addAll(s, getNodesArray());
 		return s.iterator();
 	}
-	@Override
+
 	public Set getResultSet(String from, String linkLabel) {
 		String []idStrings = getResultSetArray(from, linkLabel);
 		if (idStrings == null)
 			return Collections.EMPTY_SET;
 		if (idStrings.length == 0)
 			return Collections.EMPTY_SET;
-		Set accum = new HashSet();
+		Set<GraphId> accum = new HashSet<GraphId>();
 		for (int i = 0; i < idStrings.length; i++){
 			accum.add(GraphId.fromString(idStrings[i]));
 		}

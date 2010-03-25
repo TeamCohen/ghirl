@@ -22,9 +22,10 @@ package ghirl.persistance;
 import java.io.*;
 import java.util.*;
 
+import ghirl.graph.Closable;
 import ghirl.graph.GraphId;
 import ghirl.util.*;
-public interface IGraphStore {
+public interface IGraphStore extends Closable {
 	
 	/**
 	 * 
@@ -55,6 +56,8 @@ public interface IGraphStore {
 	public boolean contains_Node(String key);
 	
 	public void writeToDB();
+	
+	public void close();
 
 	class MyKeyIteratorAdaptor implements Iterator
 	{

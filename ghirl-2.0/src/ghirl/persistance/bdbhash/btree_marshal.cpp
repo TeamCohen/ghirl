@@ -134,7 +134,7 @@ struct btree_data {
 		this->tail_size = *((int*)buffer);
 		bufLen += sizeof(int);
 		
-		this->tail = new int[this->tail_size];
+		// only delete if *buf wasn't constant... 
 		this->tail = (int*)(buffer+bufLen); 
 		bufLen += this->tail_size * sizeof(int);
 	}

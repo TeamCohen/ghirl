@@ -1,7 +1,9 @@
 package ghirl.graph;
 
 import ghirl.persistance.SleepycatStore;
+import ghirl.util.Config;
 
+import java.io.File;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -15,8 +17,12 @@ public class PersistantGraphSleepycat extends PersistantGraph
 
 	public PersistantGraphSleepycat(String dbName,char mode)
 	{ 
-		logger.info("Creating new PersistantGraphSleepycat");
-		persistance = new SleepycatStore(dbName, mode);
+
+		String basedir = Config.getProperty("ghirl.dbDir");
+		if (basedir == null) throw new IllegalArgumentException("The property ghirl.dbDir must be defined!");
+		String dbpath = basedir + File.separatorChar + dbName;
+		logger.info("Creating new PersistantGraphSleepycat '"+dbpath+"'");
+		persistance = new SleepycatStore(dbpath, mode);
 		if ('r'==mode) freeze();
 	}
 	
@@ -25,6 +31,8 @@ public class PersistantGraphSleepycat extends PersistantGraph
 		super.freeze();
 		persistance.sync();
 	}
+	
+	public void close() { this.persistance.close(); }
 
 	public GraphId createNode(String flavor,String shortName,Object obj)
 	{

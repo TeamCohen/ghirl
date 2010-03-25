@@ -7,6 +7,7 @@ import java.util.*;
 import org.apache.log4j.Logger;
 
 import edu.cmu.minorthird.util.*;
+import ghirl.util.Config;
 
 /**
  * Loads nodes into a MutableGraph, from a file-based storage.  
@@ -88,6 +89,9 @@ public class GraphLoader
 	/** Load some stuff from a file */
 	public void load(File file) throws IOException, FileNotFoundException
 	{
+		if (!file.exists()) file = new File(Config.getProperty("ghirl.dbDir")
+				+ File.separatorChar
+				+ file.getPath());
 		log.info("loading graph from "+file+"...");
 		LineNumberReader in = new LineNumberReader(new FileReader(file));
 		String line = null;

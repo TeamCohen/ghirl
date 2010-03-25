@@ -18,7 +18,7 @@ import java.util.TreeSet;
 public class NullGraph implements Graph, MutableGraph {
 
 	@Override
-	public boolean contains(GraphId id) { return true; }
+	public boolean contains(GraphId id) { return false; }
 
 	@Override
 	public GraphId getNodeId(String flavor, String shortNodeName) { return null; }
@@ -33,7 +33,7 @@ public class NullGraph implements Graph, MutableGraph {
 	public String getProperty(GraphId from, String prop) { return ""; }
 
 	@Override
-	public Distribution asQueryDistribution(String queryString) { return new TreeDistribution(); }
+	public Distribution asQueryDistribution(String queryString) { return null; /* new TreeDistribution(); */ }
 
 	@Override
 	public Set followLink(GraphId from, String linkLabel) { return new TreeSet(); }
@@ -57,10 +57,10 @@ public class NullGraph implements Graph, MutableGraph {
 	public void addEdge(String label, GraphId from, GraphId to) { }
 
 	@Override
-	public GraphId createNode(String flavor, String shortName) { return null; }
+	public GraphId createNode(String flavor, String shortName) { return new GraphId(flavor,shortName); }
 
 	@Override
-	public GraphId createNode(String flavor, String shortName, Object content) { return null; }
+	public GraphId createNode(String flavor, String shortName, Object content) { return new GraphId(flavor,shortName); }
 
 	@Override
 	public void freeze() { }

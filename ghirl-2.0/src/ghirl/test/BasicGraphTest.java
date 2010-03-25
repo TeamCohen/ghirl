@@ -7,6 +7,7 @@ import ghirl.graph.GraphLoader;
 import ghirl.graph.MutableGraph;
 
 import java.io.File;
+import java.util.Iterator;
 
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
@@ -45,13 +46,16 @@ public abstract class BasicGraphTest {
 	 * Adds a standardized set of nodes and edges which match the numbers 
 	 * DEFAULT_IDS and DEFAULT_EDGES.
 	 */
-	public void loadGraph() {
-		GraphLoader loader = new GraphLoader((MutableGraph)graph);
+	public void loadGraph(MutableGraph g) {
+		GraphLoader loader = new GraphLoader(g);
 		loader.invertLinks = false; // only put in what we tell it
 		logger.debug("Adding an edge");
 		loader.loadLine("edge isa  puppy pet");
 		loader.loadLine("edge eats puppy dogfood");
-		((MutableGraph)graph).freeze();
+		g.freeze();
+	}
+	public void loadGraph() {
+		loadGraph((MutableGraph)graph);
 	}
 	
 	/**
@@ -110,6 +114,18 @@ public abstract class BasicGraphTest {
 		// test read-from-graph nodes
 		nodes = graph.getOrderedIds();
 		assertEquals(nnodes,nodes.length);
+	}
+	
+	
+	public void testGetNodeIterator() { testGetNodeIterator(3); }
+	public void testGetNodeIterator(int nnodes) {
+		int i=0;
+		for(Iterator it = graph.getNodeIterator(); it.hasNext();) i++;
+		assertEquals(nnodes,i);
+		reset();
+		i=0;
+		for(Iterator it = graph.getNodeIterator(); it.hasNext();) i++;
+		assertEquals(nnodes,i);
 	}
 
 }

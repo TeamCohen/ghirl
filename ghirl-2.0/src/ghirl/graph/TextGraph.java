@@ -28,7 +28,7 @@ import org.apache.log4j.*;
 
 
 /** Read-only version of {@link:ghirl.graph.MutableTextGraph}. */
-public class TextGraph implements Graph, TextGraphExtensions
+public class TextGraph implements Graph, TextGraphExtensions, Closable
 {
 	private static Logger log = Logger.getLogger(TextGraph.class);
 
@@ -72,6 +72,8 @@ public class TextGraph implements Graph, TextGraphExtensions
 
 	/** the graph that holds non-text links */
 	protected Graph innerGraph; 
+	
+	protected String basedir;
 
 	private TFIDFWeighter weighter = 
 		new TFIDFWeighter(new DocFreqFunction() {
@@ -135,20 +137,21 @@ public class TextGraph implements Graph, TextGraphExtensions
 	}
 	
 	protected void setupLuceneSettings(String fileStem) {
-		String baseDir = Config.getProperty("ghirl.dbDir");
-		if (baseDir==null) throw new IllegalArgumentException("The property ghirl.dbDir must be defined!");
-		
-		
-		File baseDirFile = new File(baseDir);
+		basedir = Config.getProperty("ghirl.dbDir");
+		if (basedir == null) throw new IllegalArgumentException("The property ghirl.dbDir must be defined!");
+
+		File baseDirFile = new File(basedir);
 		if (!baseDirFile.exists() || !baseDirFile.isDirectory()) {
 			throw new IllegalArgumentException("The directory "+baseDirFile+" must exist");
 		}
 
-		indexFileName = baseDir + File.separatorChar + fileStem+"_lucene.index";
-		dbFileName    = baseDir + File.separatorChar + fileStem+"_db";
+		indexFileName = inBaseDir(fileStem+"_lucene.index");
+		// Inner databases are polymorphic and automatically place themselves
+		// in the baseDir
+		dbFileName    = fileStem+"_db";
 	}
 	protected void setupInnerGraph(char mode, Class graphType) {
-		if (this.innerGraph != null) return;
+		if (this.getInnerGraph() != null) return;
 		try {
 			Class pgraphclass = configurePersistantGraphClass(graphType); 
 			log.info("Configured "+pgraphclass.getCanonicalName());
@@ -172,6 +175,19 @@ public class TextGraph implements Graph, TextGraphExtensions
 
 	protected TextGraph() {}
 
+
+	protected String inBaseDir(String filename) {
+		return basedir
+		       +File.separatorChar
+		       +filename;
+	}
+	
+	public void close() { 
+		Graph g = getInnerGraph();
+		if (g instanceof PersistantGraph) {
+			((PersistantGraph) g).close();
+		}
+	}
 
 	/** Set number of documents to look at when 'walking' from a term 
 	 */
@@ -355,18 +371,10 @@ public class TextGraph implements Graph, TextGraphExtensions
 		// copy ids
 		int i=0;
 		for (; i<innerids.length; i++) ids.add(innerids[i]);
-		// Since TermNodeIterator includes terms, filenames, and flavors,
-		// but returns everything as a TERM_TYPE flavored GraphId,
-		// we do some filtering here to drop the flavors (TERM$TEXT, etc)
 		TermNodeIterator it = new TermNodeIterator();
-		// it would be nice if we didn't have to hardcode this "flavor" here
-		// but Lucene doesn't provide a constant for it?
-		String flavorfield = "flavor";
 		for (GraphId node=null; it.hasNext();) {
-			if (!flavorfield.equals(it.field())) {
-				ids.add((GraphId) it.next());
-				i++;
-			} else { it.next(); }
+			ids.add((GraphId) it.next());
+			i++;
 		}
 		this.nTermNodes = Math.max(nTermNodes,i);
 		// switch to array and sort
@@ -600,9 +608,14 @@ public class TextGraph implements Graph, TextGraphExtensions
 	// iterate over terms 
 	private class TermNodeIterator implements Iterator
 	{
+		private static final String FLAVORFIELD = "flavor";
 		private TermEnum te;
 		private Term term;
 		private boolean hadNext;
+		private boolean includeFlavorField=false;
+		/** The default TermNodeIterator excludes flavor nodes such as TERM$TEXT.
+		 * 
+		 */
 		public TermNodeIterator() 
 		{ 
 			try {
@@ -611,6 +624,15 @@ public class TextGraph implements Graph, TextGraphExtensions
 				throw new IllegalStateException("error: "+ex);
 			}
 			advance(); 
+		}
+		/** Use this constructor if you want the iterator to include flavor
+		 * nodes like TERM$TEXT.
+		 * 
+		 * @param includeFlavorField (default false)
+		 */
+		public TermNodeIterator(boolean includeFlavorField) {
+			this();
+			this.includeFlavorField = includeFlavorField;
 		}
 		public Object next() 
 		{ 
@@ -631,8 +653,10 @@ public class TextGraph implements Graph, TextGraphExtensions
 		{ 
 			try {
 				hadNext = te.next(); 
-				if (hadNext) term = te.term(); 
-				else te.close();
+				if (hadNext) {
+					term = te.term();
+					if (!includeFlavorField && FLAVORFIELD.equals(term.field())) advance();
+				} else te.close();
 			} catch (IOException ex) {
 				throw new IllegalStateException("error: "+ex);
 			}

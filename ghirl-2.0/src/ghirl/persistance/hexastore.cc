@@ -32,9 +32,15 @@ map<int, string> id_s;
 
 int iid = 0;
 
-MyDb mapDB; 
-MyDb mymdb;
+
+
+string dict_db = "NULL";
+string data_db = "NULL";
+
+MyDb *mapDB; 
+MyDb *mymdb;
 int flag = 0;
+
 
 
 //===========================================
@@ -68,7 +74,7 @@ void read_in_mapping(){
 		// Database open omitted for clarity
 		
 		// Get a cursor
-		cursorp = mapDB.newcursor(); 
+		cursorp = mapDB->newcursor(); 
 		
 		Dbt key, data;
 		int ret;
@@ -104,16 +110,28 @@ void read_in_mapping(){
 	
 }
 
-void open_DB(){
-	if (flag == 0) {
-		if (DEBUG == 1) { cout << "mapDB open..." << endl; }
-		mapDB.dbopen();
-		if (DEBUG == 1) { cout << "mymdb open..." << endl; }
-		mymdb.dbopen();
-		if (DEBUG == 1) { cout << "reading in mapping..." << endl; }
-		read_in_mapping();
+void open_DB(const char* mode = "w"){
+
+	if (strcmp(dict_db.c_str(), "NULL") == 0 || strcmp(data_db.c_str(), "NULL") == 0) {
+		cout << "[DB ERROR] You need to set a database base name first by using setBase(..). DB cannot be opened" << endl;
+		return;
 	}
-	flag = 1;
+	if (mapDB == NULL && mymdb == NULL) {
+		mapDB = new MyDb(dict_db);
+		mymdb = new MyDb(data_db);
+		if (strcmp(mode, "r") == 0){
+			mapDB->dbread();
+			mymdb->dbread();
+		} else {
+			mapDB->dbopen();
+			mymdb->dbopen();
+		}
+		if (flag == 0) {
+			read_in_mapping();
+			flag = 1;
+		}	
+	}
+	
 }
 
 
@@ -180,9 +198,7 @@ void write_nodes_to_db(MyDb &mdb){
 	int *allnodes = new int[nodes.size()];
 	mapping m;
 	m.mid = -2;
-	
-	
-	
+
 	Dbt key((void*)(m.make_id_key_buffer()), sizeof(int));
 	m.mid = nodes.size();
 	Dbt data((void*)(m.make_id_key_buffer()), sizeof(int));
@@ -251,7 +267,6 @@ void test_read(MyDb &mdb, int id1, int id2, nodetype t){
 }
 
 string s_mapping(MyDb &mdb, int sid){
-	
 	
 	if (id_s.count(sid) == 0){
 	
@@ -366,13 +381,13 @@ int put_edge(const char *sc, const char *pc, const char *oc){
 	string p(pc);
 	string o(oc);
 	if (s_id.count(s) == 0){
-		read_mapping(mapDB, s);
+		read_mapping(*mapDB, s);
 	}
 	if (s_id.count(p) == 0){
-		read_mapping(mapDB, p);
+		read_mapping(*mapDB, p);
 	}
 	if (s_id.count(o) == 0){
-		read_mapping(mapDB, o);
+		read_mapping(*mapDB, o);
 	}
 	edges[s_id[s]][s_id[p]].insert(s_id[o]);
 	
@@ -415,16 +430,19 @@ btree_data *read_props(MyDb &mdb, int id1, int id2){
 }
 
 btree_data *read_nodes(MyDb &mdb){
+	mdb.dbread();
 	btree_data *bdd = new btree_data(0, -1, NODES);
 	bdd->tail_size = -1;
-	char *bkbuf = bdd->make_key_buffer();
-	Dbt key((void*)bkbuf , bdd->get_key_buffer_size());
+	mapping m;
+	m.mid = -1;
+	char *bkbuf = m.make_id_key_buffer();
+	Dbt key((void*)bkbuf, sizeof(int));
 	Dbt data;
 	
 	mdb.getrec(key, data);
 	if (data.get_data() != NULL){
 		bdd->tail_from_buffer(data.get_data());
-	}
+	} 
 	
 	delete []bkbuf;
 	return bdd;
@@ -440,18 +458,18 @@ btree_data *get_from(const char *s, const char *p) {
 		string sstring = string(s);
 	
 		if (s_id.count(sstring) == 0){
-			sid = read_mapping(mapDB, sstring);
+			sid = read_mapping(*mapDB, sstring);
 		} else {
 			sid = s_id[sstring];
 		}
 	}
 	if (s_id.count(pstring) == 0){
-		pid = read_mapping(mapDB, pstring);
+		pid = read_mapping(*mapDB, pstring);
 	} else {
 		pid = s_id[pstring];
 	}
 	
-	return read_edges(mymdb, sid, pid);
+	return read_edges(*mymdb, sid, pid);
 }
 
 
@@ -460,13 +478,13 @@ int put_prop(const char *sc, const char *pc, const char *oc){
 	string p(pc);
 	string o(oc);
 	if (s_id.count(s) == 0){
-		read_mapping(mapDB, s);
+		read_mapping(*mapDB, s);
 	}
 	if (s_id.count(p) == 0){
-		read_mapping(mapDB, p);
+		read_mapping(*mapDB, p);
 	}
 	if (s_id.count(o) == 0){
-		read_mapping(mapDB, o);
+		read_mapping(*mapDB, o);
 	}
 	
 	props[s_id[s]][s_id[p]].insert(s_id[o]);
@@ -475,28 +493,26 @@ int put_prop(const char *sc, const char *pc, const char *oc){
 	
 }
 
-string get_prop(const char *so, const char *po) {
-
-	
+string get_prop(const char *so, const char *po) {	
 	string s(so);
 	string p(po);
 	if (s_id.count(s) == 0){
-		read_mapping(mapDB, s);
+		read_mapping(*mapDB, s);
 	}
 	if (s_id.count(p) == 0){
-		read_mapping(mapDB, p);
+		read_mapping(*mapDB, p);
 	}
 	
 	if (props.count(s_id[string(s)]) > 0)
 		if (props[s_id[string(s)]].count(s_id[string(p)]) > 0)
 			return id_s[*(props[s_id[string(s)]][s_id[string(p)]].begin())];
 		else {
-			btree_data *bd = read_props(mymdb, s_id[s], s_id[p]);
+			btree_data *bd = read_props(*mymdb, s_id[s], s_id[p]);
 			if (bd->tail_size < 0) {
 				delete bd;
 				return "";
 			}
-			string prop = s_mapping(mapDB, bd->tail[0]);
+			string prop = s_mapping(*mapDB, bd->tail[0]);
 			return prop;
 		}
 	return "";
@@ -512,7 +528,7 @@ int contains_node(const char *sc){
 	string s(sc);
 	
 	if (s_id.count(s) == 0){
-		read_mapping(mapDB, s);
+		read_mapping(*mapDB, s);
 	}
 	
 	if (nodes.count(s_id[s]) == 0 ){
@@ -521,7 +537,7 @@ int contains_node(const char *sc){
 		Dbt key((void*)bkbuf , bdd->get_key_buffer_size());
 		Dbt data;
 	
-		mymdb.getrec(key, data);
+		mymdb->getrec(key, data);
 		if (data.get_data() != NULL){
 			bdd->tail_from_buffer(data.get_data());
 			for (int j = 0 ; j < bdd->tail_size ; j++){
@@ -558,10 +574,10 @@ int make_node(const char *sc, const char *pc){
 	string p(pc);
 	
 	if (s_id.count(s) == 0){
-		read_mapping(mapDB, s);
+		read_mapping(*mapDB, s);
 	}
 	if (s_id.count(p) == 0){
-		read_mapping(mapDB, p);
+		read_mapping(*mapDB, p);
 	}
 	
 	nodes[s_id[s]].insert(s_id[p]);
@@ -642,7 +658,7 @@ JNIEXPORT jobjectArray JNICALL Java_ghirl_persistance_Hexastore_getSet(JNIEnv *e
 	int i = 0;
 	while (i < os->tail_size){
 		// mapping
-		string st = s_mapping(mapDB, os->tail[i]);
+		string st = s_mapping(*mapDB, os->tail[i]);
 		jstring js = env->NewStringUTF(st.c_str());
 		 env->SetObjectArrayElement(result, i, js);
 		++i;
@@ -674,10 +690,9 @@ JNIEXPORT jobjectArray JNICALL Java_ghirl_persistance_Hexastore_getLabels(JNIEnv
 	int i = 0;
 	
 	while (i < os->tail_size){
-		string st = s_mapping(mapDB, os->tail[i]);
+		string st = s_mapping(*mapDB, os->tail[i]);
 		jstring js = env->NewStringUTF(st.c_str());
 		env->SetObjectArrayElement(result, i, js);
-		
 		++i;
 	}
 	delete os;
@@ -705,18 +720,18 @@ JNIEXPORT jobjectArray JNICALL Java_ghirl_persistance_Hexastore_getNodes(JNIEnv 
 		cout << "[GET_NODES_START]" << endl;
 	}
 	open_DB();
-	btree_data *bd = read_nodes(mymdb);
+	btree_data *bd = read_nodes(*mymdb);
 	jobjectArray result = env->NewObjectArray(bd->tail_size, env->FindClass("java/lang/String"), 0);
 
 	int i = 0;
 	while (i < bd->tail_size){
 
-		string st = s_mapping(mapDB,bd->tail[i]);
+		string st = s_mapping(*mapDB,bd->tail[i]);
 		jstring js = env->NewStringUTF(st.c_str());
 		env->SetObjectArrayElement(result, i, js);
 		++i;
 	}
-	delete []bd->tail;
+	
 	delete bd;
 	if (DEBUG == 1){
 		cout << "[GET_NODES_END]" << endl;
@@ -769,17 +784,30 @@ JNIEXPORT jstring JNICALL Java_ghirl_persistance_Hexastore_getNode(JNIEnv *env, 
 }
 
 JNIEXPORT void JNICALL Java_ghirl_persistance_Hexastore_writeAll(JNIEnv *env, jobject obj){
-	// if we haven't opened the DB yet, there's nothing to write, so don't bother
-	//if (flag == 1){
-		write_all_db(mymdb);
-	//}
+	open_DB();
+	write_all_db(*mymdb);
+	
 }
 
 JNIEXPORT void JNICALL Java_ghirl_persistance_Hexastore_setBase(JNIEnv *env, jobject obj, jstring bname){
 	const char *cArr = env->GetStringUTFChars(bname, JNI_FALSE);
-	string dbname1 = string(cArr) + "_dict.db";
-	string dbname2 = string(cArr) + "_data.db";
-	mapDB.setFileName(dbname1) ;
-	mymdb.setFileName(dbname2);
+	dict_db = string(cArr) + "_dict.db";
+	data_db = string(cArr) + "_data.db";
+	
 }
 
+JNIEXPORT void JNICALL Java_ghirl_persistance_Hexastore_open(JNIEnv *env, jobject obj, jstring mode){
+	const char *m = env->GetStringUTFChars(mode, JNI_FALSE);
+	open_DB(m);
+}
+
+JNIEXPORT void JNICALL Java_ghirl_persistance_Hexastore_close(JNIEnv *env, jobject obj){
+	if (mapDB != NULL && mymdb != NULL ) {
+		mapDB->close();
+		mymdb->close();
+		delete mapDB;
+		delete mymdb;
+		mapDB = NULL;
+		mymdb = NULL;
+	}
+}

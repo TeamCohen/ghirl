@@ -47,6 +47,7 @@ public class CachingGraph implements Graph
         log.info("creating new CachingGraph: innerGraph="+innerGraph.getClass());
         this.innerGraph = innerGraph; 
         this.cacheSize = cacheSize;
+        log.warn("Fix this code!  getOrdered*() must first loadCache() on a PersistantGraph and ONLY if the graph fits in memory!");
         graphIds = innerGraph.getOrderedIds();
         linkLabels = innerGraph.getOrderedEdgeLabels();
         log.debug("for CachingGraph, "+graphIds.length+" ids, linkLabels="+StringUtil.toString(linkLabels));

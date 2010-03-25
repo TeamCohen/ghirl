@@ -124,6 +124,30 @@
 		</jar>
 	</target>
 	
+	<target name="dist-lib-full-withtests" depends="compile,pack-all-libs" description="Jar up GHIRL for distribution (includes all dependencies and tests)">
+		<jar destfile="${path.dist}/ghirl2-full-tests-${DSTAMP}.jar">
+			<fileset dir="${path.build}"/>
+			<zipfileset src="${path.tmp}/lib.zip"/>
+			<zipfileset src="${path.devlib}/junit-4.7.jar"/>
+		</jar>
+	</target>
+	
+	<target name="dist-srcjar" depends="compile,pack-all-libs" description="Jar up GHIRL for distribution, including source, dependencies, and tests)">
+		<copy todir="${path.build}">
+			<fileset dir="${path.src}">
+				<include name="**/*.java"/>
+				<include name="**/*.cpp"/>
+				<include name="**/*.h"/>
+				<include name="**/*.c"/>
+				<include name="**/*.cc"/>
+			</fileset>
+		</copy>
+		<jar destfile="${path.dist}/ghirl2-srcjar-${DSTAMP}.jar">
+			<fileset dir="${path.build}"/>
+			<zipfileset src="${path.tmp}/lib.zip"/>
+		</jar>
+	</target>
+	
 	<target name="dist-custom" depends="compile" description="Like dist-lib-full but create an executable jar using a custom Main file (specify using -Dmainclass=package.path.to.class.name)">
 		<jar destfile="${path.dist}/ghirl2-custom-${mainclass}.jar">
 			<fileset dir="${path.build}"><patternset refid="no-tests"/></fileset>

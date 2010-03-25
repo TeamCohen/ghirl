@@ -8,13 +8,13 @@ import ghirl.util.*;
 public class BasicGraph implements MutableGraph 
 {
 	/** Set of nodes */
-	private Set nodeSet = new HashSet();  // set of nodes
+	private Set<GraphId> nodeSet = new HashSet<GraphId>();  // set of nodes
 	/** Maps id to edge labels */
-	private Map labelMap = new HashMap(); // maps id => edge labels
+	private Map<GraphId,Set<String>> labelMap = new HashMap<GraphId,Set<String>>(); // maps id => edge labels
 	/** Maps edgeKey(id,label) to destinations */
-	private Map edgeMap = new HashMap();  // maps edgeKey(id,label)=>destinations
+	private Map<String,Set<GraphId>> edgeMap = new HashMap<String,Set<GraphId>>();  // maps edgeKey(id,label)=>HashSet<destinations>
 	/** Maps edgeKey(node prop) to properties */
-	private Map nodeProps = new HashMap(); // maps edgeKey(node,prop)=>properties
+	private Map<GraphId,Properties> nodeProps = new HashMap<GraphId,Properties>(); // maps edgeKey(node,prop)=>properties
 	private boolean isFrozen = false;
 	
 	public void freeze() 
@@ -55,7 +55,7 @@ public class BasicGraph implements MutableGraph
 		else return null;
 	} 
 
-	public Iterator getNodeIterator() { return nodeSet.iterator(); }
+	public Iterator<GraphId> getNodeIterator() { return nodeSet.iterator(); }
 
 
 	public Properties getProperties(GraphId id){
@@ -86,22 +86,22 @@ public class BasicGraph implements MutableGraph
 	{
 		checkMelted();
 		String key = edgeKey(from,linkLabel);
-		Set oldSet = (Set)edgeMap.get(key);
-		if (oldSet==null) edgeMap.put(key,(oldSet = new HashSet()));
+		Set<GraphId> oldSet = edgeMap.get(key);
+		if (oldSet==null) edgeMap.put(key,(oldSet = new HashSet<GraphId>()));
 		oldSet.add(to);
-		Set oldLabs = (Set)labelMap.get(from);
-		if (oldLabs==null) labelMap.put(from,(oldLabs = new HashSet()));
+		Set<String> oldLabs = labelMap.get(from);
+		if (oldLabs==null) labelMap.put(from,(oldLabs = new HashSet<String>()));
 		oldLabs.add( linkLabel );
 	}
 
 	public Set followLink(GraphId from,String linkLabel) 
 	{
-		return safeSet((Set)edgeMap.get(edgeKey(from,linkLabel)));
+		return safeSet(edgeMap.get(edgeKey(from,linkLabel)));
 	}
 
 	public Set getEdgeLabels(GraphId from)
 	{
-		return safeSet((Set)labelMap.get(from));
+		return safeSet(labelMap.get(from));
 	}
 
 	public Distribution walk1(GraphId from, String linkLabel)
@@ -133,7 +133,8 @@ public class BasicGraph implements MutableGraph
 	}
 
 	public String[] getOrderedEdgeLabels() { 
-		Set edges = new HashSet(this.edgeMap.values());
+		Set<String> edges = new HashSet<String>();
+		for(Set<String> valset: this.labelMap.values()) edges.addAll(valset);
 		String[] edgearray = (String[]) edges.toArray(new String[edges.size()]);
 		Arrays.sort(edgearray);
 		return edgearray;

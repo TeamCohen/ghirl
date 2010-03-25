@@ -13,6 +13,8 @@ import ghirl.graph.CachingGraph;
 import ghirl.graph.Graph;
 import ghirl.graph.GraphLoader;
 import ghirl.graph.MutableTextGraph;
+import ghirl.graph.PersistantGraph;
+import ghirl.graph.PersistantGraphSleepycat;
 import ghirl.graph.TextGraph;
 import ghirl.util.Distribution;
 
@@ -20,20 +22,24 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class TestCachingTextGraph {
-	protected static String DBDIR="toy";
+	protected static String DBNAME="toy";
+	protected static String DBDIR = "tests";
 	/**
 	 * @throws java.lang.Exception
 	 */
 	@Before
 	public void setUp() throws Exception {
-		ghirl.util.Config.setProperty("ghirl.dbDir", ".");
+		ghirl.util.Config.setProperty("ghirl.dbDir", DBDIR);
 	}
 	@Test
 	public void testCachingGraph() throws FileNotFoundException, IOException {
-		GraphLoader loader = new GraphLoader(new MutableTextGraph(DBDIR,'w'));
+		GraphLoader loader = new GraphLoader(new MutableTextGraph(DBNAME,'w'));
 		loader.load(new File("graph.txt"));
 		loader.getGraph().freeze();
-		Graph graph = new CachingGraph(new TextGraph(DBDIR));
+		((TextGraph)loader.getGraph()).close();
+		PersistantGraph innerGraph = new PersistantGraphSleepycat(DBNAME+"_db",'r');
+		innerGraph.loadCache();
+		Graph graph = new CachingGraph(new TextGraph(DBNAME, innerGraph));
 		
 		GoldStandard gold = new GoldStandard();
 		Distribution resdist = gold.queryGraph(graph);
