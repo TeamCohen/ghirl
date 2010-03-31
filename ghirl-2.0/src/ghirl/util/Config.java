@@ -11,6 +11,9 @@ public class Config
 {
   private static final Logger log = Logger.getLogger(Config.class);
     private static Properties props = new Properties();
+    public static final String DBDIR = "ghirl.dbDir";
+    public static final String GRAPHNAME = "ghirl.graphName";
+    public static final String ISAFLAVORLINKS = "ghirl.isaFlavorLinks";
     static {
 	try {
 	    InputStream in = Config.class.getClassLoader().getResourceAsStream("ghirl.properties");

@@ -51,6 +51,13 @@ import ghirl.util.Config;
  *
  * <p>If a node declared already exists, the old definition is used and any new content (for a TEXT node, e.g.) is <i>discarded</i>.
  *
+ * <p>By default, GraphLoader will not link a node and its flavor.  If you would
+ * like GraphLoader to do so, set the following property:
+ * <pre>ghirl.isaFlavorLinks=true</pre>
+ * With this property enabled, GraphLoader will, for the example "TEXT$foo", 
+ * add an implicit "edge isa TEXT$foo TEXT".  This represents old GHIRL behavior
+ * that was phased out in March 2010.</p>
+ *  
  * @author William Cohen
  */
 
@@ -66,14 +73,19 @@ public class GraphLoader
 
 	// customizable behaviour
 
-	/** If true, automatically provide inverse link for every edge. */
+	/** If true, automatically provide inverse link for every edge (Default true). */
 	public boolean invertLinks = true; 
-	/** If true, throw an error for illegal lines. */
+	/** If true, throw an error for illegal lines (Default false). */
 	public boolean throwErrors = false;
-	/** If true, print warnings for illegal lines. */
+	/** If true, print warnings for illegal lines (Default true). */
 	public boolean printWarnings = true;
-	/** If non-zero, print status after each N lines. */
+	/** If non-zero, print status after each N lines (Default 10K). */
 	public int linesBetweenStatusMessage = 10000;
+	/** If true, add isa edges between a node and its flavor (Default false).
+	 * This can also be set in a properties file using the "ghirl.isaFlavorLinks" property. */
+	public boolean addIsaFlavorLinks;
+	
+	protected GraphLoader() {}
 
 	/** Create a new loader for this graph */
 	public GraphLoader(MutableGraph graph) 
@@ -81,6 +93,7 @@ public class GraphLoader
 		this.graph = graph;
 		this.isaRules = new HashMap();
 		log.info("created GraphLoader for "+graph);
+		addIsaFlavorLinks = Boolean.parseBoolean(Config.getProperty(Config.ISAFLAVORLINKS,"false"));
 	}
 
 	/** Return the graph */
@@ -89,7 +102,7 @@ public class GraphLoader
 	/** Load some stuff from a file */
 	public void load(File file) throws IOException, FileNotFoundException
 	{
-		if (!file.exists()) file = new File(Config.getProperty("ghirl.dbDir")
+		if (!file.exists()) file = new File(Config.getProperty(Config.DBDIR)
 				+ File.separatorChar
 				+ file.getPath());
 		log.info("loading graph from "+file+"...");
@@ -165,12 +178,12 @@ public class GraphLoader
 		return buf.toString();
 	}
 
-	private GraphId lookupNode(String s)
+	protected GraphId lookupNode(String s)
 	{
 		return lookupNode(s,"");
 	}
 
-	private GraphId lookupNode(String s,String content) 
+	protected GraphId lookupNode(String s,String content) 
 	{
 		GraphId id = GraphId.fromString(s);
 		log.debug("Checking containment of "+s);
@@ -180,9 +193,16 @@ public class GraphLoader
 		} else {
 			log.debug("creating node "+id.toString());
 			id = graph.createNode(id.getFlavor(),id.getShortName(),content);
-			if ((s.split("\\$")).length>1){
+			if (this.addIsaFlavorLinks && id.getFlavor().length() > 0){
+				/* 29 Mar 2010 Katie Rivard
+				 * This code used to provide an ISA edge for 
+				 * nodes named "$foo" i.e. "edge isa $foo "
+				 * which was deemed incorrect.
+				 * 
+				 * Now it only provides ISA edges for nodes with 
+				 * a flavor e.g."TEXT$foo".
+				 */
 				log.debug("specifying node type");
-//				graph.addEdge("isa",id,GraphId.fromString(id.getFlavor()));
 				graph.addEdge("isa",id,lookupNode(id.getFlavor()));
 			}
 			return id;
