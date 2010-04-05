@@ -187,6 +187,14 @@ public class TextGraph implements Graph, TextGraphExtensions, Closable
 		if (g instanceof PersistantGraph) {
 			((PersistantGraph) g).close();
 		}
+		try {
+			if(index != null) {
+				index.close();
+				searcher.close();
+			}
+		} catch (IOException e) {
+			log.error("Trouble closing Lucene index for "+this.toString(),e);
+		}
 	}
 
 	/** Set number of documents to look at when 'walking' from a term 

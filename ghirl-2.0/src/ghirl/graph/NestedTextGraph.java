@@ -22,7 +22,7 @@ import edu.cmu.minorthird.text.TextLabels;
 */
 
 
-public class NestedTextGraph implements MutableGraph,TextGraphExtensions
+public class NestedTextGraph implements MutableGraph,TextGraphExtensions,Closable
 {
     private MutableTextGraph outer, inner;
     public NestedTextGraph(MutableTextGraph inner)
@@ -36,6 +36,9 @@ public class NestedTextGraph implements MutableGraph,TextGraphExtensions
     public String toString() 
     { 
         return "[NestedTextGraph inner:"+inner+" outer: "+outer+"]"; 
+    }
+    public void close() {
+    	this.inner.close();
     }
 
     public void freeze() 
