@@ -1,4 +1,4 @@
-package ghirl.test;
+package ghirl.test.verify;
 
 import java.util.Iterator;
 
@@ -9,6 +9,8 @@ import ghirl.graph.GraphLoader;
 import ghirl.graph.MutableGraph;
 import ghirl.util.Config;
 
+import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -48,6 +50,11 @@ switches from the old semantics to a simpler one.
  *
  */
 public class TestGraphLoaderFlavorBug {
+	@AfterClass
+	public static void tearAllDown() {
+		Config.setProperty(Config.ISAFLAVORLINKS, "");
+		Config.getProperties().remove(Config.ISAFLAVORLINKS);
+	}
 	@Test
 	public void testFlavorIsaDefaults() {
 		TestableGraphLoader loader = new TestableGraphLoader(new BasicGraph());
@@ -71,6 +78,13 @@ public class TestGraphLoaderFlavorBug {
 		
 		n = lookupAndGetCount("$bar",g,loader);
 		assertEquals("Wrong number of nodes in the graph: ", 3, n);
+	}
+	@Test
+	public void testLoadLine() {
+
+		TestableGraphLoader loader = new TestableGraphLoader(new BasicGraph());
+		Graph g = loader.getGraph();
+		assertTrue(loader.loadLine("edge isa 3280976 paper"));
 	}
 	private int lookupAndGetCount(String node, Graph g, TestableGraphLoader loader) {
 		GraphId id = loader.lookupNode(node);

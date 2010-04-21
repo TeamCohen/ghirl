@@ -1,7 +1,8 @@
-package ghirl.test;
+package ghirl.test.verify;
 
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -16,20 +17,41 @@ import ghirl.graph.MutableTextGraph;
 import ghirl.graph.PersistantGraph;
 import ghirl.graph.PersistantGraphSleepycat;
 import ghirl.graph.TextGraph;
+import ghirl.test.GoldStandard;
+import ghirl.util.Config;
 import ghirl.util.Distribution;
+import ghirl.util.FilesystemUtil;
 
+import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestCachingTextGraph {
-	protected static String DBNAME="toy";
-	protected static String DBDIR = "tests";
-	/**
-	 * @throws java.lang.Exception
-	 */
-	@Before
-	public void setUp() throws Exception {
-		ghirl.util.Config.setProperty("ghirl.dbDir", DBDIR);
+	protected static String DBNAME="toy/toy";
+	protected static String CLEANUPDIR="tests/toy";
+	protected static String DBDIR ="tests";
+	protected TextGraph graph;
+	protected static File testhome;
+	@BeforeClass
+	public static void setAllUp() {
+		Config.setProperty("ghirl.dbDir", DBDIR);
+		testhome = new File(CLEANUPDIR);
+		if (testhome.exists()) {
+			FilesystemUtil.rm_r(testhome);
+			fail("Test home wasn't cleaned up -- run again.");
+		}
+		testhome.mkdir();
+	}
+	@After
+	public void tearDown() {
+		graph.close();
+	}
+
+	@AfterClass
+	public static void tearAllDown() {
+		FilesystemUtil.rm_r(testhome);
 	}
 	@Test
 	public void testCachingGraph() throws FileNotFoundException, IOException {
@@ -39,10 +61,11 @@ public class TestCachingTextGraph {
 		((TextGraph)loader.getGraph()).close();
 		PersistantGraph innerGraph = new PersistantGraphSleepycat(DBNAME+"_db",'r');
 		innerGraph.loadCache();
-		Graph graph = new CachingGraph(new TextGraph(DBNAME, innerGraph));
+		graph = new TextGraph(DBNAME, innerGraph);
+		Graph cgraph = new CachingGraph(graph);
 		
 		GoldStandard gold = new GoldStandard();
-		Distribution resdist = gold.queryGraph(graph);
+		Distribution resdist = gold.queryGraph(cgraph);
 		
 		BufferedReader testreader, goldreader;
 		testreader = new BufferedReader(new StringReader(resdist.format()));
@@ -54,6 +77,4 @@ public class TestCachingTextGraph {
 			if (t==null && g==null) break;
 		}
 	}
-	
-
 }

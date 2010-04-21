@@ -245,5 +245,9 @@ public class TextUI extends MessageViewer
 			}
 			System.out.println("The graph has "+nodeCount+" nodes and "+edgeCount + " edges.");
 		}
+		
+		if (gui.graph instanceof Closable) {
+			((Closable) gui.graph).close();
+		}
 	}
 }

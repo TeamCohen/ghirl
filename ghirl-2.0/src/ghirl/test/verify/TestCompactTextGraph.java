@@ -1,7 +1,7 @@
 /**
  * 
  */
-package ghirl.test;
+package ghirl.test.verify;
 
 import static org.junit.Assert.*;
 
@@ -14,6 +14,7 @@ import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import ghirl.graph.Closable;
 import ghirl.graph.CommandLineUtil;
 import ghirl.graph.CompactGraph;
 import ghirl.graph.Graph;
@@ -25,10 +26,12 @@ import ghirl.graph.NullGraph;
 import ghirl.graph.TextGraph;
 import ghirl.graph.WeightedTextGraph;
 import ghirl.graph.WeightedWalker;
+import ghirl.test.GoldStandard;
 import ghirl.util.Distribution;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -37,7 +40,7 @@ import org.junit.Test;
  * @author katie
  *
  */
-public class CompactTextGraphTest {
+public class TestCompactTextGraph {
 	protected static String DBNAME = "testCompactGraph";
 	protected static String TESTROOT = "tests";
 	/**
@@ -48,20 +51,26 @@ public class CompactTextGraphTest {
 		ghirl.util.Config.setProperty("ghirl.dbDir", TESTROOT);
 	}
 	
+	Graph graph;
+	@After
+	public void shutDown() {
+		((Closable) graph).close();
+	}
+	
 	public String enDir(String name) {
 		return TESTROOT + File.separatorChar + DBNAME + File.separatorChar + name;
 	}
 	
 	@Test
 	public void testNNodes() throws Exception {
-		Graph g = load();
+		graph = load();
 		int i=0;
-		for(Iterator it=g.getNodeIterator(); it.hasNext(); ) {
+		for(Iterator it=graph.getNodeIterator(); it.hasNext(); ) {
 			System.out.println(it.next()); 
 			i++;
 		}
 		assertEquals("modules for inferring names and ontological relationships etc",
-				g.getTextContent(GraphId.fromString("TEXT$m3ac")));
+				graph.getTextContent(GraphId.fromString("TEXT$m3ac")));
 	}
 	
 	public Graph load() throws Exception {
@@ -78,7 +87,7 @@ public class CompactTextGraphTest {
 		
 		CompactGraph cgraph = new CompactGraph();
 		cgraph.load(size, link, node, walk);
-		graph = new TextGraph(DBNAME+File.separatorChar+DBNAME, cgraph);
+		graph = new TextGraph(DBNAME, cgraph);
 		return graph;
 	}
 
@@ -89,7 +98,7 @@ public class CompactTextGraphTest {
 	 */
 	@Test
 	public void testLoad() throws Exception {
-		Graph graph = load();
+		graph = load();
 		
 		GoldStandard gold = new GoldStandard();
 		Distribution resdist = gold.queryGraph(graph);
@@ -97,9 +106,8 @@ public class CompactTextGraphTest {
 		assertTrue("Must have at least 20 items; only has "+resdist.size(),resdist.size() >= 20);
 		System.err.println("Top 20:\n"+test);
 		
-		weightTest(test,gold);
-//		this.lineByLineTest(test, gold);
-		((TextGraph)graph).close();
+		//weightTest(test,gold);
+		this.lineByLineTest(test, gold);
 	}
 	
 	public void weightTest(String test, GoldStandard gold) throws IOException {
@@ -111,7 +119,6 @@ public class CompactTextGraphTest {
 			answers.put(part[1], part[0]);
 		}
 		
-
 		BufferedReader testreader = new BufferedReader(new StringReader(test));
 		String t;
 		while ( (t = testreader.readLine()) != null) {

@@ -1,7 +1,7 @@
 /**
  * 
  */
-package ghirl.test;
+package ghirl.test.verify;
 
 import static org.junit.Assert.*;
 
@@ -43,8 +43,20 @@ public class TestTextGraph { //extends BasicGraphTest {
 	protected static String DBNAME = "testTextGraph/testTextGraph";
 	protected static String CLEANUPDIR = "tests/testTextGraph";
 	protected static int N_EDGE_LABELS = 7;
-	protected static int N_NODES = 11;
-	Graph graph;
+	protected static int N_NODES = 10;
+	// Node number calculation:
+	// 1 TEXT$loremipsom
+	// 2 TERM$lorem
+	// 3 TERM$ipsum
+	// 4 TERM$dolor
+	// 5 TERM$sit
+	// 6 TERM$amet
+	// 7 TERM$loremipsum
+	// 8 $puppy
+	// 9 $pet
+	//10 $dogfood
+	protected Graph graph;
+	public static File testhome;
 	
 	public static void setUpLogger() {
 		Logger.getRootLogger().removeAllAppenders();
@@ -70,7 +82,6 @@ public class TestTextGraph { //extends BasicGraphTest {
 		loader.loadLine("edge eats puppy dogfood");
 	}
 	
-	public static File testhome;
 	@BeforeClass
 	public static void setAllUp() {
 		setUpLogger();
@@ -152,9 +163,6 @@ public class TestTextGraph { //extends BasicGraphTest {
 		((MutableGraph)graph).melt();
 		loadGraphText(((MutableGraph)graph));
 		((MutableGraph)graph).freeze();
-//		assertEquals("Nodes written:", N_NODES, getIteratorNodecount(graph));
-//		assertEquals("Nodes written:", N_NODES, getOrderedNodecount(graph));
-//		assertEquals("Edges labels used:", N_EDGE_LABELS, graph.getOrderedEdgeLabels().length);
 		checkNumbers("written:");
 		
 		PersistantGraph innerGraph;
@@ -165,9 +173,6 @@ public class TestTextGraph { //extends BasicGraphTest {
 		innerGraph = new PersistantGraphSleepycat(innerGraphName,'r');
 		innerGraph.loadCache();
 		graph = new TextGraph(DBNAME, innerGraph);
-//		assertEquals("Nodes remaining after close and reopen:", N_NODES, getIteratorNodecount(graph));
-//		assertEquals("Nodes remaining after close and reopen:", N_NODES, getOrderedNodecount(graph));
-//		assertEquals("Edges labels after close and reopen:", N_EDGE_LABELS, graph.getOrderedEdgeLabels().length);
 		checkNumbers("remaining after close and reopen:");
 		
 		// check they're still there in a read-only Mutable
@@ -175,9 +180,6 @@ public class TestTextGraph { //extends BasicGraphTest {
 		innerGraph = new PersistantGraphSleepycat(innerGraphName,'r');
 		innerGraph.loadCache();
 		graph = new MutableTextGraph(DBNAME,'r', innerGraph);
-//		assertEquals("Nodes remaining after close and reopen:", N_NODES, getIteratorNodecount(graph));
-//		assertEquals("Nodes remaining after close and reopen:", N_NODES, getOrderedNodecount(graph));
-//		assertEquals("Edges labels after close and reopen:", N_EDGE_LABELS, graph.getOrderedEdgeLabels().length);
 		checkNumbers("remaining after close and reopen:");
 		
 		// check they're still there in an appendable Mutable
@@ -185,9 +187,6 @@ public class TestTextGraph { //extends BasicGraphTest {
 		innerGraph = new PersistantGraphSleepycat(innerGraphName,'a');
 		innerGraph.loadCache();
 		graph = new MutableTextGraph(DBNAME,'a', innerGraph);
-//		assertEquals("Nodes remaining after close and reopen:", N_NODES, getIteratorNodecount(graph));
-//		assertEquals("Nodes remaining after close and reopen:", N_NODES, getOrderedNodecount(graph));
-//		assertEquals("Edges labels after close and reopen:", N_EDGE_LABELS, graph.getOrderedEdgeLabels().length);
 		checkNumbers("remaining after close and reopen:");
 	}
 	
@@ -201,7 +200,7 @@ public class TestTextGraph { //extends BasicGraphTest {
 	@Test
 	public void verifyContentsInDetail() {
 		Set<String> masterNodeList = new HashSet<String>();
-		Collections.addAll(masterNodeList, "$TEXT",
+		Collections.addAll(masterNodeList,
 									   "$puppy",
 									   "$pet",
 									   "$dogfood",

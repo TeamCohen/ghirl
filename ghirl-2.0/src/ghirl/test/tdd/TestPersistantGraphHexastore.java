@@ -1,7 +1,7 @@
 /**
  * 
  */
-package ghirl.test;
+package ghirl.test.tdd;
 
 import static org.junit.Assert.*;
 
@@ -11,6 +11,7 @@ import ghirl.graph.Closable;
 import ghirl.graph.MutableGraph;
 import ghirl.graph.PersistantGraph;
 import ghirl.graph.PersistantGraphHexastore;
+import ghirl.test.verify.TestTextGraph;
 import ghirl.util.Config;
 import ghirl.util.FilesystemUtil;
 
@@ -28,7 +29,7 @@ import org.junit.Test;
  * @author katie
  *
  */
-public class TestPersistantGraphHexastore extends TestTextGraph { //extends BasicGraphTest {
+public class TestPersistantGraphHexastore extends TestTextGraph { 
 	private static final Logger logger = Logger.getLogger(TestPersistantGraphHexastore.class);
 	protected static String DBDIR = "tests";
 	protected static String DBNAME = "testPersistantGraphHexastore";
@@ -110,53 +111,4 @@ public class TestPersistantGraphHexastore extends TestTextGraph { //extends Basi
 	
 	@Test @Override @Ignore
 	public void verifyContentsInDetail() {}
-	
-	/*
-	@AfterClass
-	public static void tearAllDown() {
-		logger.info("Cleaning up test directory "+DBDIR+"...");
-		rm_r(new File(DBDIR));
-	}
-
-	@After
-	public void tearDown() {
-		logger.info("Closing PersistantGraph...");
-		((PersistantGraph) graph).close();
-	}
-
-	
-	@Before
-	public void setUp() {
-		logger.info("System java.library.path: "+System.getProperty("java.library.path"));
-		graph = new PersistantGraphHexastore(DBDIR,'w');
-		logger.debug("created graph; loading stuff...");
-		loadGraph();
-	}
-
-	/**
-	 * Test method for {@link ghirl.graph.PersistantGraph#getOrderedEdgeLabels()}.
-	 /
-	@Test
-	public void testGetOrderedEdgeLabels() {
-		super.testGetOrderedEdgeLabels();
-	}
-
-	/**
-	 * Test method for {@link ghirl.graph.PersistantGraph#getOrderedIds()}.
-	 /
-	@Test
-	public void testGetOrderedIds() {
-		super.testGetOrderedIds();
-	}
-
-	@Override
-	public void reset() {
-		logger.info("Closing PersistantGraph...");
-		((PersistantGraph) graph).close();
-		logger.info("PG was "+graph);
-		graph = new PersistantGraphHexastore(DBDIR,'r');
-		logger.info("PG is now" + graph);
-	}
-	*/
-
 }

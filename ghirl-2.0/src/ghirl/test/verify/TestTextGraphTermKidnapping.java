@@ -1,14 +1,22 @@
-package ghirl.test;
+package ghirl.test.verify;
 
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.io.File;
+
 import ghirl.graph.Graph;
 import ghirl.graph.GraphLoader;
 import ghirl.graph.MutableGraph;
 import ghirl.graph.MutableTextGraph;
 import ghirl.util.Config;
 import ghirl.util.Distribution;
+import ghirl.util.FilesystemUtil;
 
+import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
@@ -25,27 +33,44 @@ import org.junit.Test;
  *
  */
 public class TestTextGraphTermKidnapping {
-	protected static String DBDIR = "tests/testTermKidnapping";
+	protected static String DBDIR = "tests";
+	protected static String CLEANUPDIR="tests/testTermKidnapping";
+	protected static String DBNAME = "testTermKidnapping/db";
+	public static File testhome;
+	public MutableTextGraph g;
 	public void assertInGraph(String s, Graph g) {
 		Distribution d = g.asQueryDistribution(s);
 		assertTrue(d != null);
 		assertTrue(s+" should be in the graph!", d.size() > 0);
 	}
-	
-	@Before
-	public void setup() {
+	@BeforeClass
+	public static void setAllUp() {
 		Config.setProperty("ghirl.dbDir", DBDIR);
+		testhome = new File(CLEANUPDIR);
+		if (testhome.exists()) {
+			FilesystemUtil.rm_r(testhome);
+			fail("Test home wasn't cleaned up -- run again.");
+		}
+		testhome.mkdir();
+	}
+	@After
+	public void tearDown() {
+		g.close();
+	}
+	@AfterClass
+	public static void tearAllDown() {
+		FilesystemUtil.rm_r(testhome);
 	}
 	
 	@Test
 	public void testMemoryGraph() {
-		MutableGraph g = new MutableTextGraph();
+		g = new MutableTextGraph();
 		testTKforGraph(g);
 	}
 	
 	@Test
 	public void testPersistantGraph() {
-		MutableGraph g = new MutableTextGraph("db",'w');
+		g = new MutableTextGraph(DBNAME,'w');
 	}
 	
 	public void testTKforGraph(MutableGraph g) {

@@ -6,4 +6,6 @@ loader.load(new File("graph.txt"));
 loader.getGraph().freeze();
 
 // return a caching version of it 
-return new CachingGraph(new TextGraph("toy"));
+Graph pgraph = new PersistantGraphSleepycat("toy_db",'r');
+pgraph.loadCache();
+return new CachingGraph(new TextGraph("toy",pgraph));

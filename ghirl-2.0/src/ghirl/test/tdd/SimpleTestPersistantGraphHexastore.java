@@ -1,4 +1,4 @@
-package ghirl.test;
+package ghirl.test.tdd;
 
 
 import ghirl.graph.GraphLoader;

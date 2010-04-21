@@ -44,6 +44,7 @@ public class SleepycatStore extends SleepycatDB implements IGraphStore {
 	protected void handleDBError(DatabaseException ex) 
 	{
 		logger.error("db error ",ex);
+		throw new IllegalStateException(ex);
 	}
 	
 	@Override

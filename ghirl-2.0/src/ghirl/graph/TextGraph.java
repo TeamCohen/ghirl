@@ -166,7 +166,7 @@ public class TextGraph implements Graph, TextGraphExtensions, Closable
 	}
 	protected void setupReadonlyIndex() {
 		if (!new File(indexFileName).exists()) {
-			throw new IllegalArgumentException("lucene index doesn't exist");
+			throw new IllegalArgumentException("lucene index doesn't exist at "+indexFileName);
 		}
 	}
 	

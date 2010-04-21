@@ -40,29 +40,38 @@ public class SleepycatDB
 		dbDupConfig = new DatabaseConfig();
 		dbDupConfig.setSortedDuplicates(true);
 		File envDir = new File(dbDirName);
-		if (mode=='w') {
-			if (envDir.exists()) {
-				// remove old copies of databases rooted here.  This is sortof
-				// a hack -- if a different db was rooted here than
-				// the one which is currently running, we won't remove the
-				// right databases, and we'll still end up with old data
-				// in the db.  There ought to be a better way to do this but
-				// I don't know what it is.  Deleting the files at runtime
-				// isn't enough.
-				cleanEnvironment(envDir); 
-			}
-			envDir.mkdir();
-			if (!envDir.isDirectory() || !envDir.canWrite()) {
-				throw new IllegalArgumentException("can't write to env directory "+envDir);
-			}
-			envConfig.setAllowCreate(true);
-			// exclusiveCreate: will complain if a db is opened which already exists
-			dbConfig.setExclusiveCreate(true); 
-			dbConfig.setAllowCreate(true);
-			dbDupConfig.setExclusiveCreate(true); 
-			dbDupConfig.setAllowCreate(true);
+		switch(mode) {
+			case 'w':
+				if (envDir.exists()) {
+					// remove old copies of databases rooted here.  This is sortof
+					// a hack -- if a different db was rooted here than
+					// the one which is currently running, we won't remove the
+					// right databases, and we'll still end up with old data
+					// in the db.  There ought to be a better way to do this but
+					// I don't know what it is.  Deleting the files at runtime
+					// isn't enough.
+					cleanEnvironment(envDir); 
+				}
+				createEnvironment(envDir,envConfig);
+				break;
+			case 'a':
+				if (!envDir.exists()) createEnvironment(envDir,envConfig);
+				break;
 		}
 		env = new Environment(envDir,envConfig);
+	}
+	
+	private void createEnvironment(File envDir, EnvironmentConfig envConfig) {
+		envDir.mkdir();
+		if (!envDir.isDirectory() || !envDir.canWrite()) {
+			throw new IllegalArgumentException("can't write to env directory "+envDir);
+		}
+		envConfig.setAllowCreate(true);
+		// exclusiveCreate: will complain if a db is opened which already exists
+		dbConfig.setExclusiveCreate(true); 
+		dbConfig.setAllowCreate(true);
+		dbDupConfig.setExclusiveCreate(true); 
+		dbDupConfig.setAllowCreate(true);
 	}
 	
 	protected void cleanEnvironment(File envDir) throws DatabaseException {

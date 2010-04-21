@@ -100,6 +100,8 @@ public class MutableTextGraph extends TextGraph implements MutableGraph {
 	/** Create a text graph with a pre-initialized innerGraph.
 	 * 
 	 * @param graph The innerGraph this text graph should use.
+	 * @param mode One of 'r' read, 'a' append, 'w' write.  Write overwrites 
+	 * existing graphs.  Append creates a new one if one doesn't exist already.
 	 */
 	public MutableTextGraph(String fileStem, char mode, MutableGraph graph)
 	{
@@ -124,7 +126,8 @@ public class MutableTextGraph extends TextGraph implements MutableGraph {
 			setupWriteableIndex(true);
 		} else if (mode=='a') {
 			innerGraph.melt();
-			setupWriteableIndex(false);
+			// only create the index if it does not exist yet
+			setupWriteableIndex( !(new File(indexFileName).exists()) );
 		} else if (mode=='r') {
 			setupReadonlyIndex();
 			freeze();

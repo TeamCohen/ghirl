@@ -114,12 +114,10 @@ public class GraphLoader
 			numLines++;
 			if (linesBetweenStatusMessage>0 && numLines%linesBetweenStatusMessage==0) 
 				log.info("loaded "+numLines+" lines");
-			if (!line.startsWith("#") && line.trim().length()>0) {
-				boolean status = loadLine(line);
-				if (!status) {
-					if (printWarnings) log.warn("illegal line "+in.getLineNumber()+": "+line);
-					if (throwErrors) throw new IllegalArgumentException("illegal line "+in.getLineNumber()+": "+line);
-				}
+			boolean status = loadLine(line);
+			if (!status) {
+				if (printWarnings) log.warn("illegal line "+in.getLineNumber()+": "+line);
+				if (throwErrors) throw new IllegalArgumentException("illegal line "+in.getLineNumber()+": "+line);
 			}
 			pc.progress();
 		}
@@ -129,6 +127,7 @@ public class GraphLoader
 	/** Process a single line from the file. */ 
 	public boolean loadLine(String line)
 	{
+		if (line.startsWith("#") || line.trim().length()==0) return true;
 		// This is kindof dumb -- what we actually want is
 		// 1: split first token on "node" or "edge"
 		// node: lookup second token with remainder of string

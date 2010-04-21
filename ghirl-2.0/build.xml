@@ -93,8 +93,6 @@
 
 	<target name="all" depends="clean, compile" description="Clean and compile all components"/>
 	
-	<target name="test"><echo>Not yet implemented :(</echo></target>
-	
 	<target name="dist-lib-solo" depends="compile" description="Jar up GHIRL for distribution (NO dependencies, just GHIRL; does not include tests)">
 		<jar destfile="${path.dist}/ghirl2-${DSTAMP}.jar">
 			<fileset dir="${path.build}">
@@ -203,39 +201,39 @@
 		</exec>
 	</target>
 	
-	<!-- java -Dghirl.dbDir=. -jar ghirl-custom-ghirl.graph.TextUI.jar -graph cache-toy.bsh -query william | tail -21 > output.txt  -->
-	<!-- The following targets need work.  I'm leaving them in, but they're not important to complete at this time. 
-	
-	What I want:
-		(1) Run TextUI on cache-toy.bsh in tests/
-		(2) [tail -21] the output and save to a output-DSTAMP.txt
-		(3) diff output-goldstandard.txt output-DSTAMP.txt
-				* Ant doesn't appear to be able to do this.  It might be an OK place to drop in JUnit.
-				  * IF we drop in JUnit, add an exclude to the jar targets so they don't grab the tests or the junit jar.
-		(4) If there are differences, fail
-		(5) otherwise succeed
-	
-	<target name="dist-textui">
-		<property name="textui-jar" value="${path.dist}/ghirl2-custom-ghirl.graph.TextUI.jar"/>
-	</target>
-	<target name="runtime-test" depends="dist-textui">
-		<java jar="${textui-jar}" ouptut="${path.test}/raw-${DSTAMP}.txt">
-			<jvmarg value="-Dghirl.dbDir=${path.test}"/>
-			<arg value="-graph ${path.test}/cache-toy.bsh -query william"/>
-		</java>
-		<copy file="${path.test}/raw-${DSTAMP}.txt" tofile="${path.test}/output-$DSTAMP.txt">
-			<filterchain>
-				<tailfilter lines="21"/>
-			</filterchain>
-		</copy>
-	</target>
-	
-	-->
-	
 	<target name="javadoc" depends="init" description="build javadoc API documentation">
 		<delete dir="${path.javadoc}"/>
 		<mkdir dir="${path.javadoc}"/>
 		<javadoc sourcepath="${path.src}" destdir="${path.javadoc}" classpathref="compile.classpath"  packagenames="*">
 		</javadoc>
+	</target>
+	
+	<target name="verify" depends="prepare,compile" description="Run all verification tests">
+		<junit printsummary="off" failureproperty="hasFailedTests">
+			<formatter type="brief"/>
+			<classpath refid="compile.classpath"/>
+			<batchtest>
+				<fileset dir="${path.build}" id="verificationTests">
+					<include name="ghirl/test/verify/Test*.class"/>
+					<exclude name="**/*$*.class"/>
+				</fileset>
+			</batchtest>
+		</junit>
+		<fail if="hasFailedTests" message="See TEST-*.txt files for details on the failed tests noted above."/>
+		<resourcecount property="verificationTestCount" refid="verificationTests"/>
+		<echo>${verificationTestCount} verification tests passed.</echo>
+	</target>
+	
+	<target name="test-class" depends="init" description="Run a single named (-DtestClass=fully.qualified.class.name) test">
+		<fail message="Command-line switch testClass not defined.  Re-run with -DtestClass=your.fully.qualified.test.class">
+			<condition><not><isset property="testClass"/></not></condition>
+		</fail>
+		<junit printsummary="withOutAndErr" failureproperty="hasFailedTests">
+			<formatter type="brief"/>
+			<classpath refid="compile.classpath"/>
+			<test name="${testClass}"/>
+		</junit>
+		<fail if="hasFailedTests" message="Test failed!"/>
+		<echo>Test passed.</echo>
 	</target>
 </project>
