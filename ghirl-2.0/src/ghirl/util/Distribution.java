@@ -113,6 +113,7 @@ public abstract class Distribution
         public boolean hasNext() { return i.hasNext(); }
         public Object next() {
             Object o = i.next();
+            //System.out.println("getting weight of "+o+" in MyOtherIterator");
             theLastWeight = getWeight(o);
             return o;
         }

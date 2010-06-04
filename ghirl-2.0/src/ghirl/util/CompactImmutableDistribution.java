@@ -80,19 +80,21 @@ public class CompactImmutableDistribution extends Distribution
 	 */
 	public double getWeight(Object obj)
 	{
-		int index = Arrays.binarySearch(sortedObjectArray,obj);
-		if (index<0) return 0; 
-		else {
-			double prevWeight = 0;
-			for (int k=1; k<objectIndex.length; k++) {
-				if (objectIndex[k]==index) {
-					theLastWeight = totalWeightSoFar[k] - prevWeight;
-					return theLastWeight;
-				}
-				prevWeight = totalWeightSoFar[k];
-			}
-			return 0;
-		}
+            int index = Arrays.binarySearch(sortedObjectArray,obj);
+            if (index<0) return 0; 
+            else if (index==0) {
+                theLastWeight = totalWeightSoFar[0];
+                return theLastWeight;
+            } else {
+                for (int k=1; k<objectIndex.length; k++) {
+                    if (objectIndex[k]==index) {
+                        theLastWeight = totalWeightSoFar[k] - totalWeightSoFar[k-1];
+                        System.out.println("weight of "+obj+"="+theLastWeight);
+                        return theLastWeight;
+                    }
+                }
+                return 0;
+            }
 	}
 
 	/** Return an iterator over all objects.
@@ -108,9 +110,11 @@ public class CompactImmutableDistribution extends Distribution
 		public boolean hasNext() { return index < objectIndex.length; }
 		public void remove() { throw new UnsupportedOperationException("can't remove"); }
 		public Object next() { 
-			if (index==0) theLastWeight = totalWeightSoFar[0];
-			else theLastWeight = totalWeightSoFar[index]-totalWeightSoFar[index-1];
-			return sortedObjectArray[objectIndex[index++]]; 
+                    Object result = sortedObjectArray[objectIndex[index]]; 
+                    if (index==0) theLastWeight = totalWeightSoFar[0];
+                    else theLastWeight = totalWeightSoFar[index]-totalWeightSoFar[index-1];
+                    index++;
+                    return result;
 		}
 	}
 

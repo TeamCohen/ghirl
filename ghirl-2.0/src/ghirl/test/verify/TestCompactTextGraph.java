@@ -106,24 +106,24 @@ public class TestCompactTextGraph {
 		assertTrue("Must have at least 20 items; only has "+resdist.size(),resdist.size() >= 20);
 		System.err.println("Top 20:\n"+test);
 		
-		//weightTest(test,gold);
-		this.lineByLineTest(test, gold);
+		weightTest(test,gold);
+		//this.lineByLineTest(test, gold);
 	}
 	
 	public void weightTest(String test, GoldStandard gold) throws IOException {
-		HashMap<String,String> answers = new HashMap<String,String>();
+		HashMap<String,Double> answers = new HashMap<String,Double>();
 		BufferedReader goldreader = new BufferedReader(new StringReader(gold.getGoldStandard()));
 		String g;
 		while ( (g=goldreader.readLine()) != null) {
 			String[] part = g.split("\\s+");
-			answers.put(part[1], part[0]);
+			answers.put(part[1], new Double(Double.parseDouble(part[0])));
 		}
-		
 		BufferedReader testreader = new BufferedReader(new StringReader(test));
 		String t;
 		while ( (t = testreader.readLine()) != null) {
 			String[] part = t.split("\\s+");
-			assertEquals(answers.get(part[1]), part[0]);
+                        double w = Double.parseDouble(part[0]);
+                        assertEquals(w, answers.get(part[1]).doubleValue(), 0.05);
 		}
 	}
 	

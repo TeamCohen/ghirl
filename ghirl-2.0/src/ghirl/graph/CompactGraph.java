@@ -70,7 +70,6 @@ public class CompactGraph implements Graph
         linkLabels[0] = "";   //null id
         while ((line = linkIn.readLine())!=null) {
             linkLabels[++id] = line;
-            //System.out.println("labelId "+id+" = '"+line+"'");
         }
         linkIn.close();
 
@@ -80,7 +79,6 @@ public class CompactGraph implements Graph
         graphIds[0] = GraphId.fromString("");   //for null id
         while ((line = nodeIn.readLine())!=null) {
             graphIds[++id] = GraphId.fromString(line);
-            //System.out.println("graphId "+id+" = '"+line+"'");
             npc.progress();
         }
         npc.finished();
@@ -117,7 +115,6 @@ public class CompactGraph implements Graph
     {
         int k = Arrays.binarySearch( array, o );
         if (k<0) {
-	    //System.out.println("searching: "+StringUtil.toString(array));
 	    throw new IllegalStateException(whatItIs+": "+o+" not found");
         }
         return k;
@@ -237,8 +234,12 @@ public class CompactGraph implements Graph
         throws IOException, FileNotFoundException 
     {
         CompactGraph cg = new CompactGraph();
-        cg.load(new File(args[0]), new File(args[1]), new File(args[2]), new File(args[3]));
-        QueryGUI gui = new QueryGUI(cg);
-        new ViewerFrame("QueryGUI", gui );
+        if (args.length!=4) {
+            System.out.println("usage: sizeFile linkFile nodeFile rowFile");
+        } else {
+            cg.load(new File(args[0]), new File(args[1]), new File(args[2]), new File(args[3]));
+            QueryGUI gui = new QueryGUI(cg);
+            new ViewerFrame("QueryGUI", gui );
+        }
     }
 }
