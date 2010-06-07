@@ -153,15 +153,17 @@ public class GraphSearchEval implements Visible, Saveable
         double numPosSoFar = 0, totPrec = 0;
         Distribution weights = getRanking(exampleId).copy();
         Distribution removeNodes = (Distribution)initialNodesMap.get(exampleId);
-        for (Iterator it=removeNodes.iterator();it.hasNext();)
-            weights.remove(it.next());
+        if (removeNodes!=null) {
+            for (Iterator it=removeNodes.iterator();it.hasNext();) {
+                weights.remove(it.next());
+            }
+        }
         Distribution ranks = weights.rankDistribution();
         for (Iterator i=ranks.orderedIterator(false); i.hasNext(); ) {
             GraphId id = (GraphId)i.next();
             if (isPositive(exampleId,id)) {
                 numPosSoFar++;
                 totPrec += numPosSoFar/ranks.getWeight(id);
-                System.out.println(exampleId.toString() + " " + id.toString() + " " + ranks.getWeight(id));
             }
             if (numPosSoFar==numCorrect)
                 return totPrec/numCorrect;
@@ -513,10 +515,10 @@ public class GraphSearchEval implements Visible, Saveable
             Distribution ranking = getRanking(name);
             int rank = 0;
             for (Iterator j=ranking.orderedIterator(); j.hasNext(); ) {
-            GraphId id = (GraphId)j.next();
-            rank++;
-            double weight = ranking.getLastWeight();
-            out.println(name +"\t"+ id +"\t"+ rank +"\t" + weight);
+                GraphId id = (GraphId)j.next();
+                rank++;
+                double weight = ranking.getLastWeight();
+                out.println(name +"\t"+ id +"\t"+ rank +"\t" + weight);
             }
             Set pos = getPosIds(name);
             for (Iterator j=pos.iterator(); j.hasNext(); ) {
@@ -541,17 +543,17 @@ public class GraphSearchEval implements Visible, Saveable
         while ((line = in.readLine())!=null) {
             String[] parts = line.split("\t");
             if (parts.length==2) {
-            // exampleId positiveGraphId
-            Set pos = (Set)positiveIdMap.get(parts[0]);
-            if (pos==null) positiveIdMap.put(parts[0], (pos = new TreeSet()));
-            pos.add( GraphId.fromString(parts[1]) );
+                // exampleId positiveGraphId
+                Set pos = (Set)positiveIdMap.get(parts[0]);
+                if (pos==null) positiveIdMap.put(parts[0], (pos = new TreeSet()));
+                pos.add( GraphId.fromString(parts[1]) );
             } else if (parts.length==4) {
-            // exampleId graphId rank weight
-            Distribution ranking = (Distribution)rankedListMap.get(parts[0]);
-            if (ranking==null) rankedListMap.put(parts[0], (ranking = new TreeDistribution()));
-            ranking.add( StringUtil.atof(parts[3]), GraphId.fromString(parts[1]) );
+                // exampleId graphId rank weight
+                Distribution ranking = (Distribution)rankedListMap.get(parts[0]);
+                if (ranking==null) rankedListMap.put(parts[0], (ranking = new TreeDistribution()));
+                ranking.add( StringUtil.atof(parts[3]), GraphId.fromString(parts[1]) );
             } else {
-            throw new IllegalArgumentException(file+" line "+in.getLineNumber()+": illegal format");
+                throw new IllegalArgumentException(file+" line "+in.getLineNumber()+": illegal format");
             }
         }
     }
@@ -568,7 +570,9 @@ public class GraphSearchEval implements Visible, Saveable
             try { loadFromFile(new File(s)); } catch (IOException ex) { ex.printStackTrace(); }
         }
     }
-    public void processArguments(String[] args) { new MyCLP().processArguments(args); }
+    public void processArguments(String[] args) { 
+        new MyCLP().processArguments(args); 
+    }
 
 
     static public void main(String[] args) throws IOException
