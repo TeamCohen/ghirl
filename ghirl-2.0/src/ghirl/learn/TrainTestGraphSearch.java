@@ -2,6 +2,7 @@ package ghirl.learn;
 
 import java.util.*;
 import java.io.*;
+
 import edu.cmu.minorthird.util.*;
 import edu.cmu.minorthird.classify.*;
 import edu.cmu.minorthird.classify.experiments.*;
@@ -20,7 +21,7 @@ public class TrainTestGraphSearch
     private boolean removeDups = false;
 
     public class MyCLP extends BasicCommandLineProcessor {
-        public void graph(String s) { graph = new TextGraph(s); }
+        public void graph(String s) { try { graph = new TextGraph(s);  } catch(IOException e) { throw new IllegalStateException("Couldn't open graph "+s,e); }}
         public void annotate(String s)
         {
             graph = AnnotatableGraph.addAnnotator( graph, (GraphAnnotator)BshUtil.toObject(s,GraphAnnotator.class) );

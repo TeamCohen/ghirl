@@ -163,7 +163,7 @@ public abstract class PersistantGraph implements MutableGraph, Closable
 	}
 
 	public GraphId[] getOrderedIds() {
-		if(ensureNodeCache()) logger.warn("Node cache empty -- call loadCache() before getORderedIds()");
+		if(ensureNodeCache()) logger.warn("Node cache empty -- call loadCache() before getOrderedIds()");
 		GraphId[] result = nodeCache.toArray(new GraphId[nodeCache.size()]);
 		Arrays.sort(result);
 		return result;

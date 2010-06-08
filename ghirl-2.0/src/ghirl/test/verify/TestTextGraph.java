@@ -6,6 +6,7 @@ package ghirl.test.verify;
 import static org.junit.Assert.*;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -106,7 +107,7 @@ public class TestTextGraph { //extends BasicGraphTest {
 	}
 	
 	@Test
-	public void writeableTest() {
+	public void writeableTest() throws IOException {
 		logger.info("*************************** STARTING W-MODE TEST");
 		graph = new MutableTextGraph(DBNAME,'w');
 		loadGraphText(((MutableGraph)graph));
@@ -116,7 +117,7 @@ public class TestTextGraph { //extends BasicGraphTest {
 	}
 	
 	@Test
-	public void appendableTest() {
+	public void appendableTest() throws IOException {
 		logger.info("*************************** STARTING A-MODE TEST");
 		graph = new MutableTextGraph(DBNAME,'a');
 		((Closable)graph).close();
@@ -124,7 +125,7 @@ public class TestTextGraph { //extends BasicGraphTest {
 	}
 	
 	@Test
-	public void readableTest() {
+	public void readableTest() throws IOException {
 		logger.info("*************************** STARTING R-MODE TEST");
 		graph = new MutableTextGraph(DBNAME,'r');
 		((Closable)graph).close();
@@ -132,7 +133,7 @@ public class TestTextGraph { //extends BasicGraphTest {
 	}
 	
 	@Test
-	public void overwriteTest() {
+	public void overwriteTest() throws IOException {
 		logger.info("*************************** STARTING OVERWRITE TEST");
 		graph = new MutableTextGraph(DBNAME,'w');
 		loadGraphText(((MutableGraph)graph));
@@ -156,7 +157,7 @@ public class TestTextGraph { //extends BasicGraphTest {
 	 * 
 	 */
 	@Test
-	public void verifyContents() {
+	public void verifyContents() throws IOException {
 		logger.info("*************************** VERIFYING GRAPH CONTENTS");
 		graph = new MutableTextGraph(DBNAME,'w');
 		assertEquals("Overwritten graph should be empty:",0,getIteratorNodecount(graph));
@@ -198,7 +199,7 @@ public class TestTextGraph { //extends BasicGraphTest {
 	}
 	
 	@Test
-	public void verifyContentsInDetail() {
+	public void verifyContentsInDetail() throws IOException {
 		Set<String> masterNodeList = new HashSet<String>();
 		Collections.addAll(masterNodeList,
 									   "$puppy",

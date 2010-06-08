@@ -2,6 +2,7 @@ package ghirl.learn;
 
 import java.util.*;
 import java.io.*;
+
 import edu.cmu.minorthird.util.*;
 import edu.cmu.minorthird.classify.*;
 import edu.cmu.minorthird.classify.experiments.*;
@@ -31,7 +32,7 @@ public class TrainGraphSearch
 
 
     public class MyCLP extends BasicCommandLineProcessor {
-        public void graph(String s) {graph = new TextGraph(s); }
+        public void graph(String s) { try { graph = new TextGraph(s); } catch(IOException e) { throw new IllegalStateException("Couldn't open graph "+s,e); }}
         public void cache(String s) { graph = new CachingGraph(graph,StringUtil.atoi(s)); }
         public void annotate(String s)
         {

@@ -40,12 +40,19 @@ public class ExperimentAuthorGenename extends MessageViewer
 
     public ExperimentAuthorGenename(String file)
     {
-        this(new CachingGraph(new TextGraph(file)));
+    	try {
+    		this.init(new CachingGraph(new TextGraph(file)));
+    	} catch (IOException e) {
+    		throw new IllegalStateException("Couldn't open graph "+file,e);
+    	}
     }
 
     public ExperimentAuthorGenename(Graph graph)
     {
-        this.graph = graph;
+        this.init(graph);
+    }
+    private void init(Graph graph) {
+    	this.graph=graph;
     }
 
 

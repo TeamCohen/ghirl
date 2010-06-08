@@ -1,6 +1,7 @@
 package ghirl.graph;
 
 import java.io.Console;
+import java.io.IOException;
 import java.util.Set;
 
 import ghirl.graph.Graph;
@@ -45,7 +46,14 @@ public class InteractiveTextUI {
 	}
 	public void runConsole(String graphName) {
 		System.out.println("Opening "+graphName+" in "+Config.getProperty("ghirl.dbDir")+"...");
-		TextGraph graph = new TextGraph(graphName);
+		TextGraph graph=null;
+		try {
+			graph = new TextGraph(graphName);
+		} catch (IOException e) {
+			System.err.println("Couldn't create graph!  Check your spelling.");
+			e.printStackTrace();
+			System.exit(0);
+		}
 		
 		Console console = System.console(); String input;
 		while ( !(input = console.readLine("> ")).equals("q")) {

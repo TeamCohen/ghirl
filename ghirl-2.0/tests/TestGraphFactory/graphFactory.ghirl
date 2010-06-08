@@ -1,0 +1,7 @@
+node wuzzy
+edge hasNickname wuzzy fuzzy
+edge was wuzzy a_bear
+edge notHas wuzzy hair
+edge wasnt wuzzy fuzzy
+node FILE$fuzzywuzzy.txt
+edge hasStory wuzzy FILE$fuzzywuzzy.txt

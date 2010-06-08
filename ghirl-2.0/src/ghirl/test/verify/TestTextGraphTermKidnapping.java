@@ -4,6 +4,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.File;
+import java.io.IOException;
 
 import ghirl.graph.Graph;
 import ghirl.graph.GraphLoader;
@@ -69,7 +70,7 @@ public class TestTextGraphTermKidnapping {
 	}
 	
 	@Test
-	public void testPersistantGraph() {
+	public void testPersistantGraph() throws IOException {
 		g = new MutableTextGraph(DBNAME,'w');
 	}
 	

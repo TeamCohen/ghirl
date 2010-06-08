@@ -13,11 +13,13 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 import ghirl.graph.Closable;
 import ghirl.graph.CommandLineUtil;
 import ghirl.graph.CompactGraph;
 import ghirl.graph.Graph;
+import ghirl.graph.GraphFactory;
 import ghirl.graph.GraphId;
 import ghirl.graph.GraphLoader;
 import ghirl.graph.MutableGraph;
@@ -43,6 +45,7 @@ import org.junit.Test;
 public class TestCompactTextGraph {
 	protected static String DBNAME = "testCompactGraph";
 	protected static String TESTROOT = "tests";
+	protected static String COMPACTSRC = "tests/TestCompactTextGraph";
 	/**
 	 * @throws java.lang.Exception
 	 */
@@ -54,28 +57,17 @@ public class TestCompactTextGraph {
 	Graph graph;
 	@After
 	public void shutDown() {
-		((Closable) graph).close();
+		if (graph != null) ((Closable) graph).close();
 	}
 	
 	public String enDir(String name) {
-		return TESTROOT + File.separatorChar + DBNAME + File.separatorChar + name;
-	}
-	
-	@Test
-	public void testNNodes() throws Exception {
-		graph = load();
-		int i=0;
-		for(Iterator it=graph.getNodeIterator(); it.hasNext(); ) {
-			System.out.println(it.next()); 
-			i++;
-		}
-		assertEquals("modules for inferring names and ontological relationships etc",
-				graph.getTextContent(GraphId.fromString("TEXT$m3ac")));
+		return COMPACTSRC + File.separatorChar + name;
 	}
 	
 	public Graph load() throws Exception {
 		Logger.getRootLogger().setLevel(Level.INFO);
-		Graph graph = (MutableGraph) CommandLineUtil.makeGraph("compact-loader.bsh");
+		TextGraph graph = (TextGraph) GraphFactory.makeGraph("-bshgraph","tests/compact-loader.bsh");
+		
 		((MutableGraph)graph).freeze();
 		((TextGraph)graph).close();
 		
@@ -100,19 +92,32 @@ public class TestCompactTextGraph {
 	public void testLoad() throws Exception {
 		graph = load();
 		
-		GoldStandard gold = new GoldStandard();
-		Distribution resdist = gold.queryGraph(graph);
-		String test = resdist.copyTopN(20).format();
-		assertTrue("Must have at least 20 items; only has "+resdist.size(),resdist.size() >= 20);
-		System.err.println("Top 20:\n"+test);
+		GoldStandard gold = new GoldStandard(GoldStandard.GRAPH);
+		gold.assertMatchesGoldStandard(gold.queryGraph(graph));
+//		Distribution resdist = gold.queryGraph(graph);
+//		String test = resdist.copyTopN(20).format();
+//		assertTrue("Must have at least 20 items; only has "+resdist.size(),resdist.size() >= 20);
+//		System.err.println("Top 20:\n"+test);
 		
-		weightTest(test,gold);
+		//weightTest(test,gold);
 		//this.lineByLineTest(test, gold);
 	}
-	
+
+	@Test
+	public void testNNodes() throws Exception {
+		graph = load();
+		int i=0;
+		for(Iterator it=graph.getNodeIterator(); it.hasNext(); ) {
+			System.out.println(it.next()); 
+			i++;
+		}
+		assertEquals("modules for inferring names and ontological relationships etc",
+				graph.getTextContent(GraphId.fromString("TEXT$m3ac")));
+	}
+	/*
 	public void weightTest(String test, GoldStandard gold) throws IOException {
 		HashMap<String,Double> answers = new HashMap<String,Double>();
-		BufferedReader goldreader = new BufferedReader(new StringReader(gold.getGoldStandard()));
+		BufferedReader goldreader = new BufferedReader(new StringReader(gold.getFormattedGoldStandard()));
 		String g;
 		while ( (g=goldreader.readLine()) != null) {
 			String[] part = g.split("\\s+");
@@ -130,13 +135,13 @@ public class TestCompactTextGraph {
 	public void lineByLineTest(String test, GoldStandard gold) throws IOException {
 		BufferedReader testreader, goldreader;
 		testreader = new BufferedReader(new StringReader(test));
-		goldreader = new BufferedReader(new StringReader(gold.getGoldStandard()));
+		goldreader = new BufferedReader(new StringReader(gold.getFormattedGoldStandard()));
 		String t,g;
 		while (true) {
 			t = testreader.readLine(); g = goldreader.readLine();
 			assertEquals(g,t);
 			if (t==null && g==null) break;
 		}
-	}
+	}*/
 
 }

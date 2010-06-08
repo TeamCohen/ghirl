@@ -17,6 +17,7 @@ import ghirl.util.Config;
 import ghirl.util.FilesystemUtil;
 
 import java.io.*;
+
 import org.apache.log4j.*;
 
 /** A graph structure that can contain "text nodes".  There are implicit
@@ -92,8 +93,9 @@ public class MutableTextGraph extends TextGraph implements MutableGraph {
 	 * the property ghirl.dbDir (in the properties file ghirl.properties).
 	 *
 	 * @param mode 'w' for write, 'r' for read, 'a' for append.
+	 * @throws IOException 
 	 */
-	public MutableTextGraph(String fileStem, char mode) {
+	public MutableTextGraph(String fileStem, char mode) throws IOException {
 		this(fileStem, mode, null);
 	}
 	
@@ -102,8 +104,9 @@ public class MutableTextGraph extends TextGraph implements MutableGraph {
 	 * @param graph The innerGraph this text graph should use.
 	 * @param mode One of 'r' read, 'a' append, 'w' write.  Write overwrites 
 	 * existing graphs.  Append creates a new one if one doesn't exist already.
+	 * @throws IOException 
 	 */
-	public MutableTextGraph(String fileStem, char mode, MutableGraph graph)
+	public MutableTextGraph(String fileStem, char mode, MutableGraph graph) throws IOException
 	{
 		this.innerGraph = graph;
 		
@@ -141,6 +144,7 @@ public class MutableTextGraph extends TextGraph implements MutableGraph {
 	{
 		indexFileName = dbFileName = null;
 		innerGraph = new BasicGraph();
+		this.basedirFile = new File(Config.getProperty(Config.DBDIR,""));
 		try {
 			writerDirectory = new RAMDirectory();
 			writer = new IndexWriter(writerDirectory, analyzer, true);
@@ -321,7 +325,8 @@ public class MutableTextGraph extends TextGraph implements MutableGraph {
 	
 	private File disambiguateFile(String name, boolean throwException) {
 		File f = new File(name);
-		if (!f.exists()) f = new File(inBaseDir(name));
+		if (!f.exists()) 
+			f = new File(this.basedirFile,name);
 		if (!f.exists()) {
 			String err = "No file exists for "+name+" in JVM direcotry or in ghirl.dbDir!";
 			if (throwException) throw new IllegalArgumentException(err);

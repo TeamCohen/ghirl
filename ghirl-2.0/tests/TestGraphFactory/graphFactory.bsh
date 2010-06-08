@@ -1,0 +1,4 @@
+MutableTextGraph g = new MutableTextGraph("db",'w');
+new GraphLoader(g).load(new File("graphFactory.ghirl"));
+g.freeze();
+return g;

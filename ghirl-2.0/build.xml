@@ -209,7 +209,8 @@
 	</target>
 	
 	<target name="verify" depends="prepare,compile" description="Run all verification tests">
-		<junit printsummary="off" failureproperty="hasFailedTests">
+		<junit printsummary="off" failureproperty="hasFailedTests" fork="on">
+			<jvmarg value="-Djava.library.path=${tokyo.java.library.path}"/>
 			<formatter type="brief"/>
 			<classpath refid="compile.classpath"/>
 			<batchtest>
@@ -228,7 +229,8 @@
 		<fail message="Command-line switch testClass not defined.  Re-run with -DtestClass=your.fully.qualified.test.class">
 			<condition><not><isset property="testClass"/></not></condition>
 		</fail>
-		<junit printsummary="withOutAndErr" failureproperty="hasFailedTests">
+		<junit printsummary="withOutAndErr" failureproperty="hasFailedTests" fork="on">
+			<jvmarg value="-Djava.library.path=${tokyo.java.library.path}"/>
 			<formatter type="brief"/>
 			<classpath refid="compile.classpath"/>
 			<test name="${testClass}"/>

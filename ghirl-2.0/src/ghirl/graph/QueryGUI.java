@@ -6,6 +6,7 @@ import edu.cmu.minorthird.util.ProgressCounter;
 
 import java.util.*;
 import java.io.*;
+
 import javax.swing.*;
 import javax.swing.event.*;
 import javax.swing.text.*;
@@ -26,9 +27,14 @@ public class QueryGUI extends MessageViewer
 	private QueryControls controls;
 	private ControlledWeightedGraphViewer graphViewer;
 
-	public QueryGUI(String file) 
+	/**
+	 * Constructs a read-only textgraph with the specified name.
+	 * @param graphName
+	 * @throws IOException
+	 */
+	public QueryGUI(String graphName) throws IOException 
 	{ 
-		this(new TextGraph(file)); 
+		this(new TextGraph(graphName)); 
 	}
 	public QueryGUI(Graph graph) 
 	{ 

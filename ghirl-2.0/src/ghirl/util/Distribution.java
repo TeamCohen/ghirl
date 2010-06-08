@@ -7,7 +7,7 @@ import java.util.*;
 /**
  * A probability distribution of objects that can be sampled from.
  */
-public abstract class Distribution
+public abstract class Distribution implements Iterable
 {
     /** caches last weight returned  */
     protected double theLastWeight = 0;

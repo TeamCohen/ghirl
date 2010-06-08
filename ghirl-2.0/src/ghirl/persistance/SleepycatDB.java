@@ -75,13 +75,18 @@ public class SleepycatDB
 	}
 	
 	protected void cleanEnvironment(File envDir) throws DatabaseException {
-		log.info("Cleaning environment: removing all database contents rooted at "+envDir.getPath());
-		EnvironmentConfig tmpconfig = new EnvironmentConfig();
-		Environment tmpenv = new Environment(envDir, tmpconfig);
-		for (String dbname : getDatabaseNames()) {
-			log.info("Cleaning "+dbname);
-			tmpenv.removeDatabase(null, dbname);
-		}
+		log.warn("A previous environment existed at this location. Overwriting: Removing all database contents rooted at "+envDir.getPath());
+		try {
+			EnvironmentConfig tmpconfig = new EnvironmentConfig();
+			tmpconfig.setAllowCreate(true);
+			Environment tmpenv = new Environment(envDir, tmpconfig);
+			for (String dbname : tmpenv.getDatabaseNames()) {
+				log.info("Cleaning "+dbname);
+				tmpenv.removeDatabase(null, dbname);
+			}
+		} catch (com.sleepycat.je.recovery.NoRootException e) {
+			log.warn("Previous environment at this location was corrupted; check your cleanup procedure.  Wiping and restoring...",e);
+		} 
 		FilesystemUtil.rm_r(envDir);
 	}
 	protected List<String> getDatabaseNames() { return new ArrayList<String>(); }

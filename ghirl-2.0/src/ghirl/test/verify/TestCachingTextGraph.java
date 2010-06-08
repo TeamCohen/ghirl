@@ -46,7 +46,7 @@ public class TestCachingTextGraph {
 	}
 	@After
 	public void tearDown() {
-		graph.close();
+		if (graph != null) graph.close();
 	}
 
 	@AfterClass
@@ -56,7 +56,7 @@ public class TestCachingTextGraph {
 	@Test
 	public void testCachingGraph() throws FileNotFoundException, IOException {
 		GraphLoader loader = new GraphLoader(new MutableTextGraph(DBNAME,'w'));
-		loader.load(new File("graph.txt"));
+		loader.load(new File("tests/graph.txt"));
 		loader.getGraph().freeze();
 		((TextGraph)loader.getGraph()).close();
 		PersistantGraph innerGraph = new PersistantGraphSleepycat(DBNAME+"_db",'r');
@@ -69,7 +69,7 @@ public class TestCachingTextGraph {
 		
 		BufferedReader testreader, goldreader;
 		testreader = new BufferedReader(new StringReader(resdist.format()));
-		goldreader = new BufferedReader(new StringReader(gold.getGoldStandard()));
+		goldreader = new BufferedReader(new StringReader(gold.getFormattedGoldStandard()));
 		String t,g;
 		while (true) {
 			t = testreader.readLine(); g = goldreader.readLine();

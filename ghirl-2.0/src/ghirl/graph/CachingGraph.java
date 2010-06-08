@@ -1,5 +1,6 @@
 package ghirl.graph;
 
+import java.io.IOException;
 import java.util.*;
 
 import org.apache.log4j.Logger;
@@ -282,9 +283,13 @@ public class CachingGraph implements Graph
 
     static public void main(String[] args)
     {
-        Graph graph = new TextGraph(args[0]);
-        CachingGraph cg = new CachingGraph(graph,1000);
-        QueryGUI gui = new QueryGUI(cg);
-        new ViewerFrame("QueryGUI", gui );
+    	try {
+	        Graph graph = new TextGraph(args[0]);
+	        CachingGraph cg = new CachingGraph(graph,1000);
+	        QueryGUI gui = new QueryGUI(cg);
+	        new ViewerFrame("QueryGUI", gui );
+    	} catch(IOException e) {
+    		e.printStackTrace();
+    	}
     }
 }

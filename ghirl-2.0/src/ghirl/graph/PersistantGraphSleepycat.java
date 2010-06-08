@@ -54,7 +54,7 @@ public class PersistantGraphSleepycat extends PersistantGraph
 
 	public boolean contains(GraphId id) 
 	{ 
-		return persistance.contains_Node(makeKey(id.getFlavor(), id.getShortName()));//getNodeId(id.getFlavor(),id.getShortName())!=null; 
+		return persistance.contains_Node(makeKey(id));//getNodeId(id.getFlavor(),id.getShortName())!=null; 
 	}
 
 

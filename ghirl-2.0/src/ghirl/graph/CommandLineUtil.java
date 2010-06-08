@@ -9,6 +9,13 @@ import org.apache.log4j.PropertyConfigurator;
 public class CommandLineUtil
 {
 	private static Logger log = Logger.getLogger(CommandLineUtil.class);
+	/**
+	 * 
+	 * @param s Graph name or beanshell filename
+	 * @return
+	 * @deprecated Please consider using GraphFactory.makeGraph(String[] args), which is more flexible and robust.
+	 */
+	@Deprecated
 	public static Graph makeGraph(String s)
     {
 		log.info("in make graph: " + s);
@@ -18,7 +25,11 @@ public class CommandLineUtil
                 return (Graph)BshUtil.toObject(s,Graph.class);
             } catch (Exception ex) {
                 System.out.println("can't parse bsh script '"+s+"': will try to lookup existing graph named "+s);
-                return new TextGraph(s);
+                try {
+                	return new TextGraph(s);
+                } catch(IOException e) { 
+                	throw new IllegalStateException("Couldn't make graph",e);
+                }
             }
         } else {
             try {

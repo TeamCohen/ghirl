@@ -5,8 +5,24 @@ If you need to use cutting-edge GHIRL features such as Hexastore (TBA) or a
 current copy of Minorthird, or you are adding new features to GHIRL, this is 
 probably the distribution for you.
 
+
 Requirements:
  - Java 1.6, although it can probably run in 1.5 if you care to tweak build.xml
+
+
+Installation/Getting Started:
+
+If using Eclipse, be sure to label src/ as a source folder, and add all the .jar
+files in lib/ to the build path.
+
+If using Hexastore or TokyoCabinet, copy build.properties.orig to build.properties
+locally, then edit the relevant section of build.properties to fit your system.
+Note that while our antfile will build Hexastore, you must build and install
+the Java bindings for TokyoCabinet externally.  See 
+	http://1978th.net/tokyocabinet/
+for details.
+
+
 
 Troubleshooting:
 If you are building ghirl2 and seeing this error:

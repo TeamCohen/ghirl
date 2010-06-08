@@ -31,7 +31,10 @@ import org.apache.log4j.*;
 public class TextGraph implements Graph, TextGraphExtensions, Closable
 {
 	private static Logger log = Logger.getLogger(TextGraph.class);
-
+	
+	/** Property name for setting the persistance class in ghirl.properties */
+	public static final String CONFIG_PERSISTANCE_PROPERTY="ghirl.persistanceClass";
+	
 	/** Special node flavor for TextGraphs */
 	public static final String FILE_TYPE = "FILE",
 							   TEXT_TYPE = "TEXT",
@@ -74,6 +77,7 @@ public class TextGraph implements Graph, TextGraphExtensions, Closable
 	protected Graph innerGraph; 
 	
 	protected String basedir;
+	protected File basedirFile;
 
 	private TFIDFWeighter weighter = 
 		new TFIDFWeighter(new DocFreqFunction() {
@@ -93,16 +97,16 @@ public class TextGraph implements Graph, TextGraphExtensions, Closable
 	 * @return A Class object representing the class of the graph to be instantiated.
 	 */
 	protected static Class configurePersistantGraphClass(Class graphType ) {
-		String pgraphclassname = Config.getProperty("ghirl.persistanceClass");
+		String pgraphclassname = Config.getProperty(CONFIG_PERSISTANCE_PROPERTY);
 		if (null != pgraphclassname) {
 			try {
 				Class temp = Class.forName(pgraphclassname);
 				if (graphType.isAssignableFrom(temp))
 					return temp;
 				else
-					log.error("\""+pgraphclassname+"\" doesn't implement MutableGraph and is an invalid selection for ghirl.persistanceClass. Using default.");
+					log.error("\""+pgraphclassname+"\" doesn't implement MutableGraph and is an invalid selection for "+CONFIG_PERSISTANCE_PROPERTY+". Using default.");
 			} catch (ClassNotFoundException e1) {
-				log.error("Couldn't get specified ghirl.persistanceClass \""+pgraphclassname+"\"; using default");
+				log.error("Couldn't get specified "+CONFIG_PERSISTANCE_PROPERTY+" \""+pgraphclassname+"\"; using default");
 				return DEFAULT_PERSISTANTGRAPH;
 			}
 		} else log.info("No ghirl.persistanceClass specified.  Using default...");
@@ -116,12 +120,15 @@ public class TextGraph implements Graph, TextGraphExtensions, Closable
 	 * the property ghirl.dbDir (in the properties file ghirl.properties).
 	 *
 	 * @param fileStem Name of the graph (minus "_db" or "_lucene.index").
+	 * @throws IOException if the named graph can't be found or can't be opened.
 	 */
-	public TextGraph(String fileStem) { this(fileStem, null); }
+	public TextGraph(String fileStem) throws IOException { this(fileStem, null); }
 	
-	public TextGraph(String fileStem, Graph graph) {
+	public TextGraph(String fileStem, Graph graph) throws IOException {
 		this.innerGraph = graph;
 		setupLuceneSettings(fileStem);
+		if (this.innerGraph == null && !new File(inBaseDir(dbFileName)).exists())
+			throw new FileNotFoundException("Database "+dbFileName+" must exist.");
 		setupInnerGraph('r', Graph.class);
 		setupReadonlyIndex();
 		
@@ -130,19 +137,19 @@ public class TextGraph implements Graph, TextGraphExtensions, Closable
 		try {
 			index = IndexReader.open(indexFileName);
 		} catch (IOException e) {
-			throw new IllegalArgumentException("Couldn't open lucene index!",e);
+			throw new IOException("Couldn't open lucene index "+indexFileName,e);
 		} 
 
 		searcher = new IndexSearcher(index);
 	}
 	
-	protected void setupLuceneSettings(String fileStem) {
-		basedir = Config.getProperty("ghirl.dbDir");
+	protected void setupLuceneSettings(String fileStem) throws IOException {
+		basedir = Config.getProperty(Config.DBDIR);
 		if (basedir == null) throw new IllegalArgumentException("The property ghirl.dbDir must be defined!");
 
-		File baseDirFile = new File(basedir);
-		if (!baseDirFile.exists() || !baseDirFile.isDirectory()) {
-			throw new IllegalArgumentException("The directory "+baseDirFile+" must exist");
+		basedirFile = new File(basedir);
+		if (!basedirFile.exists() || !basedirFile.isDirectory()) {
+			throw new IOException("The directory "+basedirFile+" must exist");
 		}
 
 		indexFileName = inBaseDir(fileStem+"_lucene.index");
@@ -164,9 +171,9 @@ public class TextGraph implements Graph, TextGraphExtensions, Closable
 		}
 		if (null == getInnerGraph()) throw new IllegalStateException("Cannot proceed without innerGraph.");
 	}
-	protected void setupReadonlyIndex() {
+	protected void setupReadonlyIndex() throws FileNotFoundException {
 		if (!new File(indexFileName).exists()) {
-			throw new IllegalArgumentException("lucene index doesn't exist at "+indexFileName);
+			throw new FileNotFoundException("Lucene index doesn't exist at "+indexFileName);
 		}
 	}
 	

@@ -1,3 +1,10 @@
+
+############### build properties for Tokyo Cabinet testcases: #################
+
+tokyo.java.library.path=/usr/local/lib
+
+############### build properties for the Hexastore JNI bridge: ################
+
 # MacOSX:
 special.javainclude=/System/Library/Frameworks/JavaVM.framework/Versions/1.6.0/Headers
 # FedoraCore:
@@ -8,7 +15,7 @@ special.bdbhome=/usr/local/BerkeleyDB.4.7
 cxx.compiler=/usr/bin/g++
 
 # MacOSX:
-cxx.cflags=-dynamiclib -arch i386 -arch x86_64
+cxx.cflags=-dynamiclib -arch i386 -arch x86_64 -g
 # FedoraCore:
 #cxx.cflags=-shared -fPIC
 
@@ -20,3 +27,4 @@ cxx.ldflags=-ldb-4.7 -ldb_cxx-4.7
 cxx.libext=jnilib
 # FedoraCore:
 #cxx.libext=so
+

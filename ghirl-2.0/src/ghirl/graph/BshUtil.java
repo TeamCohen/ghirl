@@ -4,37 +4,49 @@ import ghirl.util.Config;
 
 import java.io.*;
 
+import bsh.EvalError;
+import bsh.Interpreter;
+
 public class BshUtil
 {
-	static public Object toObject(String s,Class expectedType) 
-	{
+	
+	private static Object bshFile(Interpreter interp, String s) throws EvalError, IOException {
+		String dbDir = ghirl.util.Config.getProperty("ghirl.dbDir");
+		File bshfile = new File(s);
+		if (!bshfile.exists()) {
+			bshfile = new File(dbDir+File.separator+s);
+			if (!bshfile.exists()) {
+				throw new FileNotFoundException("No file "+s+" in working directory or ghirl.dbDir!");
+			}
+		}
+		String parent =bshfile.getParent();
+		if (parent != "") interp.eval("cd(\""+parent+"\");");
+		return interp.source(bshfile.getName());
+	}
+	private static Object bshStatement(Interpreter interp, String s) throws EvalError {
+		if (!s.startsWith("new")) s = "new "+s;
+		return interp.eval(s);
+	}
+	public static <T> T toObject(String s, Class<T> expectedType) { 
 		try {
 			bsh.Interpreter interp = new bsh.Interpreter();
 			interp.eval("import ghirl.graph.*;");
 			interp.eval("import ghirl.learn.*;");
+			Object raw_result;
 			if (s.endsWith(".bsh")) {
-//				interp.set("bsh.cwd", Config.getProperty("ghirl.dbDir"));
-				interp.eval("cd(ghirl.util.Config.getProperty(\"ghirl.dbDir\"));");
-				interp.eval("print(bsh.cwd);");
-				return interp.source(s);
+				raw_result = bshFile(interp, s);
 			} else {
-				if (!s.startsWith("new")) s = "new "+s;
-				Object o = interp.eval(s);
-				if (!expectedType.isInstance(o)) {
-					throw new IllegalArgumentException(s+" did not produce "+expectedType);
-				}
-				return o;
+				raw_result = bshStatement(interp, s);
 			}
+
+			if (!expectedType.isInstance(raw_result)) {
+				throw new IllegalArgumentException(s+" did not produce "+expectedType);
+			}
+			return (T) raw_result;
 		} catch (IOException e) {
-			System.out.println("=====bsh error====");
-			System.out.println("the file '"+s+"' was not found");
-			System.out.println("=====end bsh error====");
-			throw new IllegalArgumentException("error parsing '"+s+"':\n"+e);
+			throw new IllegalArgumentException(e);
 		} catch (bsh.EvalError e) {
-			System.out.println("=====bsh error====");
-			e.printStackTrace();
-			System.out.println("=====end bsh error====");
-			throw new IllegalArgumentException("error parsing '"+s+"':\n"+e);
+			throw new IllegalStateException("Beanshell error for \""+s+"\":",e);
 		}
 	} 
 

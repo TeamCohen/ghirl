@@ -1,0 +1,5 @@
+node TEXT$fuzzywuzzy Fuzzy-Wuzzy
+node TEXT$kipling-name Rudyard Kipling
+edge isa TEXT$fuzzywuzzy poem
+edge hasName kipling TEXT$kipling-name
+edge writtenBy TEXT$fuzzywuzzy kipling

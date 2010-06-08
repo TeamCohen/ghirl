@@ -13,6 +13,10 @@ public class PathSearcher extends ProgrammableSearcher
 		this(path);
 		setTrace(traceFlag);
 	}
+	public PathSearcher(String path, Graph graph) {
+		this(path);
+		setGraph(graph);
+	}
 
 	/**
 	 * Create a new PathSearcher for the specified path.

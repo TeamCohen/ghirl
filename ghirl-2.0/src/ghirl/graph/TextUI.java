@@ -42,10 +42,10 @@ public class TextUI extends MessageViewer
 	private boolean sampleWalk = false;
 	private boolean stayWalkVersion = false; // an experimental type of walk
 
-	public TextUI(String file)
-	{
-		this(new CachingGraph(new TextGraph(file)));
-	}
+//	public TextUI(String file)
+//	{
+//		this(new CachingGraph(new TextGraph(file)));
+//	}
 
 	public TextUI(Graph graph)
 	{

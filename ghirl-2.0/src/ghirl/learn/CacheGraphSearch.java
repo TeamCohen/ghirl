@@ -21,7 +21,7 @@ public class CacheGraphSearch
     private int numToSave = 1000;
 
     public class MyCLP extends BasicCommandLineProcessor {
-	public void graph(String s) { graph = new TextGraph(s); }
+	public void graph(String s) { try {graph = new TextGraph(s); } catch(IOException e) { throw new IllegalStateException("Couldn't open graph "+s,e); }}
 	public void cache(String s) { cache = new SearchResultCache(s,'w'); }
 	public void numToSave(String s) { numToSave = StringUtil.atoi(s); }
 	public void annotate(String s) 
