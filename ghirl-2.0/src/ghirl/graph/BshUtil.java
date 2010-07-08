@@ -20,7 +20,7 @@ public class BshUtil
 			}
 		}
 		String parent =bshfile.getParent();
-		if (parent != "") interp.eval("cd(\""+parent+"\");");
+		if (parent != null && !"".equals(parent)) interp.eval("cd(\""+parent+"\");");
 		return interp.source(bshfile.getName());
 	}
 	private static Object bshStatement(Interpreter interp, String s) throws EvalError {
