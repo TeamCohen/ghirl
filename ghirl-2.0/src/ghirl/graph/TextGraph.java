@@ -250,8 +250,12 @@ public class TextGraph implements Graph, TextGraphExtensions, Closable
 		String flavor = id.getFlavor();
 		if (TERM_TYPE.equals(flavor)) {
 			try {
+				// here we check for TERM nodes both in the contents and 
+				// file handle fields, since those fields are the sources
+				// of TERM nodes that come out of getNodeIterator()
 				Term t = new Term(CONTENTS_FIELD,id.getShortName());
-				return index.docFreq(t) > 0;
+				Term ti = new Term(TEXT_HANDLE_FIELD,id.getShortName());
+				return (index.docFreq(t) > 0) || (index.docFreq(ti) > 0);
 			} catch (IOException ex) {
 				throw new IllegalStateException("index error: "+ex);
 			}

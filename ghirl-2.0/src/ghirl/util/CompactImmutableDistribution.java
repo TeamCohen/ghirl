@@ -6,60 +6,33 @@ import edu.cmu.minorthird.util.StringUtil;
 /**
  * A distribution that takes up minimal space, but cannot be added to or changed.
  */
-public class CompactImmutableDistribution extends Distribution
+public abstract class CompactImmutableDistribution extends Distribution
 {
-	private Object[] sortedObjectArray;
 
 	// parallel arrays
-	// objectIndex[k] is index of object in sortedObjectArray */
-	private int[] objectIndex; 
-	// totalWeightSoFar[k] is cumulative weight of all objects pointed to be objectIndex[0]...objectIndex[k]
-	private float[] totalWeightSoFar; 
-	// same as totalWeightSoFar[ totalWeightSoFar.length-1 ];
-	private float totalWeight;
+	/** objectIndex[k] is index of object in sortedObjectArray */
+	protected int[] objectIndex; 
+	/** totalWeightSoFar[k] is cumulative weight of all objects pointed to be objectIndex[0]...objectIndex[k] */
+	protected float[] totalWeightSoFar; 
+	/** same as totalWeightSoFar[ totalWeightSoFar.length-1 ]; */
+	protected float totalWeight;
 
-	/**
-	 * @param objectIndex - array objects in the distribution, named by
-	 * their positions in the sortedObjectArray.
-	 * @param totalWeightSoFar - parallel array of the cumulative weight of all objects 
-	 * in the distribution up to the corresponding point in the objectIndices array.
-	 * @param sortedObjectArray - sorted array that contains all objects in the distribution
-	 * 
-	 * The arrays passed in are not copied.
-	 */
-	public CompactImmutableDistribution(int[] objectIndex, float[] totalWeightSoFar, Object[] sortedObjectArray)
-	{
-		this.sortedObjectArray = sortedObjectArray;
+	/** Only for clever extensions. */
+	protected CompactImmutableDistribution() {}
+	public CompactImmutableDistribution(int[] objectIndex, float[] totalWeightSoFar) {
+
 		this.totalWeightSoFar = totalWeightSoFar;
 		this.objectIndex = objectIndex;
-		this.totalWeight = totalWeightSoFar[totalWeightSoFar.length - 1];
+		if (totalWeightSoFar.length>0) 
+			this.totalWeight = totalWeightSoFar[totalWeightSoFar.length - 1];
 	}
-
-	/**
-	 * @param dist - is a distribution of objects
-	 * @param sortedObjectArray - sorted array that contains all objects in the distribution
-	 */
-	public CompactImmutableDistribution(Distribution dist, Object[] sortedObjectArray)
-	{
-		this.sortedObjectArray = sortedObjectArray;
-		objectIndex = new int[dist.size()];
-		totalWeightSoFar = new float[dist.size()];
-		totalWeight = 0;
-		int k = 0;
-		for (Iterator i=dist.iterator(); i.hasNext(); ) {
-			Object o = i.next();
-			totalWeight += dist.getLastWeight();
-			objectIndex[ k ] = Arrays.binarySearch(sortedObjectArray, o);
-			if (objectIndex[ k ]<0) throw new IllegalStateException("Can't have a nonexistant object "+o+" in objectindex"+
-					" k="+k+", "+objectIndex[k]+" in "+StringUtil.toString(sortedObjectArray));
-			totalWeightSoFar[ k ] = totalWeight;
-			k++;
-		}
-	}
+	
+	abstract protected int getIndex(Object obj);
+	abstract protected Object getObject(int index);
 
 	public int sizeInBytes()
 	{
-		return 4*objectIndex.length + 4*totalWeightSoFar.length + 8;
+		return (Integer.SIZE*objectIndex.length + Float.SIZE*totalWeightSoFar.length + Float.SIZE)/8;
 	}
 
 	/** Not supported in this implementation.
@@ -80,21 +53,19 @@ public class CompactImmutableDistribution extends Distribution
 	 */
 	public double getWeight(Object obj)
 	{
-            int index = Arrays.binarySearch(sortedObjectArray,obj);
-            if (index<0) return 0; 
-            else if (index==0) {
-                theLastWeight = totalWeightSoFar[0];
-                return theLastWeight;
-            } else {
-                for (int k=1; k<objectIndex.length; k++) {
-                    if (objectIndex[k]==index) {
-                        theLastWeight = totalWeightSoFar[k] - totalWeightSoFar[k-1];
-                        System.out.println("weight of "+obj+"="+theLastWeight);
-                        return theLastWeight;
-                    }
-                }
-                return 0;
+            int index = getIndex(obj); //Arrays.binarySearch(sortedObjectArray,obj);
+            if (index<0) return 0;
+            if (objectIndex[0] == index) {
+            	theLastWeight = totalWeightSoFar[0];
+            	return theLastWeight;
             }
+            for (int k=1; k<objectIndex.length; k++) {
+            	if (objectIndex[k] == index) {
+                	theLastWeight = totalWeightSoFar[k] - totalWeightSoFar[k-1];
+                	return theLastWeight;
+            	}
+            }
+            return 0;
 	}
 
 	/** Return an iterator over all objects.
@@ -110,7 +81,7 @@ public class CompactImmutableDistribution extends Distribution
 		public boolean hasNext() { return index < objectIndex.length; }
 		public void remove() { throw new UnsupportedOperationException("can't remove"); }
 		public Object next() { 
-                    Object result = sortedObjectArray[objectIndex[index]]; 
+                    Object result = getObject(objectIndex[index]); 
                     if (index==0) theLastWeight = totalWeightSoFar[0];
                     else theLastWeight = totalWeightSoFar[index]-totalWeightSoFar[index-1];
                     index++;
@@ -140,9 +111,9 @@ public class CompactImmutableDistribution extends Distribution
 		if (find < 0) {
 			// find = -insertionPoint-1 
 			int insertionPoint = -(find+1);
-			return sortedObjectArray[ insertionPoint ];
+			return getObject( objectIndex[insertionPoint] );
 		} else {
-			return sortedObjectArray[ find ];
+			return getObject( objectIndex[find] );
 		}
 	}
 
@@ -157,7 +128,8 @@ public class CompactImmutableDistribution extends Distribution
 		}
 		return 
 		"[cid tot "+getTotalWeight()+" wts: "+StringUtil.toString(wts)+" idx: "+StringUtil.toString(objectIndex)
-		+" obj: "+StringUtil.toString(sortedObjectArray)+"]";
+		//+" obj: "+StringUtil.toString(sortedObjectArray)+"]";
+		;
 	}
 
 	// it's ok to share all structure since the distribution is immutable

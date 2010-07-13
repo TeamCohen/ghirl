@@ -138,8 +138,8 @@ public class GoldStandard {
 			Double testWeight = d.getLastWeight();
 			if ( Math.abs(goldWeight - testWeight) > TOLERANCE ) {
 				if (assertIt) {
-					assertFalse("Weight of "+node+" must be "+goldWeight+"+/-"+TOLERANCE,
-							 Math.abs(goldWeight - testWeight) > TOLERANCE);
+					assertEquals("Weight of "+node+" is outside tolerance +/-"+TOLERANCE,
+							 goldWeight, testWeight, TOLERANCE);
 					return false;
 				} else return false;
 			}
@@ -168,7 +168,7 @@ public class GoldStandard {
 	public Distribution queryGraph(Graph graph) {
 		WeightedWalker walker = new WeightedWalker();
 		Distribution dist = graph.asQueryDistribution(QUERY);
-		assertTrue(dist != null && dist.size() > 0);
+		assertTrue("Must have nonzero results for query "+QUERY, dist != null && dist.size() > 0);
 		walker.setGraph(graph);
 		walker.setInitialDistribution(dist);
 		walker.setUniformEdgeWeights();

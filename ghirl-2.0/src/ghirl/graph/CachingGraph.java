@@ -31,7 +31,7 @@ public class CachingGraph implements Graph
     /** cached walk for potentially every graph id, indexed by graph in */
     private CompactImmutableDistribution[][] walkInfo;
 
-    /** queue of graphIds, in order they are added to walkInfo */
+    /** queue of graphIds, in order they are added to walkDistributions */
     private int[] lruQueue = null;
     int lruQueuePtr;
 
@@ -106,7 +106,7 @@ public class CachingGraph implements Graph
           int idIndex = lruQueue[i];
           if (idIndex>0) {
           for (int j=0; j<linkLabels.length; j++) {
-          walkInfo[idIndex][j] = null;
+          walkDistributions[idIndex][j] = null;
           }
           lruQueue[i] = 0;
           }
@@ -155,7 +155,7 @@ public class CachingGraph implements Graph
     		for (int i=0; i<linkLabels.length; i++) {
     			Distribution d = innerGraph.walk1(graphIds[fromIndex],linkLabels[i]);
     			//if (d.size()>0) System.out.println("inner dist for "+graphIds[fromIndex]+","+linkLabels[i]+" = "+d);
-    			cd = new CompactImmutableDistribution(d, graphIds);
+    			cd = new CompactImmutableArrayDistribution(d, graphIds);
     			//if (cd.size()>0) System.out.println("compact dist = "+cd);
     			walkInfo[fromIndex][i] = cd;
     			walkInfoSize += cd.sizeInBytes();

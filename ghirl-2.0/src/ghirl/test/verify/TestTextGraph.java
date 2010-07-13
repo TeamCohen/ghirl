@@ -12,15 +12,18 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
+import ghirl.graph.BasicGraph;
 import ghirl.graph.Closable;
 import ghirl.graph.Graph;
 import ghirl.graph.GraphId;
 import ghirl.graph.GraphLoader;
 import ghirl.graph.MutableGraph;
 import ghirl.graph.MutableTextGraph;
+import ghirl.graph.NullGraph;
 import ghirl.graph.PersistantGraph;
 import ghirl.graph.PersistantGraphSleepycat;
 import ghirl.graph.TextGraph;
+import ghirl.test.GhirlTestSupport;
 import ghirl.util.Config;
 import ghirl.util.FilesystemUtil;
 
@@ -63,7 +66,7 @@ public class TestTextGraph { //extends BasicGraphTest {
 		Logger.getRootLogger().removeAllAppenders();
 		BasicConfigurator.configure();
 		Logger.getRootLogger().setLevel(Level.DEBUG); 
-		Logger.getLogger("ghirl.graph.GraphLoader").setLevel(Level.INFO);
+//		Logger.getLogger("ghirl.graph.GraphLoader").setLevel(Level.INFO);
 		logger.debug("Set up logger.");
 	}
 	
@@ -81,6 +84,7 @@ public class TestTextGraph { //extends BasicGraphTest {
 		logger.debug("Adding an edge");
 		loader.loadLine("edge isa  puppy pet");
 		loader.loadLine("edge eats puppy dogfood");
+		loader.loadLine("edge eats dogfood TEXT$loremipsum");
 	}
 	
 	@BeforeClass
@@ -149,7 +153,6 @@ public class TestTextGraph { //extends BasicGraphTest {
 		loadGraphText(((MutableGraph)graph));
 		((MutableGraph)graph).freeze();
 		checkNumbers("written in memory:");
-		((Closable)graph).close();
 	}
 	
 	/** Tests getNodeIterator(), getOrderedIds(), getOrderedEdgeLabels(),
@@ -256,6 +259,29 @@ public class TestTextGraph { //extends BasicGraphTest {
 		assertEquals("Nodes missing from graph after reopen:",0,masterNodeList.size());
 		assertEquals("Nodes in graph after close and reopen:", N_NODES, getIteratorNodecount(graph));
 		assertEquals("Edges labels after close and reopen:", N_EDGE_LABELS, graph.getOrderedEdgeLabels().length);
+	}
+	
+	@Test
+	public void wtf() throws IOException {
+		graph = new MutableTextGraph(DBNAME,'w', new NullGraph());
+		GraphLoader loader = new GraphLoader((MutableGraph) graph);
+		File graphFile =new File("tests/graph.txt"); 
+		loader.load(graphFile);
+		((MutableGraph)graph).freeze();
+		((MutableTextGraph)graph).close();
+		BasicGraph g = new BasicGraph();
+		loader=new GraphLoader(g); loader.load(graphFile);
+		graph = new MutableTextGraph(DBNAME,'r',g);
+		
+		for (Iterator it=graph.getNodeIterator(); it.hasNext(); ) {
+			GraphId node = (GraphId) it.next();
+			assertTrue(node.toString(),graph.contains(node));
+		}
+		
+//		String nodes[] = {"TERM$ontological","TERM$m3ac","TERM$lswac"};
+//		for (String s : nodes) assertTrue(s,graph.contains(GraphId.fromString(s)));
+//		assertEquals("lego star wars",
+//				graph.getTextContent(GraphId.fromString("TEXT$lswac")));
 	}
 	
 

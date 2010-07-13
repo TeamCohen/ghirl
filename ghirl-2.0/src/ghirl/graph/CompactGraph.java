@@ -34,18 +34,18 @@ public class CompactGraph implements Graph
 {
     private static final Logger log = Logger.getLogger(CompactGraph.class);
 
-    private static final Distribution EMPTY_DIST = new TreeDistribution();
+    protected static final Distribution EMPTY_DIST = new TreeDistribution();
 
     /** ordered list of all graph ids */
-    private GraphId[] graphIds;
-    private int graphIdIndex(GraphId id) { return safeLookup( graphIds,id,"graphId"); }
+    protected GraphId[] graphIds;
+    protected int graphIdIndex(GraphId id) { return safeLookup( graphIds,id,"graphId"); }
 
     /** ordered list of all link labels */
-    private String[] linkLabels;
-    private int linkLabelIndex(String label) { return safeLookup( linkLabels,label,"link label"); }
+    protected String[] linkLabels;
+    protected int linkLabelIndex(String label) { return safeLookup( linkLabels,label,"link label"); }
 
     /** cached walk for potentially every graph id, indexed by graph in */
-    private CompactImmutableDistribution[][] walkInfo;
+    protected CompactImmutableDistribution[][] walkInfo;
 
     public void load(File sizeFileName,File linkFileName,File nodeFileName,File walkFileName)
         throws IOException, FileNotFoundException 
@@ -86,7 +86,7 @@ public class CompactGraph implements Graph
 
         ProgressCounter wpc = new ProgressCounter("loading "+walkFileName,"lines");
         LineNumberReader walkIn = new LineNumberReader(new FileReader(walkFileName));
-        walkInfo = new CompactImmutableDistribution[ graphIds.length ][ linkLabels.length ];
+        initWalkInfo(); // template call
         while ((line = walkIn.readLine())!=null) {        
             parts = line.split(" ");
             int srcId = StringUtil.atoi(parts[0]);
@@ -103,24 +103,39 @@ public class CompactGraph implements Graph
                 totalWeightSoFar[k] = tw;
                 k++;
             }
-            walkInfo[srcId][linkId] = 
-                new CompactImmutableDistribution(destId,totalWeightSoFar,graphIds);
+            initWalkInfoCell(srcId,linkId,destId,totalWeightSoFar); // template call
             wpc.progress();
         }
+        finishWalkInfo(); // template call
         wpc.finished();
         walkIn.close();
     }
+    /** Finish initialization of immutable walk info cache */
+    protected void finishWalkInfo() {}
+    /** Initialize walk info cache */
+    protected void initWalkInfo() {
+        walkInfo = new CompactImmutableDistribution[ graphIds.length ][ linkLabels.length ];
+    }
+    /** Add one node:link record to the walk info cache */
+    protected void initWalkInfoCell(int srcId, int linkId, int[]destId, float[] totalWeightSoFar) {
+        walkInfo[srcId][linkId] = 
+            new CompactImmutableArrayDistribution(destId,totalWeightSoFar,graphIds);
+    }
 
-    final private int safeLookup( Object[] array, Object o, String whatItIs)
+    final protected int safeLookup( Object[] array, Object o, String whatItIs)
     {
         int k = Arrays.binarySearch( array, o );
-        if (k<0) {
-	    throw new IllegalStateException(whatItIs+": "+o+" not found");
-        }
+//        if (k<0) {
+//	    throw new IllegalStateException(whatItIs+": "+o+" not found");
+//        }
         return k;
     }
 
-    final private Distribution getStoredDist(int fromIndex,int linkIndex)
+    // change 6/22 kmr: this method was marked final, but I don't think
+    // that's what we meant to do -- "final" just means the method cannot
+    // be overridden in a subclass, not that the method is inlined or
+    // the resulting object is immutable.
+    protected Distribution getStoredDist(int fromIndex,int linkIndex)
     {
         Distribution result = walkInfo[fromIndex][linkIndex];
         if (result == null) {
@@ -172,7 +187,7 @@ public class CompactGraph implements Graph
     public Set getEdgeLabels(GraphId from)
     {
         Set accum = new HashSet();
-        int fromIndex = graphIdIndex(from);
+        int fromIndex = graphIdIndex(from); if (fromIndex<0) return Collections.EMPTY_SET;
         for (int i=1; i<linkLabels.length; i++) {
 	    if (getStoredDist(fromIndex,i).size()>0) {
                 accum.add( linkLabels[i] );
@@ -183,8 +198,8 @@ public class CompactGraph implements Graph
 
     public Set followLink(GraphId from,String linkLabel)
     {
-        int fromIndex = graphIdIndex(from);
-        int linkIndex = linkLabelIndex(linkLabel);
+        int fromIndex = graphIdIndex(from); if (fromIndex<0) return Collections.EMPTY_SET;
+        int linkIndex = linkLabelIndex(linkLabel); if (linkIndex<0) return Collections.EMPTY_SET;
         Distribution d = getStoredDist(fromIndex,linkIndex);
         Set accum = new HashSet();
         for (Iterator i=d.iterator(); i.hasNext(); ) {
@@ -195,15 +210,15 @@ public class CompactGraph implements Graph
 
     public Distribution walk1(GraphId from,String linkLabel)
     {
-        int fromIndex = graphIdIndex(from);
-        int linkIndex = linkLabelIndex(linkLabel);
+        int fromIndex = graphIdIndex(from); if (fromIndex<0) return TreeDistribution.EMPTY_DISTRIBUTION;
+        int linkIndex = linkLabelIndex(linkLabel);  if (linkIndex<0) return TreeDistribution.EMPTY_DISTRIBUTION;
         return getStoredDist( fromIndex, linkIndex );
     }
 
     public Distribution walk1(GraphId from)
     {
         Distribution accum = new TreeDistribution();
-        int fromIndex = graphIdIndex(from);
+        int fromIndex = graphIdIndex(from); if (fromIndex<0) return TreeDistribution.EMPTY_DISTRIBUTION;
         for (int i=0; i<linkLabels.length; i++) {
 	    Distribution d = getStoredDist(fromIndex,i);
 	    if (d.size()>0) accum.addAll( 1.0, d );

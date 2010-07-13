@@ -229,8 +229,21 @@ public class MutableTextGraph extends TextGraph implements MutableGraph {
 			} catch (IOException ex) {
 				throw new IllegalArgumentException("can't create lucene writer: "+ex);
 			}
-			index = null;
-			searcher = null;
+			try { index.close(); } catch (IOException e) {
+				log.error("Problem closing index:",e);
+				try { searcher.close(); } catch(IOException e2) {
+					log.error("Problem closing index searcher:",e2);
+					throw new IllegalStateException("IO Badness with searcher *and* index",e2);
+				}
+				throw new IllegalStateException("IO Badness with index",e);
+			}
+			try { searcher.close(); } catch(IOException e2) {
+				log.error("Problem closing index searcher:",e2);
+				throw new IllegalStateException("IO Badness with searcher",e2);
+			}
+		 
+			index = null; searcher = null;
+			
 		}
 		frozenFlag=false;
 	}

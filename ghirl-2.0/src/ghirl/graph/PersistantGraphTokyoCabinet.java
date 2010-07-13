@@ -1,5 +1,7 @@
 package ghirl.graph;
 
+import ghirl.persistance.TokyoCabinetPersistance;
+import ghirl.persistance.TokyoValueIterator;
 import ghirl.util.Config;
 
 import java.io.File;
@@ -19,23 +21,14 @@ import tokyocabinet.BDB;
 import tokyocabinet.BDBCUR;
 
 public class PersistantGraphTokyoCabinet extends PersistantGraph {
-	private static final HashMap<Character,Integer> MODES = new HashMap<Character,Integer>();
-	public static final char
-		MODE_READ = 'r',
-		MODE_WRITE= 'w',
-		MODE_APPEND='a';
 	private static final Logger logger = Logger.getLogger(PersistantGraphTokyoCabinet.class);
-	static {
-		MODES.put(MODE_READ,   BDB.OREADER);
-		MODES.put(MODE_WRITE,  BDB.OWRITER | BDB.OTRUNC | BDB.OCREAT);
-		MODES.put(MODE_APPEND, BDB.OWRITER | BDB.OCREAT);
-	}
+	
 	protected BDB nodeNames;
 	protected BDB nodeProps;
 	protected BDB edgeDestinations;
 	protected BDB nodeEdges;
 	protected List<BDB> dbs;
-	protected char mode;
+	protected TokyoCabinetPersistance tc;
 	protected static final String
 		NAME_NODENAMES = "_nodes",
 		NAME_NODEPROPS = "_props",
@@ -44,40 +37,22 @@ public class PersistantGraphTokyoCabinet extends PersistantGraph {
 		
 	
 	public PersistantGraphTokyoCabinet(String dbName,char mode) throws IOException {
-		this.mode= mode;
+		this.tc = new TokyoCabinetPersistance(logger);
+		this.tc.mode= mode;
 		String fqpath = Config.getProperty(Config.DBDIR)
 		+ File.separator
 		+ dbName
 		+ File.separator;
 		File dbdir = new File(fqpath);
 		if (!dbdir.exists()) dbdir.mkdir();
-		int imode = MODES.get(mode);
+		int imode = tc.MODES.get(mode);
 		dbs = new ArrayList<BDB>();
-		nodeNames = initDB(fqpath+NAME_NODENAMES, imode); dbs.add(nodeNames);
-		nodeProps = initDB(fqpath+NAME_NODEPROPS, imode); dbs.add(nodeProps);
-		edgeDestinations = initDB(fqpath+NAME_EDGEDESTS, imode); dbs.add(edgeDestinations);
-		nodeEdges = initDB(fqpath+NAME_NODEEDGES, imode); dbs.add(nodeEdges);
+		nodeNames = tc.initDB(fqpath+NAME_NODENAMES, imode); dbs.add(nodeNames);
+		nodeProps = tc.initDB(fqpath+NAME_NODEPROPS, imode); dbs.add(nodeProps);
+		edgeDestinations = tc.initDB(fqpath+NAME_EDGEDESTS, imode); dbs.add(edgeDestinations);
+		nodeEdges = tc.initDB(fqpath+NAME_NODEEDGES, imode); dbs.add(nodeEdges);
 	}
 	
-	protected BDB initDB(String fqpath, int mode) throws IOException {
-		BDB db;
-		try {
-			db = new BDB();
-			logger.debug("Opening Tokyo Cabinet at "+fqpath+" in mode "+mode);
-			if(db.open(fqpath,mode)) return db;
-			int code = db.ecode();
-			switch(code) {
-			case BDB.ENOFILE:
-				throw new FileNotFoundException("Couldn't open database at "+fqpath+": "+BDB.errmsg(db.ecode()));
-			case BDB.ENOPERM:
-				throw new IOException("Permission denied on "+fqpath);
-			}
-			throw new IllegalStateException("Couldn't open database at "+fqpath+": "+BDB.errmsg(db.ecode()));
-		} catch (UnsatisfiedLinkError e) {
-			throw new IllegalStateException("Tokyo Cabinet requires \"-Djava.library.path=usr/local/lib\""
-					+"(or correct path to tokyocabinet.dylib) on command line or in VM arguments.",e);			
-		}
-	}
 	
 	@Override
 	public void addEdge(String linkLabel, GraphId from, GraphId to) {
@@ -91,21 +66,15 @@ public class PersistantGraphTokyoCabinet extends PersistantGraph {
 
 	@Override
 	public void freeze() {
-		if (!this.isFrozen && this.mode != MODE_READ) {
-			for (BDB db: dbs) {
-				if (!db.sync())
-					logger.error("EXCEPTION NEEDED: problem syncing Tokyo Cabinet: "+BDB.errmsg(db.ecode()));
-			}
+		if (!this.isFrozen) {
+			tc.freeze(dbs);
 		}
 		super.freeze();
 	}
 	
 	@Override
 	public void close() {
-		for (BDB db: dbs) {
-			if (!db.close())
-				logger.error("Problem closing database: "+BDB.errmsg(nodeNames.ecode()));
-		}
+		tc.close(dbs); 
 	}
 
 	@Override
@@ -160,20 +129,5 @@ public class PersistantGraphTokyoCabinet extends PersistantGraph {
 		nodeProps.put(makeKey(id,prop), val);
 	}
 	
-	protected class TokyoValueIterator implements Iterator<GraphId> {
-		private BDBCUR cursor;
-		public TokyoValueIterator(BDBCUR cursor) {
-			this.cursor = cursor;
-			this.cursor.first();
-		}
-		public void remove() { throw new UnsupportedOperationException("Can't remove from a Tokyo Cabinet iterator."); }
-		public boolean hasNext() {
-			return (cursor.key2() != null);
-		}
-		public GraphId next() {
-			String value = cursor.val2();
-			cursor.next();
-			return GraphId.fromString(value);
-		}
-	}
+
 }
