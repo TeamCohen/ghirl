@@ -69,7 +69,7 @@ public class GraphLoader
 	public static final StringEncoder ENCODER = new StringEncoder('%',"\t\n ");
 
 	private Map isaRules; // applied defineIsa rules, as given in the header of graph file.
-	private MutableGraph graph; // graph that is loaded
+	protected MutableGraph graph; // graph that is loaded
 
 	// customizable behaviour
 
@@ -144,24 +144,28 @@ public class GraphLoader
 			log.debug("Looking up field 2 "+parts[3]);
 			GraphId to = lookupNode(parts[3]);    // id of field 2
 			log.debug("Adding edge");
-			graph.addEdge( linkLabel, from, to );
-			if (invertLinks) graph.addEdge( linkLabel+"Inverse", to, from );
-			// also, check if an 'isa' rule is applied
-			if (isaRules.keySet().contains(linkLabel)){
-				Map indexType = (Map)isaRules.get(linkLabel);
-				for (Iterator i=indexType.keySet().iterator(); i.hasNext();){
-					Integer index = (Integer)i.next();
-					String type = (String)indexType.get(index);
-					GraphId node = index.intValue()==1? from : to;
-					GraphId typeNode = lookupNode(type);
-					graph.addEdge ( "isa", node, typeNode);
-					if (invertLinks) graph.addEdge( "isa"+"Inverse", typeNode, node );
-				}
-			}
+			addEdge(linkLabel, from, to);
 			return true;
 		}
 		else {
 			return false;
+		}
+	}
+	
+	protected void addEdge(String linkLabel, GraphId from, GraphId to) {
+		graph.addEdge( linkLabel, from, to );
+		if (invertLinks) graph.addEdge( linkLabel+"Inverse", to, from );
+		// also, check if an 'isa' rule is applied
+		if (isaRules.keySet().contains(linkLabel)){
+			Map indexType = (Map)isaRules.get(linkLabel);
+			for (Iterator i=indexType.keySet().iterator(); i.hasNext();){
+				Integer index = (Integer)i.next();
+				String type = (String)indexType.get(index);
+				GraphId node = index.intValue()==1? from : to;
+				GraphId typeNode = lookupNode(type);
+				graph.addEdge ( "isa", node, typeNode);
+				if (invertLinks) graph.addEdge( "isa"+"Inverse", typeNode, node );
+			}
 		}
 	}
 
@@ -191,21 +195,26 @@ public class GraphLoader
 			return id;
 		} else {
 			log.debug("creating node "+id.toString());
-			id = graph.createNode(id.getFlavor(),id.getShortName(),content);
-			if (this.addIsaFlavorLinks && id.getFlavor().length() > 0){
-				/* 29 Mar 2010 Katie Rivard
-				 * This code used to provide an ISA edge for 
-				 * nodes named "$foo" i.e. "edge isa $foo "
-				 * which was deemed incorrect.
-				 * 
-				 * Now it only provides ISA edges for nodes with 
-				 * a flavor e.g."TEXT$foo".
-				 */
-				log.debug("specifying node type");
-				graph.addEdge("isa",id,lookupNode(id.getFlavor()));
-			}
+			id = createNode(id,content);
 			return id;
 		}
+	}
+	
+	protected GraphId createNode(GraphId id,String content) {
+		GraphId ret = graph.createNode(id.getFlavor(),id.getShortName(),content);
+		if (this.addIsaFlavorLinks && id.getFlavor().length() > 0){
+			/* 29 Mar 2010 Katie Rivard
+			 * This code used to provide an ISA edge for 
+			 * nodes named "$foo" i.e. "edge isa $foo "
+			 * which was deemed incorrect.
+			 * 
+			 * Now it only provides ISA edges for nodes with 
+			 * a flavor e.g."TEXT$foo".
+			 */
+			log.debug("specifying node type");
+			graph.addEdge("isa",id,lookupNode(id.getFlavor()));
+		}
+		return ret;
 	}
 
 	static public void main(String[] args) throws IOException

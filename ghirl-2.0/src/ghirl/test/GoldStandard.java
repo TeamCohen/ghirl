@@ -42,6 +42,8 @@ public class GoldStandard {
 	public static final int TEXTFILE=0;
 	public static final int GRAPH=1;
 	public static final double TOLERANCE = 0.0001d;
+	public static final String FILENAME_GOLD_NOINV="tests/output-goldstandard.txt";
+	public static final String FILENAME_GOLD_INV="tests/output-goldstandard-inv.txt";
 	
 	private String formattedAnswers;
 	private HashMap<String,Double> answers;
@@ -62,7 +64,7 @@ public class GoldStandard {
 	}
 	private void initText() throws IOException {
 		StringBuilder b = new StringBuilder();
-		BufferedReader in = new BufferedReader(new FileReader("tests/output-goldstandard.txt"));
+		BufferedReader in = new BufferedReader(new FileReader(FILENAME_GOLD_NOINV));
 		String read;
 		while ( (read=in.readLine()) != null) {
 			b.append("\n");

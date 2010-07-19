@@ -103,11 +103,12 @@
 
 	<target name="pack-lib">
 		<echo>Packing ${jarfile}...</echo>
-		<zip destfile="${path.tmp}/lib.zip" update="true">
+		<zip destfile="${path.tmp}/${lib.zip}" update="true">
 			<zipfileset src="${jarfile}"/>
 		</zip>
 	</target>
 	<target name="pack-all-libs">
+		<property name="lib.zip" value="lib.zip"/>
 		<foreach target="pack-lib" param="jarfile" inheritall="true">
 			<path>
 				<fileset dir="${path.lib}" includes="*.jar"/>
@@ -115,17 +116,39 @@
 		</foreach>
 		<echo>Lib packing complete.</echo>
 	</target>
+	<target name="pack-tomcat-libs">
+		<property name="lib.zip" value="tomcat-libs.zip"/>
+		<foreach target="pack-lib" param="jarfile" inheritall="true">
+			<path>
+				<fileset dir="${path.lib}" includes="*.jar">
+					<exclude name="tokyocabinet.jar"/>
+				</fileset>
+			</path>
+		</foreach>
+		<echo>Lib packing complete.</echo>
+	</target>
+			
 	<target name="dist-lib-full" depends="compile,pack-all-libs" description="Jar up GHIRL for distribution (includes all dependencies; does not include tests)">
 		<jar destfile="${path.dist}/ghirl2-full-${DSTAMP}.jar">
 			<fileset dir="${path.build}"><patternset refid="no-tests"/></fileset>
-			<zipfileset src="${path.tmp}/lib.zip"/>
+			<zipfileset src="${path.tmp}/${lib.zip}"/>
 		</jar>
 	</target>
-	
+	<target name="copy-sharedlibs">
+		<copy todir="${path.dist}">
+			<fileset dir="${path.lib}" includes="tokyocabinet.jar"/>
+		</copy>
+	</target>
+	<target name="dist-lib-tomcat" depends="compile,pack-tomcat-libs,copy-sharedlibs" description="Jar up GHIRL for distribution to a tomcat container (includes all dependencies EXCEPT tokyocabinet.jar, which must be transferred to $CATALINA_HOME/shared/lib separately)">
+		<jar destfile="${path.dist}/ghirl2-tomcat-${DSTAMP}.jar">
+			<fileset dir="${path.build}"><patternset refid="no-tests"/></fileset>
+			<zipfileset src="${path.tmp}/${lib.zip}"/>
+		</jar>
+	</target>		
 	<target name="dist-lib-full-withtests" depends="compile,pack-all-libs" description="Jar up GHIRL for distribution (includes all dependencies and tests)">
 		<jar destfile="${path.dist}/ghirl2-full-tests-${DSTAMP}.jar">
 			<fileset dir="${path.build}"/>
-			<zipfileset src="${path.tmp}/lib.zip"/>
+			<zipfileset src="${path.tmp}/${lib.zip}"/>
 			<zipfileset src="${path.devlib}/junit-4.7.jar"/>
 		</jar>
 	</target>
@@ -142,14 +165,14 @@
 		</copy>
 		<jar destfile="${path.dist}/ghirl2-srcjar-${DSTAMP}.jar">
 			<fileset dir="${path.build}"/>
-			<zipfileset src="${path.tmp}/lib.zip"/>
+			<zipfileset src="${path.tmp}/${lib.zip}"/>
 		</jar>
 	</target>
 	
 	<target name="dist-custom" depends="compile" description="Like dist-lib-full but create an executable jar using a custom Main file (specify using -Dmainclass=package.path.to.class.name)">
 		<jar destfile="${path.dist}/ghirl2-custom-${mainclass}.jar">
 			<fileset dir="${path.build}"><patternset refid="no-tests"/></fileset>
-			<zipfileset src="${path.tmp}/lib.zip"/>
+			<zipfileset src="${path.tmp}/${lib.zip}"/>
 			<manifest>
 				<attribute name="Built-By" value="${user.name}"/>
 				<attribute name="Main-Class" value="${mainclass}"/>
