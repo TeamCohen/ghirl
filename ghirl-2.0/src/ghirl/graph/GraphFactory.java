@@ -194,6 +194,8 @@ public class GraphFactory {
 	
 	public static void main(String[] args) {
 		Graph g = makeGraph(args);
+		logger.info("Closing graph...");
 		if (g instanceof Closable) ((Closable)g).close();
+		logger.info("Closed.");
 	}
 }

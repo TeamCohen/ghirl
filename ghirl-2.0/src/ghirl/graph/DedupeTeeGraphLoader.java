@@ -8,18 +8,12 @@ import java.util.Set;
 
 import org.apache.log4j.Logger;
 
-public class TextfileGraphLoader extends GraphLoader {
-	private static final Logger logger = Logger.getLogger(TextfileGraphLoader.class);
-	protected Writer writer;
+public class DedupeTeeGraphLoader extends TeeGraphLoader {
+	private static final Logger logger = Logger.getLogger(DedupeTeeGraphLoader.class);
 	protected boolean newThing=false;
-	public TextfileGraphLoader(MutableGraph g) { super(g); }
-	public TextfileGraphLoader(MutableGraph g, File tofile) throws IOException {
-		super(g);
-		this.writer = new FileWriter(tofile);
-	}
-	
-	public void setTextfile(File tofile) throws IOException {
-		this.writer = new FileWriter(tofile);
+	public DedupeTeeGraphLoader(MutableGraph g) { super(g); }
+	public DedupeTeeGraphLoader(MutableGraph g, File tofile) throws IOException {
+		super(g, tofile);
 	}
 	
 	@Override

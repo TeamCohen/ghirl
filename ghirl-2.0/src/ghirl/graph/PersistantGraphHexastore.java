@@ -15,14 +15,16 @@ import org.apache.log4j.Logger;
 
 public class PersistantGraphHexastore extends PersistantGraph {
 	private static final Logger logger = Logger.getLogger(PersistantGraphHexastore.class);
+	/** This string is appended to the fileStem to create the named location where PersistantGraphHexastore stores its data. **/
+	public static final String FILECODE="_hexastore";
 	IGraphStore hs;  // the interface to the C code
 	boolean canWrite;
 	
-	public PersistantGraphHexastore(String dbName,char mode)
+	public PersistantGraphHexastore(String fileStem,char mode)
 	{ 
 		canWrite=true;
-		if (dbName.equals(""))
-			hs = new Memstore(dbName);
+		if (fileStem.equals(""))
+			hs = new Memstore(fileStem);
 		else {
 			// Hexastore uses two different index files which start with the 
 			// provided name.  For compliance with TextGraph's method of
@@ -31,14 +33,13 @@ public class PersistantGraphHexastore extends PersistantGraph {
 
 			String basedir = Config.getProperty("ghirl.dbDir");
 			if (basedir == null) throw new IllegalArgumentException("The property ghirl.dbDir must be defined!");
-			String dbpath = basedir + File.separatorChar + dbName;
+			String dbpath = basedir + File.separatorChar + fileStem + FILECODE;
 			File enclosing = new File(dbpath);
 			if (!enclosing.exists()) {
-				logger.warn("Hexastore directory \""+dbpath+"\" not present -- creating...");
+				logger.info("Hexastore directory \""+dbpath+"\" not present -- creating...");
 				enclosing.mkdir();
 			}
-			String[] parts = dbpath.split(File.separator);
-			hs = new Hexastore(dbpath+File.separatorChar+parts[parts.length-1],mode);
+			hs = new Hexastore(dbpath+File.separatorChar+fileStem,mode);
 		}
 		if ('r'==mode) {
 			canWrite = false;

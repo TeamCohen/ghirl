@@ -1,0 +1,2 @@
+TextGraph tgraph = new TextGraph("psctcg", new PersistantSparseCompactGraphTC("psctcg_db",'a'));
+return tgraph;

@@ -1,11 +1,14 @@
 package ghirl.test.verify;
 
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.TreeSet;
 
 import ghirl.graph.Closable;
 import ghirl.graph.CompactGraph;
@@ -13,7 +16,7 @@ import ghirl.graph.Graph;
 import ghirl.graph.GraphFactory;
 import ghirl.graph.GraphId;
 import ghirl.graph.MutableGraph;
-import ghirl.graph.PersistantSparseCompactGraphTC;
+import ghirl.graph.PersistantCompactTokyoGraph;
 import ghirl.graph.SparseCompactGraph;
 import ghirl.graph.TextGraph;
 import ghirl.test.GoldStandard;
@@ -27,9 +30,11 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
+
+import tokyocabinet.Util;
 import static org.junit.Assert.*;
 
-public class TestPersistantSparseCompactGraph {
+public class TestPersistantCompactTokyoGraph {
 	protected static String DBNAME = "testPersistantSparseCompactGraph";
 	protected static String TESTROOT = "tests";
 	protected static String COMPACTSRC = "tests/TestCompactTextGraph";
@@ -80,8 +85,8 @@ public class TestPersistantSparseCompactGraph {
 		Set<String> s = graph.getEdgeLabels(g);
 		
 		Distribution d = graph.walk1(g);
-		
 	}
+	
 	
 	public static Graph load() throws Exception {
 		Logger.getRootLogger().setLevel(Level.INFO);
@@ -96,7 +101,7 @@ public class TestPersistantSparseCompactGraph {
 		walk = new File(COMPACTSRC+File.separator+"graphRow.pct");
 		size = new File(COMPACTSRC+File.separator+"graphSize.pct");
 		
-		PersistantSparseCompactGraphTC cgraph = new PersistantSparseCompactGraphTC(DBNAME,'w');
+		PersistantCompactTokyoGraph cgraph = new PersistantCompactTokyoGraph(DBNAME,'w');
 		cgraph.load(size, link, node, walk);
 		graph = new TextGraph(DBNAME, cgraph);
 		return graph;

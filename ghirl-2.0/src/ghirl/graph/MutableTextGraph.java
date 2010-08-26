@@ -108,6 +108,7 @@ public class MutableTextGraph extends TextGraph implements MutableGraph {
 	 */
 	public MutableTextGraph(String fileStem, char mode, MutableGraph graph) throws IOException
 	{
+		this.fileStem = fileStem;
 		this.innerGraph = graph;
 		
 		setupLuceneSettings(fileStem);
@@ -119,7 +120,7 @@ public class MutableTextGraph extends TextGraph implements MutableGraph {
 		
 //		 open the db, optionally clearing beforehand
 		if ('w'==mode) {
-			//FilesystemUtil.rm_r(new File(dbFileName));
+			// TODO: tell inner graph to nuke itself?
 			FilesystemUtil.rm_r(new File(indexFileName));
 		}
 		setupInnerGraph(mode, MutableGraph.class);
@@ -142,7 +143,7 @@ public class MutableTextGraph extends TextGraph implements MutableGraph {
 	 */
 	public MutableTextGraph()
 	{
-		indexFileName = dbFileName = null;
+		indexFileName = null;
 		innerGraph = new BasicGraph();
 		this.basedirFile = new File(Config.getProperty(Config.DBDIR,""));
 		try {

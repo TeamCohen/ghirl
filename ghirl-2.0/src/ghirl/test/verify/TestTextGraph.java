@@ -170,25 +170,24 @@ public class TestTextGraph { //extends BasicGraphTest {
 		checkNumbers("written:");
 		
 		PersistantGraph innerGraph;
-		String innerGraphName = DBNAME+"_db";
 		
 		// check they're still there in a TextGraph (basic way to read a graph)
 		((Closable)graph).close();
-		innerGraph = new PersistantGraphSleepycat(innerGraphName,'r');
+		innerGraph = new PersistantGraphSleepycat(DBNAME,'r');
 		innerGraph.loadCache();
 		graph = new TextGraph(DBNAME, innerGraph);
 		checkNumbers("remaining after close and reopen:");
 		
 		// check they're still there in a read-only Mutable
 		((Closable)graph).close();
-		innerGraph = new PersistantGraphSleepycat(innerGraphName,'r');
+		innerGraph = new PersistantGraphSleepycat(DBNAME,'r');
 		innerGraph.loadCache();
 		graph = new MutableTextGraph(DBNAME,'r', innerGraph);
 		checkNumbers("remaining after close and reopen:");
 		
 		// check they're still there in an appendable Mutable
 		((Closable)graph).close();
-		innerGraph = new PersistantGraphSleepycat(innerGraphName,'a');
+		innerGraph = new PersistantGraphSleepycat(DBNAME,'a');
 		innerGraph.loadCache();
 		graph = new MutableTextGraph(DBNAME,'a', innerGraph);
 		checkNumbers("remaining after close and reopen:");
@@ -246,10 +245,9 @@ public class TestTextGraph { //extends BasicGraphTest {
 		assertEquals(N_EDGE_LABELS,i);
 
 		PersistantGraph innerGraph;
-		String innerGraphName = DBNAME+"_db";
 		
 		((Closable)graph).close();
-		innerGraph = new PersistantGraphSleepycat(innerGraphName,'a');
+		innerGraph = new PersistantGraphSleepycat(DBNAME,'a');
 		innerGraph.loadCache();
 		graph = new TextGraph(DBNAME, innerGraph);
 		for (GraphId id: graph.getOrderedIds()) {

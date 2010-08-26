@@ -7,8 +7,11 @@ import ghirl.persistance.TokyoValueIterator;
 import ghirl.util.CompactTCDistribution;
 import ghirl.util.Config;
 import ghirl.util.Distribution;
+import ghirl.util.SerializationUtil;
 import ghirl.util.TreeDistribution;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -27,8 +30,10 @@ import tokyocabinet.Util;
 
 import org.apache.log4j.Logger;
 
-public class PersistantSparseCompactGraphTC implements Graph, Closable {
-	private static final Logger logger = Logger.getLogger(PersistantSparseCompactGraphTC.class);
+public class PersistantCompactTokyoGraph implements Graph, Closable {
+	private static final Logger logger = Logger.getLogger(PersistantCompactTokyoGraph.class);
+	/** This string is appended to the fileStem to create the named location where PersistantCompactTokyoGraph stores its data. **/
+	public static final String FILECODE="_compactTokyo";
 	protected static final String
 		NAME_GRAPHIDS="_nodes",
 		NAME_IDGRAPHS="_nodeids",
@@ -36,6 +41,7 @@ public class PersistantSparseCompactGraphTC implements Graph, Closable {
 		NAME_LABELLINKS="_linkids",
 		NAME_WALKLINKS="_walklinks",
 		NAME_WALKINFO="_walkinfo";
+	protected static final int BYTES_PER_INT=4;
 	
 	/** Maps nodeid:int -> flavor$shortName:String */
 	protected BDB node_id2string;
@@ -53,13 +59,14 @@ public class PersistantSparseCompactGraphTC implements Graph, Closable {
 	protected TokyoCabinetPersistance tc;
 	protected List<BDB> dbs = new ArrayList<BDB>(); 
 	
-	public PersistantSparseCompactGraphTC(String name, char mode) 
+	public PersistantCompactTokyoGraph(String fileStem, char mode) 
 	throws IOException {
 		this.tc = new TokyoCabinetPersistance();
 		tc.mode = mode;
 		String fqpath = Config.getProperty(Config.DBDIR)
 			+ File.separator
-			+ name
+			+ fileStem
+			+ FILECODE
 			+ File.separator;
 		File dbdir = new File(fqpath);
 		if (!dbdir.exists()) dbdir.mkdir();
@@ -138,6 +145,7 @@ public class PersistantSparseCompactGraphTC implements Graph, Closable {
 		putWalkLinks(srcId, links);
 		wpc.finished();
 		walkIn.close();
+		tc.freeze(dbs);
 		logger.info("Finished loading compact graph.");
 	}
 	
@@ -159,12 +167,25 @@ public class PersistantSparseCompactGraphTC implements Graph, Closable {
 			for (int i : linkIds) sb.append("\n\t"+i);
 			logger.debug(sb.toString());
 		}
-		this.walkLinks.put(Util.packint(nodeid), Util.serialize(linkIds));
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		int length = linkIds.size();
+		SerializationUtil.serializeInt(length, baos, BYTES_PER_INT);
+		for(int i : linkIds) {
+			SerializationUtil.serializeInt(i, baos, BYTES_PER_INT);
+		}
+		try { baos.close(); } catch (IOException e) {
+			logger.error("Trouble closing byte array stream for writing walk links:",e);
+		}
+		this.walkLinks.put(Util.packint(nodeid), baos.toByteArray());
 	}
 	protected Set<Integer> getStoredWalkLinks(int nodeid) {
 		byte[] result = this.walkLinks.get(Util.packint(nodeid));
 		if (result == null) return Collections.EMPTY_SET;
-		Set<Integer> s = (Set<Integer>) Util.deserialize(result);
+		ByteArrayInputStream bais = new ByteArrayInputStream(result);
+		int length = SerializationUtil.deserializeInt(bais, BYTES_PER_INT);
+		Set<Integer> s = new TreeSet<Integer>();
+		for(int i=0; i<length; i++) 
+			s.add(SerializationUtil.deserializeInt(bais, BYTES_PER_INT));
 		if (logger.isDebugEnabled()) {
 			StringBuilder sb = new StringBuilder("Got links for "+nodeid+":");
 			for (int i : s) sb.append("\n\t"+i);

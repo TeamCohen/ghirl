@@ -22,6 +22,8 @@ import tokyocabinet.BDBCUR;
 
 public class PersistantGraphTokyoCabinet extends PersistantGraph {
 	private static final Logger logger = Logger.getLogger(PersistantGraphTokyoCabinet.class);
+	/** This string is appended to the fileStem to create the named location where PersistantGraphTokyoCabinet stores its data. **/
+	public static final String FILECODE="_tokyo";
 	
 	protected BDB nodeNames;
 	protected BDB nodeProps;
@@ -36,15 +38,19 @@ public class PersistantGraphTokyoCabinet extends PersistantGraph {
 		NAME_NODEEDGES = "_edges";
 		
 	
-	public PersistantGraphTokyoCabinet(String dbName,char mode) throws IOException {
+	public PersistantGraphTokyoCabinet(String fileStem,char mode) throws IOException {
 		this.tc = new TokyoCabinetPersistance(logger);
 		this.tc.mode= mode;
 		String fqpath = Config.getProperty(Config.DBDIR)
 		+ File.separator
-		+ dbName
+		+ fileStem
+		+ FILECODE
 		+ File.separator;
 		File dbdir = new File(fqpath);
-		if (!dbdir.exists()) dbdir.mkdir();
+		if (!dbdir.exists()) {
+			if( mode != 'r') dbdir.mkdir();
+			else throw new FileNotFoundException("File "+fqpath+" must already exist.");
+		}
 		int imode = tc.MODES.get(mode);
 		dbs = new ArrayList<BDB>();
 		nodeNames = tc.initDB(fqpath+NAME_NODENAMES, imode); dbs.add(nodeNames);

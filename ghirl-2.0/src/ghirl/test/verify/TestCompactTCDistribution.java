@@ -7,6 +7,7 @@ import java.io.IOException;
 
 import ghirl.test.GoldStandard;
 import ghirl.util.CompactTCDistribution;
+import ghirl.util.SerializationUtil;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -42,10 +43,10 @@ public class TestCompactTCDistribution {
 	
 	public class TestableCompactTCDistribution extends CompactTCDistribution {
 		public void serializeInt(int allbits, ByteArrayOutputStream baos, int bytesPerInt) {
-			super.serializeInt(allbits, baos, bytesPerInt);
+			SerializationUtil.serializeInt(allbits, baos, bytesPerInt);
 		}
 		public int deserializeInt(ByteArrayInputStream bais, int bytesPerInt) {
-			return super.deserializeInt(bais, bytesPerInt);
+			return SerializationUtil.deserializeInt(bais, bytesPerInt);
 		}
 		public TestableCompactTCDistribution(int[] objectIndex, float[] totalWeightSoFar, BDB graphIds, boolean ordered) {
 			super(objectIndex,totalWeightSoFar,graphIds,ordered);

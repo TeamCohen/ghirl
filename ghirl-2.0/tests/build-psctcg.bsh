@@ -1,0 +1,11 @@
+MutableTextGraph graph = new MutableTextGraph("psctcg",'w',new NullGraph());
+new GraphLoader(graph).load(new File("graph.txt"));
+graph.freeze();
+graph.close();
+PersistantSparseCompactGraphTC cgraph = new PersistantSparseCompactGraphTC("psctcg_db",'w');
+cgraph.load(new File("TestCompactTextGraph/graphSize.pct"),
+	    new File("TestCompactTextGraph/graphLink.pct"),
+	    new File("TestCompactTextGraph/graphNode.pct"),
+	    new File("TestCompactTextGraph/graphRow.pct"));
+TextGraph tgraph = new TextGraph("psctcg",cgraph);
+return tgraph;

@@ -13,14 +13,16 @@ import org.apache.log4j.Logger;
 public class PersistantGraphSleepycat extends PersistantGraph
 {
 	private static final Logger logger = Logger.getLogger(PersistantGraphSleepycat.class);
+	/** This string is appended to the fileStem to create the named location where PersistantGraphSleepycat stores its data. **/
+	public static final String FILECODE="_sleepycat";
 	SleepycatStore persistance;
 
-	public PersistantGraphSleepycat(String dbName,char mode)
+	public PersistantGraphSleepycat(String fileStem,char mode)
 	{ 
 
 		String basedir = Config.getProperty("ghirl.dbDir");
 		if (basedir == null) throw new IllegalArgumentException("The property ghirl.dbDir must be defined!");
-		String dbpath = basedir + File.separatorChar + dbName;
+		String dbpath = basedir + File.separatorChar + fileStem + FILECODE;
 		logger.info("Creating new PersistantGraphSleepycat '"+dbpath+"'");
 		persistance = new SleepycatStore(dbpath, mode);
 		if ('r'==mode) freeze();

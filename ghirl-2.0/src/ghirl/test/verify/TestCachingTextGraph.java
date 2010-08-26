@@ -59,7 +59,7 @@ public class TestCachingTextGraph {
 		loader.load(new File("tests/graph.txt"));
 		loader.getGraph().freeze();
 		((TextGraph)loader.getGraph()).close();
-		PersistantGraph innerGraph = new PersistantGraphSleepycat(DBNAME+"_db",'r');
+		PersistantGraph innerGraph = new PersistantGraphSleepycat(DBNAME,'r');
 		innerGraph.loadCache();
 		graph = new TextGraph(DBNAME, innerGraph);
 		Graph cgraph = new CachingGraph(graph);

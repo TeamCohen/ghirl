@@ -7,7 +7,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.TreeSet;
 
 import ghirl.graph.GraphId;
 import ghirl.persistance.TokyoCabinetPersistance;
@@ -110,4 +112,37 @@ public class TestTcObjectStorage {
 		System.out.println("By hand: "+(end-start)+"\nBy util: "+(uend-ustart));
 	}
 
+
+	@Test
+	public void testBytesSize() throws IOException {
+		TreeSet<Integer> trial = new TreeSet<Integer>();
+		Collections.addAll(trial, 1,4,9,16,25,36,49);
+		byte[] bytes = Util.serialize(trial);
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		int bytesPerInt = Integer.SIZE / Byte.SIZE;
+		for(int i : trial) {
+			for (int k=0; k<bytesPerInt; k++) {
+				int shift = Byte.SIZE * k;
+				baos.write(i >> shift);
+			}
+		} baos.close();
+		byte[] customBytes = baos.toByteArray(); int loc=-1;
+		for(int i=0; i<bytes.length; i++) { byte b = bytes[i];
+			if (b==customBytes[0]) {
+				for (int j=i+1; j<bytes.length; j++) { byte c = bytes[j];
+					if(c==customBytes[1]) {
+						loc=i;
+						i=j=bytes.length; // break out of both loops
+					}
+				}
+			}
+		}
+		assertFalse(loc<0); int j=0;
+		for (int i=loc; i<bytes.length; i++) {
+			StringBuilder sb = new StringBuilder(bytes[i]+" ");
+			if (j<customBytes.length) sb.append("\t<=> ").append((int) customBytes[j++]);
+			System.out.println(sb.toString());
+		}
+	}
+	
 }

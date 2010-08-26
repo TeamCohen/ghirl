@@ -59,7 +59,7 @@ public class TextGraph implements Graph, TextGraphExtensions, Closable
 
 	boolean frozenFlag = false;
 	/** Holds the path of a data file */
-	protected String indexFileName, dbFileName;
+	protected String fileStem, indexFileName;
 	/** Specified by Lucene. */
 	protected IndexReader index = null;
 	/** Specified by Lucene. */
@@ -104,16 +104,16 @@ public class TextGraph implements Graph, TextGraphExtensions, Closable
 				if (graphType.isAssignableFrom(temp))
 					return temp;
 				else
-					log.error("\""+pgraphclassname+"\" doesn't implement MutableGraph and is an invalid selection for "+CONFIG_PERSISTANCE_PROPERTY+". Using default.");
+					log.error("\""+pgraphclassname+"\" doesn't implement "+graphType.getCanonicalName()+" and is an invalid selection for "+CONFIG_PERSISTANCE_PROPERTY+". Using default.");
 			} catch (ClassNotFoundException e1) {
 				log.error("Couldn't get specified "+CONFIG_PERSISTANCE_PROPERTY+" \""+pgraphclassname+"\"; using default");
 				return DEFAULT_PERSISTANTGRAPH;
 			}
 		} else log.info("No ghirl.persistanceClass specified.  Using default...");
-		if (MutableGraph.class.isAssignableFrom(DEFAULT_PERSISTANTGRAPH))
+		if (graphType.isAssignableFrom(DEFAULT_PERSISTANTGRAPH))
 			return DEFAULT_PERSISTANTGRAPH;
-		log.error("Shoot the programmer.  The default PersistanceGraph class must implement MutableGraph.");
-		throw new IllegalStateException("Can't make a PersistanceGraph");
+		log.error("Shoot the programmer.  The default persistance class must implement "+graphType.getCanonicalName()+".");
+		throw new IllegalStateException("Can't make a graph persistance");
 	}
 	
 	/** Create a text graph.  Data must be located under the directory named by
@@ -125,10 +125,9 @@ public class TextGraph implements Graph, TextGraphExtensions, Closable
 	public TextGraph(String fileStem) throws IOException { this(fileStem, null); }
 	
 	public TextGraph(String fileStem, Graph graph) throws IOException {
+		this.fileStem = fileStem;
 		this.innerGraph = graph;
 		setupLuceneSettings(fileStem);
-		if (this.innerGraph == null && !new File(inBaseDir(dbFileName)).exists())
-			throw new FileNotFoundException("Database "+dbFileName+" must exist.");
 		setupInnerGraph('r', Graph.class);
 		setupReadonlyIndex();
 		
@@ -153,18 +152,20 @@ public class TextGraph implements Graph, TextGraphExtensions, Closable
 		}
 
 		indexFileName = inBaseDir(fileStem+"_lucene.index");
-		// Inner databases are polymorphic and automatically place themselves
-		// in the baseDir
-		dbFileName    = fileStem+"_db";
 	}
-	protected void setupInnerGraph(char mode, Class graphType) {
-		if (this.getInnerGraph() != null) return;
+	protected void setupInnerGraph(char mode, Class graphType) throws IOException {
+		if (this.getInnerGraph() != null) {
+			return;
+		}
 		try {
 			Class pgraphclass = configurePersistantGraphClass(graphType); 
 			log.info("Configured "+pgraphclass.getCanonicalName());
 			this.setInnerGraph((Graph) pgraphclass.getConstructor(String.class, char.class)
-						.newInstance(dbFileName,mode));
+						.newInstance(fileStem,mode));
 		} catch (InvocationTargetException e) {
+			if (IOException.class.isAssignableFrom(e.getTargetException().getClass())) {
+				throw (IOException) e.getCause();
+			}
 			log.error("Problem occurred inside innerGraph constructor: ",e);
 		} catch (Exception e) {
 			log.error("Problem getting constructor for innerGraph: ",e);

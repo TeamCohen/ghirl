@@ -34,55 +34,41 @@ public class CompactTCDistribution extends CompactImmutableDistribution implemen
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		int bytesPerInt = Integer.SIZE / Byte.SIZE;
 		baos.write(bytesPerInt);                                                // bytes per int
-		serializeInt(objectIndex.length, baos, bytesPerInt);                    // length of distribution
-		serializeInt(Float.floatToRawIntBits(totalWeight), baos, bytesPerInt);  // total weight of distribution
+		SerializationUtil.serializeInt(objectIndex.length, baos, bytesPerInt);                    // length of distribution
+		SerializationUtil.serializeInt(Float.floatToRawIntBits(totalWeight), baos, bytesPerInt);  // total weight of distribution
 		baos.write(ordered ? 1 : 0);                                            // whether ordered list is also stored
 		for (int i=0; i<objectIndex.length; i++)                                // objectIndex[]
-			serializeInt(objectIndex[i], baos, bytesPerInt);
+			SerializationUtil.serializeInt(objectIndex[i], baos, bytesPerInt);
 		for (int i=0; i<objectIndex.length; i++)                                // totalWeightSoFar[]
-			serializeInt(Float.floatToRawIntBits(totalWeightSoFar[i]), baos, bytesPerInt);
+			SerializationUtil.serializeInt(Float.floatToRawIntBits(totalWeightSoFar[i]), baos, bytesPerInt);
 		if (ordered) {
 			for (int i=0; i<objectIndex.length; i++)                            // orderedIndices[]
-				serializeInt(orderedIndices[i].intValue(), baos, bytesPerInt);
+				SerializationUtil.serializeInt(orderedIndices[i].intValue(), baos, bytesPerInt);
 		}
 		baos.close();
 		return baos.toByteArray();
-	}
-	protected void serializeInt(int allbits, ByteArrayOutputStream baos, int bytesPerInt) {
-		for (int i=0; i<bytesPerInt; i++) {
-			int shift = Byte.SIZE*i;
-			baos.write(allbits >> shift);
-		}
-	}
-	protected int deserializeInt(ByteArrayInputStream bais, int bytesPerInt) {
-		int r, rebits = 0;
-		for (int i=0; i<bytesPerInt && ((r = bais.read()) != -1); i++) {
-			int shift = Byte.SIZE*i;
-			rebits = rebits | (r << shift);
-		}
-		return rebits;
 	}
 	public CompactTCDistribution(byte[] bytes, BDB graphIds) throws IOException {
 		ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
 		int bytesPerInt, length;
 		bytesPerInt = bais.read();
-		length = deserializeInt(bais, bytesPerInt);
-		int totalWeightBits = deserializeInt(bais, bytesPerInt);
+		length = SerializationUtil.deserializeInt(bais, bytesPerInt);
+		int totalWeightBits = SerializationUtil.deserializeInt(bais, bytesPerInt);
 		this.totalWeight = Float.intBitsToFloat(totalWeightBits);
 		this.ordered = bais.read() == 1;
 		this.objectIndex = new int[length];
 		this.totalWeightSoFar = new float[length];
 		for(int i=0; i<length; i++) {
-			objectIndex[i] = deserializeInt(bais, bytesPerInt);
+			objectIndex[i] = SerializationUtil.deserializeInt(bais, bytesPerInt);
 		}
 		for(int i=0; i<length; i++) {
 			totalWeightSoFar[i] = 
-				Float.intBitsToFloat(deserializeInt(bais,bytesPerInt));
+				Float.intBitsToFloat(SerializationUtil.deserializeInt(bais,bytesPerInt));
 		}
 		if (ordered) {
 			this.orderedIndices = new Integer[length];
 			for(int i=0; i<length; i++) {
-				orderedIndices[i] = deserializeInt(bais,bytesPerInt);
+				orderedIndices[i] = SerializationUtil.deserializeInt(bais,bytesPerInt);
 			}
 		}
 		bais.close();
