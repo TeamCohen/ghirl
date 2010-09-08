@@ -79,8 +79,17 @@ public class PersistantCompactTokyoGraph implements Graph, Closable {
 		walkDistributions = tc.initDB(fqpath+NAME_WALKINFO, imode); dbs.add(walkDistributions);
 	}
 	
-	public void load(File sizeFile, File linkFile, File nodeFile, File walkFile) 
-	throws IOException, FileNotFoundException {
+	public void load(String folder)	//File sizeFile, File linkFile, File nodeFile, File walkFile)
+		throws IOException, FileNotFoundException {
+		if (!folder.endsWith(File.separator))
+			folder= folder+ File.separator;
+		
+		File linkFile = new File(folder+"graphLink.pct");
+		File nodeFile = new File(folder+"graphNode.pct");
+		File walkFile = new File(folder+"graphRow.pct");
+		File sizeFile = new File(folder+"graphSize.pct");
+
+		
 		String line;
 		String parts[];
 		

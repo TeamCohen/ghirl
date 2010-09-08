@@ -11,7 +11,7 @@ import edu.cmu.minorthird.util.StringUtil;
 import ghirl.util.*;
 
 /**
- * A persistant version of a graph. 
+ * A persistent version of a graph. 
  * 
  *  Dev note: Currently there is no way to get the ordered edges or nodes without
  *  caching all the desired items into memory first.  This could be problematic for large

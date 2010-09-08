@@ -1,38 +1,30 @@
 package ghirl.test.verify;
 
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.TreeSet;
-
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import ghirl.graph.Closable;
-import ghirl.graph.CompactGraph;
 import ghirl.graph.Graph;
 import ghirl.graph.GraphFactory;
 import ghirl.graph.GraphId;
 import ghirl.graph.MutableGraph;
 import ghirl.graph.PersistantCompactTokyoGraph;
-import ghirl.graph.SparseCompactGraph;
 import ghirl.graph.TextGraph;
 import ghirl.test.GoldStandard;
 import ghirl.util.Config;
 import ghirl.util.Distribution;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.Set;
+
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.AfterClass;
-import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
-
-import tokyocabinet.Util;
-import static org.junit.Assert.*;
 
 public class TestPersistantCompactTokyoGraph {
 	protected static String DBNAME = "testPersistantSparseCompactGraph";
@@ -95,14 +87,9 @@ public class TestPersistantCompactTokyoGraph {
 		((MutableGraph)graph).freeze();
 		((TextGraph)graph).close();
 		
-		File link, node, walk, size;
-		link = new File(COMPACTSRC+File.separator+"graphLink.pct");
-		node = new File(COMPACTSRC+File.separator+"graphNode.pct");
-		walk = new File(COMPACTSRC+File.separator+"graphRow.pct");
-		size = new File(COMPACTSRC+File.separator+"graphSize.pct");
 		
 		PersistantCompactTokyoGraph cgraph = new PersistantCompactTokyoGraph(DBNAME,'w');
-		cgraph.load(size, link, node, walk);
+		cgraph.load(COMPACTSRC);//size, link, node, walk);
 		graph = new TextGraph(DBNAME, cgraph);
 		return graph;
 	}	

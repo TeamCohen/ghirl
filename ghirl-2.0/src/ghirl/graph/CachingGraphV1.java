@@ -1,7 +1,10 @@
 package ghirl.graph;
 
-import java.util.*;
 import ghirl.util.Distribution;
+
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Set;
 
 /** A graph structure that includes a fixed-size, in-memory cache. 
  */

@@ -3,35 +3,25 @@
  */
 package ghirl.test.verify;
 
-import static org.junit.Assert.*;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import ghirl.graph.Closable;
-import ghirl.graph.CommandLineUtil;
 import ghirl.graph.CompactGraph;
 import ghirl.graph.Graph;
 import ghirl.graph.GraphFactory;
 import ghirl.graph.GraphId;
-import ghirl.graph.GraphLoader;
 import ghirl.graph.MutableGraph;
-import ghirl.graph.MutableTextGraph;
-import ghirl.graph.NullGraph;
 import ghirl.graph.TextGraph;
-import ghirl.graph.WeightedTextGraph;
-import ghirl.graph.WeightedWalker;
 import ghirl.test.GoldStandard;
 import ghirl.util.Distribution;
 import ghirl.util.TreeDistribution;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.Set;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;

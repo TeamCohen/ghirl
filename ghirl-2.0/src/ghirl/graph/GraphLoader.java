@@ -136,7 +136,9 @@ public class GraphLoader
 		if ("node".equals(parts[0]) && parts.length>=2) {
 			lookupNode(parts[1],textIdShortCut(parts));
 			return true;
-		} else if ("edge".equals(parts[0]) && parts.length>=4) {
+		} 
+		
+		if ("edge".equals(parts[0]) && parts.length>=4) {
 			// syntax "edge r x y" == "x r y", eg "isa william person"
 			String linkLabel = parts[1];
 			log.debug("Looking up field 1 "+parts[2]);
@@ -147,9 +149,8 @@ public class GraphLoader
 			addEdge(linkLabel, from, to);
 			return true;
 		}
-		else {
-			return false;
-		}
+		
+		return false;
 	}
 	
 	protected void addEdge(String linkLabel, GraphId from, GraphId to) {
