@@ -80,13 +80,13 @@ public class GhirlToCompact {
 																String.valueOf(DEFAULT_ROWS)));
 		safetyfactor_sort = Double.parseDouble(Config.getProperty(PROP_SAFETYFACTOR_SORT,
 																  String.valueOf(DEFAULT_SORT)));
-		System.out.println(String.format("Memory tuning preferences:\n\t" +
+		/*System.out.println(String.format("Memory tuning preferences:\n\t" +
 				"%s = %d (default %d)\n\t" +
 				"%s = %d (default %d)\n\t" +
 				"%s = %f (default %f)\n\t" +
 				PROP_SAFETYFACTOR_NODEARRAY,safetyfactor_nodearray,DEFAULT_NODEARRAY,
 				PROP_SAFETYFACTOR_ROWS,safetyfactor_rows,DEFAULT_ROWS,
-				PROP_SAFETYFACTOR_SORT,safetyfactor_sort,DEFAULT_SORT));
+				PROP_SAFETYFACTOR_SORT,safetyfactor_sort,DEFAULT_SORT));*/
 		Runtime runtime = Runtime.getRuntime();
 		long free = runtime.freeMemory();
 		System.out.println(free+" bytes memory free");
@@ -351,12 +351,45 @@ public class GhirlToCompact {
 		
 		// merge the parts
 		mergeFiles(tmpdir, tmp);
+		System.out.println("sortFile completed");
 	}
 
+	
 	private static int mergeFiles(File tmpdir, File tmp) throws IOException {
 		// grab the first line from each tmpfile
+		System.out.println("tmpdir :"+tmpdir.getPath().toString());
 		File[] tmpfilearray = tmpdir.listFiles();
+		int maxNumFiles = 200000;
+		System.out.println("tmpfilearray.length = "+tmpfilearray.length);
+		File[] mergedfilearray = new File[(int)Math.ceil(tmpfilearray.length/maxNumFiles + 0.5)];
+		
+		int numFilesProcessed = 0;
+		int index = 0;
+		while (numFilesProcessed < tmpfilearray.length) {
+			int endIndex = numFilesProcessed + maxNumFiles;
+			if (endIndex >= tmpfilearray.length) {
+				endIndex = tmpfilearray.length-1;
+			}
+			File[] intermfilearray = new File[endIndex-numFilesProcessed+1];
+			
+			System.arraycopy(tmpfilearray, numFilesProcessed, intermfilearray, 0, endIndex-numFilesProcessed+1);
+			File intermFile = new File(new String("interm_temp"+index));
+			
+			System.out.println("mergeFileSubset(intermfilearray, intermFile) called :"+intermfilearray.length);
+			mergeFileSubset(intermfilearray, intermFile);
+			
+			mergedfilearray[index] = intermFile;
+			index++;
+			numFilesProcessed = endIndex+1;
+		}
+		System.out.println("FINAL mergeFileSubset(intermfilearray, intermFile) called : " + mergedfilearray.length);
+		return mergeFileSubset(mergedfilearray,tmp);
+	}
+	
+	private static int mergeFileSubset(File[] tmpfilearray, File tmpFile) throws IOException {
+		
 		TreeMap<String,BufferedReader> tmpfileReaders = new TreeMap<String,BufferedReader>();
+		
 		int nmerged=0,nout=0;
 		for(File f:tmpfilearray) {
 			BufferedReader reader = new BufferedReader(new FileReader(f));
@@ -366,7 +399,7 @@ public class GhirlToCompact {
 		// now write the lowest string to the sortfile, and increment that reader
 		// drop readers that become empty
 		// stop when we have no more readers
-		FileWriter writer = new FileWriter(tmp);
+		FileWriter writer = new FileWriter(tmpFile);
 		Entry<String,BufferedReader> entry;
 		while ( (entry = tmpfileReaders.pollFirstEntry()) != null) {
 			// note that pollFirstEntry is like pop() -- it removes as well as returns
@@ -376,11 +409,12 @@ public class GhirlToCompact {
 			// refinement appreciated :(
 			nmerged += putNextUnusedLine(tmpfileReaders, entry.getValue());
 		}
+		
 		writer.close();
 		System.out.println(nmerged+" lines merged in "+tmpfilearray.length+" files.\nLines in final file: "+nout);
 		return nout;
 	}
-	
+
 	private static int putNextUnusedLine(Map<String,BufferedReader> readers, BufferedReader reader) throws IOException {
 		int nlines=0;
 		for (boolean done=false; !done;) {
@@ -463,6 +497,7 @@ public class GhirlToCompact {
 			internalSetSize=0;
 		}
 		public void write(File file) throws IOException {
+			this.flush();
 			this.totalSetSize=mergeFiles(this.tmpDir, file);
 		}
 	}
