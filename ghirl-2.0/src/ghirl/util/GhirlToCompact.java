@@ -2,10 +2,17 @@ package ghirl.util;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.EOFException;
 import java.io.File;
+import java.io.FileFilter;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.RandomAccessFile;
 import java.io.Writer;
 import java.util.ArrayList;
@@ -15,6 +22,8 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.Map.Entry;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 import edu.cmu.minorthird.util.ProgressCounter;
 /** 
@@ -27,12 +36,22 @@ import edu.cmu.minorthird.util.ProgressCounter;
 public class GhirlToCompact {
 	public static final String PROP_SAFETYFACTOR_NODEARRAY="ghirl.safetyfactor.nodearray",
 		PROP_SAFETYFACTOR_ROWS="ghirl.safetyfactor.rows",
-		PROP_SAFETYFACTOR_SORT="ghirl.safetyfactor.sort";
-	private static final int DEFAULT_NODEARRAY = 96, DEFAULT_ROWS = 1000;
+		PROP_SAFETYFACTOR_SORT="ghirl.safetyfactor.sort",
+		PROP_SAFETYFACTOR_OPENFILES="ghirl.safetyfactor.openfiles";
+	private static final String PROP_PLAINTEXT_TMPFILES = "ghirl.use-plaintext-tmpfiles";
+	private static final int DEFAULT_NODEARRAY = 96, 
+	                         DEFAULT_ROWS = 1000,
+	                         DEFAULT_OPENFILES = 200000;
 	private static final double DEFAULT_SORT = 0.3;
+	public static final String FILE_EXTENSION_GZIP=".gz";
+	public static final FileFilter isGZIP = new FileFilter() {
+		public boolean accept(File pathname) {
+			return pathname.getName().endsWith(FILE_EXTENSION_GZIP);
+		}};
 	private static int safetyfactor_nodearray; // ~bytes per node
 	private static int safetyfactor_rows; // ~ maximum expected bytes needed per line of tmp
 	private static double safetyfactor_sort;
+	private static boolean debug_tmpfile;
 	private static int SORTBUFFER_SIZE = 500000;
 
 	private static String join(String delim, String ... parts) {
@@ -60,7 +79,7 @@ public class GhirlToCompact {
 	/**
 	 * @param args
 	 */
-	public static void main(String[] args) {
+	public static void main(String ... args) {
 		if (args.length < 6) {
 			System.err.println("Usage:\n" +
 					"sizeFile linkFile nodeFile rowFile tmpFile graphFile1.ghirl [graphFile2.ghirl ...]\n" +
@@ -80,6 +99,7 @@ public class GhirlToCompact {
 																String.valueOf(DEFAULT_ROWS)));
 		safetyfactor_sort = Double.parseDouble(Config.getProperty(PROP_SAFETYFACTOR_SORT,
 																  String.valueOf(DEFAULT_SORT)));
+		debug_tmpfile = Boolean.parseBoolean(Config.getProperty(PROP_PLAINTEXT_TMPFILES, "false"));
 		/*System.out.println(String.format("Memory tuning preferences:\n\t" +
 				"%s = %d (default %d)\n\t" +
 				"%s = %d (default %d)\n\t" +
@@ -100,7 +120,12 @@ public class GhirlToCompact {
 		int tmpLines=0;
 
 		try {
-			tmpwriter = new BufferedWriter(new FileWriter(tmp));
+			if (debug_tmpfile) {
+				tmpwriter = new BufferedWriter(new FileWriter(tmp));
+			} else {
+				tmp = new File(tmp.getPath()+FILE_EXTENSION_GZIP);
+				tmpwriter = new GzipWriter(tmp);
+			}
 		} catch (IOException e1) {
 			e1.printStackTrace();
 			System.exit(0);
@@ -236,8 +261,16 @@ public class GhirlToCompact {
 		int destCount=0;
 		int rowLineCount=0;
 		StringBuilder destString=null;
-		BufferedReader tmpreader = new BufferedReader(new FileReader(tmp));
-//		Writer rowwriter = new BufferedWriter(new FileWriter(row));
+		BufferedReader tmpreader = null;
+		try {
+			if (isGZIP.accept(tmp)) {
+				tmpreader = new BufferedReader(new InputStreamReader(new GZIPInputStream(new FileInputStream(tmp))));
+			} else {
+				tmpreader = new BufferedReader(new FileReader(tmp));
+			}
+		} catch (EOFException e) {
+			throw new IllegalStateException("Couldn't open temp file "+tmp.getPath()+" for input",e);
+		}
 		Writer rowwriter = new RandomAccessWriter(raf);
 		ProgressCounter progress = new ProgressCounter("convert temp to row","line");
 		for(String line; (line=tmpreader.readLine()) != null;) {
@@ -293,38 +326,66 @@ public class GhirlToCompact {
 			}
 		}
 		tmpreader.close();
-		rowwriter.write(" "+destCount+destString.toString()+"\n");
+		if (destString != null)
+			rowwriter.write(" "+destCount+destString.toString()+"\n");
+		else
+			System.out.println("WARNING: no rows written. Something wrong?");
 		rowwriter.close();
 	}
 
-	private static void writeChunk(ArrayList<String> chunk, int part, File tmpdir) throws IOException {
+	/**
+	 * 
+	 * @param chunk List of strings in the chunk to be written
+	 * @param part ID of the chunk
+	 * @param tmpdir Directory where the chunk file should reside
+	 * @param tmpFile Temp file that the chunk came out of (useful for detecting zip state)
+	 * @throws IOException
+	 */
+	private static void writeChunk(ArrayList<String> chunk, int part, File tmpdir, File tmpFile) throws IOException {
 		Collections.sort(chunk);
 		if (!tmpdir.exists()) tmpdir.mkdir();
-		FileWriter writer = new FileWriter(new File(tmpdir,String.format("%05d", part)));
+		File chunkfile = new File(tmpdir,String.format("%05d", part));
+		Writer writer = null;
+		if (isGZIP.accept(tmpFile)) {
+			chunkfile = new File(chunkfile.getPath()+FILE_EXTENSION_GZIP);
+			writer = new GzipWriter(chunkfile);
+		} else {
+			writer = new FileWriter(chunkfile);
+		}
 		for (String chunkline : chunk) writer.write(chunkline+"\n");
 		writer.close();
 		chunk.clear();
 		System.gc();
 	}
+	
+	/**
+	 * Sorts the specified file, chunking and merging if necessary.
+	 * @param tmp the file to sort; replaced by the sorted version. If the file is
+	 * too big to sort in memory, chunk files will be written to a directly {tmp.getPath()}+"_parts".
+	 * @throws IOException
+	 */
 	private static void sortFile(File tmp) throws IOException {
 		
 		// first read the file in big chunks, sorting each chunk and then writing to a file.
-		BufferedReader reader = new BufferedReader(new FileReader(tmp));
+		BufferedReader reader = null;
+		if (isGZIP.accept(tmp)) {
+			reader = new BufferedReader(new InputStreamReader(new GZIPInputStream(new FileInputStream(tmp))));
+		} else {
+			reader = new BufferedReader(new FileReader(tmp));
+		}
 		int nlines=0,part=0;
 		File tmpdir = new File(tmp.getPath()+"_parts");
 		if(tmpdir.exists()) FilesystemUtil.rm_r(tmpdir);
 		ArrayList<String> chunk = new ArrayList<String>(SORTBUFFER_SIZE);
-//		ProgressCounter progress = new ProgressCounter("read "+tmp.getName()+" tmpfile","line");
 		try {
-		for (String line; (line = reader.readLine()) != null; nlines++) {
-			if (nlines > SORTBUFFER_SIZE || !maxMemoryOkayPortion(safetyfactor_sort)) {
-				System.out.println("chunk "+(part+1)+": "+nlines+" lines");
-				writeChunk(chunk, part, tmpdir);
-				part++; nlines=0;
+			for (String line; (line = reader.readLine()) != null; nlines++) {
+				if (nlines > SORTBUFFER_SIZE || !maxMemoryOkayPortion(safetyfactor_sort)) {
+					System.out.println("chunk "+(part+1)+": "+nlines+" lines");
+					writeChunk(chunk, part, tmpdir, tmp);
+					part++; nlines=0;
+				}
+				chunk.add(line);
 			}
-			chunk.add(line);
-//			progress.progress();
-		}
 		}catch(OutOfMemoryError e) {
 			System.out.println(Runtime.getRuntime().freeMemory());
 			System.out.println(Runtime.getRuntime().maxMemory());
@@ -336,80 +397,107 @@ public class GhirlToCompact {
 		// nuke the original tmp file
 		FilesystemUtil.rm_r(tmp);
 		
+		// if we only ever used one chunk, write it to the final temp file
 		if (part == 0) {
-			//then everything fit and we're done
 			Collections.sort(chunk);
-			FileWriter writer = new FileWriter(tmp);
+			Writer writer = null;
+			if (isGZIP.accept(tmp)) {
+				writer = new GzipWriter(tmp);
+			} else {
+				writer = new FileWriter(tmp);
+			}
 			for (String chunkline : chunk) writer.write(chunkline+"\n");
 			writer.close();
 			chunk.clear();
 			return;
 		}
 		
-		// otherwise we have to merge chunks
-		writeChunk(chunk, part, tmpdir);
+		// otherwise we have to first write the most recent chunk,
+		writeChunk(chunk, part, tmpdir, tmp);
 		
-		// merge the parts
+		// and then merge all the parts back together
 		mergeFiles(tmpdir, tmp);
 		System.out.println("sortFile completed");
 	}
 
 	
 	private static int mergeFiles(File tmpdir, File tmp) throws IOException {
-		// grab the first line from each tmpfile
+		int maxNumOpenFiles = Integer.parseInt(Config.getProperty(PROP_SAFETYFACTOR_OPENFILES,
+				String.valueOf(DEFAULT_OPENFILES)));
 		System.out.println("tmpdir :"+tmpdir.getPath().toString());
 		File[] tmpfilearray = tmpdir.listFiles();
-		int maxNumFiles = 200000;
-		System.out.println("tmpfilearray.length = "+tmpfilearray.length);
-		File[] mergedfilearray = new File[(int)Math.ceil(tmpfilearray.length/maxNumFiles + 0.5)];
+		
+		// case 1: #tempfiles < max # open files
+		System.out.println("merging "+tmpfilearray.length+" files.");
+		if (tmpfilearray.length <= maxNumOpenFiles) {
+			return mergeFileSubset(tmpfilearray,0,tmpfilearray.length,tmp);
+		}
+		
+		// case 2: two-phase merge
+		File[] mergedfilearray = new File[(int)Math.ceil(tmpfilearray.length/maxNumOpenFiles + 0.5)];
+		System.out.println("using "+mergedfilearray.length+" intermediate files");
 		
 		int numFilesProcessed = 0;
 		int index = 0;
 		while (numFilesProcessed < tmpfilearray.length) {
-			int endIndex = numFilesProcessed + maxNumFiles;
-			if (endIndex >= tmpfilearray.length) {
-				endIndex = tmpfilearray.length-1;
-			}
-			File[] intermfilearray = new File[endIndex-numFilesProcessed+1];
-			
-			System.arraycopy(tmpfilearray, numFilesProcessed, intermfilearray, 0, endIndex-numFilesProcessed+1);
+			/*
+			 * Big change here: Instead of copying around a big array of files, 
+			 * we'll just keep track of the start point (numFilesProcessed)
+			 * and the number of files to process this round (maxFilesOpen or 
+			 * to the end of the file array, whichever comes first).
+			 * Since Java is pass-by-reference, this should reduce complexity,
+			 * be faster, and take up less space. 
+			 */
+			int length = Math.min( maxNumOpenFiles,
+						           tmpfilearray.length - numFilesProcessed); 
 			File intermFile = new File(new String("interm_temp"+index));
 			
-			System.out.println("mergeFileSubset(intermfilearray, intermFile) called :"+intermfilearray.length);
-			mergeFileSubset(intermfilearray, intermFile);
+			System.out.println("merging "+length+" files into "+intermFile.getName());
+			mergeFileSubset(tmpfilearray, numFilesProcessed, length, intermFile);
 			
 			mergedfilearray[index] = intermFile;
 			index++;
-			numFilesProcessed = endIndex+1;
+			numFilesProcessed += length;
 		}
 		System.out.println("FINAL mergeFileSubset(intermfilearray, intermFile) called : " + mergedfilearray.length);
-		return mergeFileSubset(mergedfilearray,tmp);
+		return mergeFileSubset(mergedfilearray,0,mergedfilearray.length,tmp);
 	}
 	
-	private static int mergeFileSubset(File[] tmpfilearray, File tmpFile) throws IOException {
+	private static int mergeFileSubset(File[] tmpfilearray, int start, int length, File tmpFile) throws IOException {
 		
 		TreeMap<String,BufferedReader> tmpfileReaders = new TreeMap<String,BufferedReader>();
 		
+		// fill the collection of readers
 		int nmerged=0,nout=0;
 		for(File f:tmpfilearray) {
-			BufferedReader reader = new BufferedReader(new FileReader(f));
+			BufferedReader reader = null;
+			if (isGZIP.accept(f)) {
+				reader = new BufferedReader(new InputStreamReader(new GZIPInputStream(new FileInputStream(f))));
+			} else {
+				reader = new BufferedReader(new FileReader(f));
+			}
+			// increment this reader to the first line we haven't seen yet,
+			// and add the reader to our collection
 			nmerged += putNextUnusedLine(tmpfileReaders, reader);
 		}
 		System.out.println("Using "+tmpfileReaders.size()+" of "+tmpfilearray.length+" files.");
+		
 		// now write the lowest string to the sortfile, and increment that reader
 		// drop readers that become empty
 		// stop when we have no more readers
-		FileWriter writer = new FileWriter(tmpFile);
+		Writer writer = null;
+		if (isGZIP.accept(tmpFile)) {
+			writer = new GzipWriter(tmpFile);
+		} else {
+			writer = new FileWriter(tmpFile);
+		}
 		Entry<String,BufferedReader> entry;
 		while ( (entry = tmpfileReaders.pollFirstEntry()) != null) {
 			// note that pollFirstEntry is like pop() -- it removes as well as returns
 			writer.write(entry.getKey()+"\n");
 			nout++;
-			// this is gross because it has two different end conditions.
-			// refinement appreciated :(
 			nmerged += putNextUnusedLine(tmpfileReaders, entry.getValue());
 		}
-		
 		writer.close();
 		System.out.println(nmerged+" lines merged in "+tmpfilearray.length+" files.\nLines in final file: "+nout);
 		return nout;
@@ -417,6 +505,9 @@ public class GhirlToCompact {
 
 	private static int putNextUnusedLine(Map<String,BufferedReader> readers, BufferedReader reader) throws IOException {
 		int nlines=0;
+		// increment this reader until we find a line we haven't seen yet,
+		// then add the reader to the collection.
+		// close the reader if it runs out of lines before we find one.
 		for (boolean done=false; !done;) {
 			String line = reader.readLine(); 
 			if (line != null) { nlines++;
@@ -438,6 +529,38 @@ public class GhirlToCompact {
 		return "$"+nodename;
 	}
 
+	/** 
+	 * Encapsulates a GZIPOutputStream in a Writer-type object. Hides
+	 * the additional GZIP-related tasks during close(), to make a GZIP writer
+	 * behave like any other writer.
+	 * @author katie
+	 *
+	 */
+	public static class GzipWriter extends Writer {
+		GZIPOutputStream zipper;
+		BufferedWriter writer;
+		public GzipWriter(File f) throws FileNotFoundException, IOException {
+			zipper = new GZIPOutputStream(new FileOutputStream(f));
+			writer = new BufferedWriter(new OutputStreamWriter(zipper));
+		}
+		@Override
+		public void close() throws IOException {
+			writer.flush();
+			zipper.finish();
+			writer.close();
+		}
+
+		@Override
+		public void flush() throws IOException { writer.flush(); }
+
+		@Override
+		public void write(char[] cbuf, int off, int len) throws IOException {}
+		
+		@Override
+		public void write(String s) throws IOException {
+			writer.write(s);
+		}
+	}
 
 	public static class RandomAccessWriter extends Writer {
 		RandomAccessFile raf;
@@ -498,7 +621,8 @@ public class GhirlToCompact {
 		}
 		public void write(File file) throws IOException {
 			this.flush();
-			this.totalSetSize=mergeFiles(this.tmpDir, file);
+			int N=mergeFiles(this.tmpDir, file);
+			if (N>=0) this.totalSetSize = N;
 		}
 	}
 }
