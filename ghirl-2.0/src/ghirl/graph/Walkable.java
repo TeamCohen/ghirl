@@ -29,6 +29,18 @@ public interface Walkable
      * originating from this node, for the linklabel. */
     public Distribution walk1(GraphId from,String linkLabel);
 
+    /** want a more efficient interface 
+     * Usually I prefer abstract class then interface
+     * since I can implement a default behavior for all the subclasses.
+     * Decide not to touch this now --Ni*/
+   // public Distribution walk1(int from,int linkLabel);
+    
+    /*@Override public abstract  Distribution walk1(int from,int linkLabel){
+    	FSystem.die("not implemented yet");
+    	return null;
+    }*/
+    
+    
     /** Get a string corresponding to the node's "content". 
      * If there is no such thing, then the shortName of the
      * id should be returned.

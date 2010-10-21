@@ -1,8 +1,14 @@
 package ghirl.util;
 
+import ghirl.PRA.util.TMap.MapID;
 import ghirl.graph.GraphId;
 
-import java.util.*;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Random;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * A probability distribution of objects that can be sampled from.
@@ -261,4 +267,13 @@ public abstract class Distribution implements Iterable
         }
      }
 
+     
+     public MapID toMapID(){
+    	 MapID m=new MapID();
+ 	    for (Iterator i=orderedIterator(); i.hasNext(); ) {
+				GraphId id = (GraphId)i.next();
+				m.put(id.hashCode(), getLastWeight());
+	    }
+ 	    return m;
+     }
 }

@@ -1,16 +1,13 @@
 package ghirl.test.tdd;
 
-import edu.cmu.lti.util.run.StopWatch;
+import ghirl.PRA.util.StopWatch;
 import ghirl.graph.BasicWalker;
 import ghirl.graph.Closable;
 import ghirl.graph.Graph;
-import ghirl.graph.GraphFactory;
 import ghirl.graph.GraphId;
 import ghirl.graph.GraphLoader;
-import ghirl.graph.MutableGraph;
 import ghirl.graph.MutableTextGraph;
 import ghirl.graph.PersistantCompactTokyoGraph;
-import ghirl.graph.TextGraph;
 import ghirl.graph.Walker;
 import ghirl.test.verify.TestTextGraph;
 import ghirl.util.Distribution;
@@ -21,13 +18,13 @@ import java.util.Iterator;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.junit.Test;
 
 public class TestSpeed {
 	protected static final Logger logger= Logger.getLogger(TestTextGraph.class);
 	protected static String DBNAME = "Yeast2";
 	protected static String TESTROOT = "tests";//graph/17-mar-2010
-	protected static String COMPACTSRC = //"tests/TestCompactTextGraph";
+	protected static String COMPACTSRC = 
+		//"tests/TestCompactTextGraph";
 		"/usr0/nlao/code_java/ni/run/yeast2/run/Yeast2_compact";
 
 	public static void setUpLogger() {
@@ -142,7 +139,7 @@ Task loading graph/17-mar-2010/go_info.ghirl: 126272 lines(s) in 18.73 sec
 		}
 		
 		System.out.println("nTest="+nTest);
-		System.out.println("Total time= "+sw.getTime());
+		sw.printElapsedTime();
 		
 		((Closable)g).close();
 		return;
