@@ -36,38 +36,38 @@ import tokyocabinet.BDBCUR;
 import tokyocabinet.Util;
 
 public class PersistantCompactTokyoGraph 
-	implements Graph, Closable, ICompact {
+implements Graph, Closable, ICompact {
 	private static final Logger logger = Logger.getLogger(PersistantCompactTokyoGraph.class);
 	/** This string is appended to the fileStem to create the named location where PersistantCompactTokyoGraph stores its data. **/
 	public static final String FILECODE="_compactTokyo";
 	protected static final String
-		NAME_GRAPHIDS="_nodes",
-		NAME_IDGRAPHS="_nodeids",
-		NAME_LINKLABELS="_links",
-		NAME_LABELLINKS="_linkids",
-		NAME_WALKLINKS="_walklinks",
-		NAME_WALKINFO="_walkinfo";
+	NAME_GRAPHIDS="_nodes",
+	NAME_IDGRAPHS="_nodeids",
+	NAME_LINKLABELS="_links",
+	NAME_LABELLINKS="_linkids",
+	NAME_WALKLINKS="_walklinks",
+	NAME_WALKINFO="_walkinfo";
 	protected static final int BYTES_PER_INT=4;
-	
+
 	/** Maps nodeid:int -> flavor$shortName:String */
 	public BDB node_id2string;
 	/** Maps flavor$shortName:String -> nodeid:int */
 	protected BDB node_string2id;
-	
+
 	/** Maps linkid:int -> String */
 	protected BDB link_id2string;
 	/** Maps link:String -> linkid:int */
 	protected BDB link_string2id;
-	
+
 	/** Maps node:String -> links:Set<String> ?? */
 	protected BDB walkLinks;
 	/** Maps node+link:String -> CompactTCDistribution */
 	protected BDB walkDistributions;
-	
+
 	protected TokyoCabinetPersistance tc;
 	protected List<BDB> dbs = new ArrayList<BDB>(); 
-	
-	
+
+
 	/**
 	 * @param fileStem
 	 * @param mode
@@ -81,8 +81,8 @@ public class PersistantCompactTokyoGraph
 		this.tc = new TokyoCabinetPersistance();
 		tc.mode = mode;
 		String fqpath = Config.getProperty(Config.DBDIR)
-			+ File.separator	+ fileStem	+ FILECODE	+ File.separator;
-		
+		+ File.separator	+ fileStem	+ FILECODE	+ File.separator;
+
 		File dbdir = new File(fqpath);
 		if (!dbdir.exists()) dbdir.mkdir();
 		int imode = tc.MODES.get(mode);
@@ -98,7 +98,7 @@ public class PersistantCompactTokyoGraph
 			//vEdgeLabel=getOrderedEdgeLabels();
 		}
 	}
-	
+
 	//these information are need but not present in Tokyocab
 	//protected String[] vEdgeLabel=null; 
 	protected Set<String> mEdgeLabel=null; 
@@ -106,12 +106,12 @@ public class PersistantCompactTokyoGraph
 	protected void cacheLabelMap(){
 		//String vLabel[]= getOrderedEdgeLabels();
 		//System.out.println("Edge Labels are:\n"+FString.join(vLabel,"\n"));
-		
+
 		VectorS vLabel= getEdgeLabels();
 		System.out.println("Edge Labels are:\n"+vLabel.join(", "));
-		
+
 		mEdgeLabel=new SetS(vLabel);		
-		
+
 		String vEntType[]= getOrderedNodeLabels();
 		//mNodeLabel=new SetS(vEntType);
 		//System.out.println("Node Labels are: "+FString.join(vEntType,", "));
@@ -128,63 +128,67 @@ public class PersistantCompactTokyoGraph
 	 * Summarize the loaded graph
 	 */
 	public void report(){
-    //System.out.println(getSize(node_string2id) +" nodes " 
-    		//+ getSize(this.walkLinks) + " links");
+		//System.out.println(getSize(node_string2id) +" nodes " 
+		//+ getSize(this.walkLinks) + " links");
 
 		//this.dump();
 	}
-  public void dump() {
-  	System.out.println("iterating over graph nodes");
-  	//this.getOrderedEdgeLabels();
-  	int nN=0; int top=10;
-  	int nL=0;
-    for (Iterator i=getNodeIterator(); i.hasNext(); ) {
-	    GraphId id = (GraphId)i.next();
-	    ++nN;
-	    int idx = getNodeIdx(id);
+	public void dump() {
+		System.out.println("iterating over graph nodes");
+		//this.getOrderedEdgeLabels();
+		int nN=0; int top=10;
+		int nL=0;
+		for (Iterator i=getNodeIterator(); i.hasNext(); ) {
+			GraphId id = (GraphId)i.next();
+			++nN;
+			int idx = getNodeIdx(id);
 			if (idx < 0) continue;
 			Set<Integer> linkIds = getStoredWalkLinks(idx);
-	    for (int k: linkIds){
-	    	Distribution d= walk1(idx, k);
-	    	//System.out.println(id+"-->\n"+d);
-	    	nL+=d.size();
-	    }
-    }
-    System.out.println(nN +" nodes " + nL + " links in total");
-    //212,167 nodes 5,561,850 links in total
-    
-    //212,167 graphNode.pct
-    //718,143 graphRow.pct
-    //graphRow.pct: 701,241 lines(s) in 11.01 sec
-    
-    //18 nodes 34 links in total
-    return;
-  }
+			for (int k: linkIds){
+				Distribution d= walk1(idx, k);
+				//System.out.println(id+"-->\n"+d);
+				nL+=d.size();
+			}
+		}
+		System.out.println(nN +" nodes " + nL + " links in total");
+		//212,167 nodes 5,561,850 links in total
 
-	public void load(String folder)	//File sizeFile, File linkFile, File nodeFile, File walkFile)
-		throws IOException, FileNotFoundException {
+		//212,167 graphNode.pct
+		//718,143 graphRow.pct
+		//graphRow.pct: 701,241 lines(s) in 11.01 sec
 
+		//18 nodes 34 links in total
+		return;
+	}
+
+	public void load(String folder) 
+	throws IOException, FileNotFoundException {
 		if (!folder.endsWith(File.separator))
 			folder= folder+ File.separator;
-		
+
 		File linkFile = new File(folder+"graphLink.pct");
 		File nodeFile = new File(folder+"graphNode.pct");
 		File walkFile = new File(folder+"graphRow.pct");
 		File sizeFile = new File(folder+"graphSize.pct");
 
-		
+		load(sizeFile, linkFile, nodeFile, walkFile);
+	}
+
+	public void load(File sizeFile, File linkFile, File nodeFile, File walkFile) 
+	throws IOException, FileNotFoundException {
+
 		String line;
 		String parts[];
-		
+
 		LineNumberReader sizeIn = new LineNumberReader(new FileReader(sizeFile));
 		line = sizeIn.readLine();
 		parts = line.split(" ");
 		int numLinks = StringUtil.atoi(parts[0]);
 		int numNodes = StringUtil.atoi(parts[1]);
 		sizeIn.close();
-		
+
 		logger.info("Creating compact graph on disk with "+numLinks+" links and "+numNodes+" nodes");
-		
+
 		LineNumberReader linkIn = new LineNumberReader(new FileReader(linkFile));
 		int id=0;	putLink("",id); // null link
 		//		int id=-1;
@@ -192,8 +196,8 @@ public class PersistantCompactTokyoGraph
 			putLink(line,++id);
 		}
 		linkIn.close();
-		
-			
+
+
 		ProgressCounter npc = new ProgressCounter("loading "+nodeFile,"lines");
 		LineNumberReader nodeIn = new LineNumberReader(new FileReader(nodeFile));
 		id = 0;
@@ -204,22 +208,22 @@ public class PersistantCompactTokyoGraph
 		}
 		npc.finished();
 		nodeIn.close();
-		
-		
+
+
 		ProgressCounter wpc = new ProgressCounter("loading "+walkFile,"lines");
 		LineNumberReader walkIn = new LineNumberReader(new FileReader(walkFile));
 		Set<Integer> links = null; int lastSrc=-1; int srcId = -2;
 		while((line = walkIn.readLine()) != null) {
 			parts = line.split(" ");
 			srcId = Util.atoi(parts[0]);
-			
+
 			if (srcId != lastSrc) {
 				if (links != null) 
 					putWalkLinks(lastSrc, links);
 				links = new TreeSet<Integer>();
 				lastSrc = srcId;
 			}
-			
+
 			int linkId = Util.atoi(parts[1]); links.add(linkId);
 			int numDest = Util.atoi(parts[2]);
 			int[] destId = new int[numDest];
@@ -234,36 +238,36 @@ public class PersistantCompactTokyoGraph
 				k++;
 			}
 			putStoredDistribution(srcId, linkId, destId, totalWeightSoFar);
-			
+
 			wpc.progress();
 		}
 		putWalkLinks(srcId, links);
 		wpc.finished();
 		walkIn.close();
-		
-			
+
+
 		tc.freeze(dbs);
 		logger.info("Finished loading compact graph.");
-		
+
 		cacheLabelMap();
 		report();
 	}
-	
+
 	protected void putNode(String nodekey, int id) {
 		putIndex(nodekey, id, this.node_id2string, this.node_string2id);
 	}
-	
+
 	protected void putLink(String link, int id) {
 		putIndex(link, id, this.link_id2string, this.link_string2id);
 	}
-	
+
 	protected void putIndex(String key, int id, BDB db2string, BDB db2id) {
 		logger.debug("Adding index "+id+" for "+key);
 		byte[] bid = Util.packint(id), bkey = key.getBytes();
 		db2string.put(bid, bkey);
 		db2id.put(bkey, bid);
 	}
-	
+
 	protected void putWalkLinks(int nodeid, Set<Integer> linkIds) {
 		if (logger.isDebugEnabled()) {
 			StringBuilder sb = new StringBuilder("Adding links to "+nodeid+":");
@@ -281,7 +285,7 @@ public class PersistantCompactTokyoGraph
 		}
 		this.walkLinks.put(Util.packint(nodeid), baos.toByteArray());
 	}
-	
+
 	protected Set<Integer> getStoredWalkLinks(int nodeid) {
 		byte[] result = this.walkLinks.get(Util.packint(nodeid));
 		if (result == null) return Collections.EMPTY_SET;
@@ -297,7 +301,7 @@ public class PersistantCompactTokyoGraph
 		}
 		return s;
 	}
-	
+
 	@Override
 	public boolean contains(GraphId node) {
 		return node_string2id.get(makeKey(node)) != null;
@@ -326,7 +330,7 @@ public class PersistantCompactTokyoGraph
 
 	@Override
 	public Distribution asQueryDistribution(String queryString) {
-        return CommandLineUtil.parseNodeOrNodeSet(queryString,this);
+		return CommandLineUtil.parseNodeOrNodeSet(queryString,this);
 	}
 
 	@Override
@@ -357,7 +361,7 @@ public class PersistantCompactTokyoGraph
 		return result;
 	}
 
-	
+
 	/**this implementation so how does not work with Yeast2 data
 	 * re-implemented in getEdgeLabels()*/
 	@Override
@@ -373,22 +377,22 @@ public class PersistantCompactTokyoGraph
 		}
 		return result;
 	}
-	
+
 	public VectorS getEdgeLabels() {
 		BDBCUR cur = new BDBCUR(link_string2id);
 		cur.first();
 
 		VectorS result = new VectorS(); 
-    String key;String value;
-    while((key = cur.key2()) != null){
-      value = cur.val2();
-      result.add(key);
-      //if(value != null)       System.out.println(key + ":" + value);
-      cur.next();
-    }
+		String key;String value;
+		while((key = cur.key2()) != null){
+			value = cur.val2();
+			result.add(key);
+			//if(value != null)       System.out.println(key + ":" + value);
+			cur.next();
+		}
 
-    
-/*		cur.last();
+
+		/*		cur.last();
 		int nlinks = Util.unpackint(cur.val());
 		cur.first(); cur.next(); // skip the null link
 		String[] result = new String[nlinks];
@@ -398,7 +402,7 @@ public class PersistantCompactTokyoGraph
 		}*/
 		return result;
 	}
-	
+
 	//@Override
 	public String[] getOrderedNodeLabels() {
 		BDBCUR cur = new BDBCUR(node_string2id);
@@ -412,7 +416,7 @@ public class PersistantCompactTokyoGraph
 		}
 		return result;
 	}
-	
+
 	public int[] getOrderedEdgeIDs() {
 		BDBCUR cur = new BDBCUR(link_string2id);
 		cur.last();
@@ -434,19 +438,19 @@ public class PersistantCompactTokyoGraph
 
 	@Override
 	public Distribution walk1(GraphId from) {
-			int fromNodeIndex = getNodeIdx(from);
-				//getStoredIndex(this.node_string2id, makeKey(from));
-			if (fromNodeIndex < 0) return TreeDistribution.EMPTY_DISTRIBUTION;
-			Set<Integer> linkIds = getStoredWalkLinks(fromNodeIndex);
-			Distribution accum = new TreeDistribution();
-			for (int li : linkIds) {
-				Distribution di = getStoredDistribution(fromNodeIndex, li);
-				accum.addAll(di.getTotalWeight(), di);
-			}
-			return accum;
+		int fromNodeIndex = getNodeIdx(from);
+		//getStoredIndex(this.node_string2id, makeKey(from));
+		if (fromNodeIndex < 0) return TreeDistribution.EMPTY_DISTRIBUTION;
+		Set<Integer> linkIds = getStoredWalkLinks(fromNodeIndex);
+		Distribution accum = new TreeDistribution();
+		for (int li : linkIds) {
+			Distribution di = getStoredDistribution(fromNodeIndex, li);
+			accum.addAll(di.getTotalWeight(), di);
+		}
+		return accum;
 	}
-	
-	
+
+
 	protected int getStoredIndex(BDB db, byte[] key) {
 		byte[] result = db.get(key);
 		if (result == null) return -1;
@@ -459,7 +463,7 @@ public class PersistantCompactTokyoGraph
 	}
 	@Override
 	public GraphId getNodeId(String flavor, String shortNodeName) {
-	/*	if (!mNodeLabel.contains(flavor)){
+		/*	if (!mNodeLabel.contains(flavor)){
 			System.err.println("flavor not found. name="+flavor);
 			return null;
 		}*/
@@ -483,44 +487,44 @@ public class PersistantCompactTokyoGraph
 		}
 		return m;
 	}
-  public String getNodeName(int idx){
+	public String getNodeName(int idx){
 		return getStoredString(node_id2string, Util.packint(idx));
-  }
+	}
 	protected String getStoredString(BDB db, byte[] key) {
 		byte[] result = db.get(key);
 		if (result == null) return null;
 		return new String(result);
 	}
-  public String[] getNodeName(Collection<Integer> vi){
-  	String vs[]= new String[vi.size()];
-  	int i=0;
-  	for (Integer idx: vi){
-  		vs[i]=this.getNodeName(idx);
-  		++i;
-  	}
+	public String[] getNodeName(Collection<Integer> vi){
+		String vs[]= new String[vi.size()];
+		int i=0;
+		for (Integer idx: vi){
+			vs[i]=this.getNodeName(idx);
+			++i;
+		}
 		return vs;
-  }
+	}
 
 	@Override
 	public Distribution walk1(GraphId from, String linkLabel) {
-			int fromNodeIndex = getNodeIdx(from);
-			if (fromNodeIndex < 0) return TreeDistribution.EMPTY_DISTRIBUTION;
-			int linkIndex = getStoredIndex(this.link_string2id, linkLabel.getBytes());
-			if (linkIndex < 0) return TreeDistribution.EMPTY_DISTRIBUTION;
-			
-			return getStoredDistribution(fromNodeIndex, linkIndex);
+		int fromNodeIndex = getNodeIdx(from);
+		if (fromNodeIndex < 0) return TreeDistribution.EMPTY_DISTRIBUTION;
+		int linkIndex = getStoredIndex(this.link_string2id, linkLabel.getBytes());
+		if (linkIndex < 0) return TreeDistribution.EMPTY_DISTRIBUTION;
+
+		return getStoredDistribution(fromNodeIndex, linkIndex);
 	}
-	
+
 	@Override public Distribution walk1(int from,int linkLabel){
 		return getStoredDistribution(from, linkLabel);
 	}
-	
-	
-	
+
+
+
 	@Override public SetI walk2(int from,int linkLabel){
 		Distribution d= getStoredDistribution(from, linkLabel);
 		SetI m= new SetI();
-		
+
 		for (Iterator i=d.iterator(); i.hasNext(); ) {
 			GraphId id = (GraphId)i.next();
 			//double w = d.getLastWeight();
@@ -528,8 +532,8 @@ public class PersistantCompactTokyoGraph
 		}
 		return m;
 	}
-	
-/*	@Override public MapID walk2(int from,int linkLabel){
+
+	/*	@Override public MapID walk2(int from,int linkLabel){
 
 		Distribution d=walk1(from, linkLabel);
 		MapID mTrg= new MapID();
@@ -554,18 +558,18 @@ public class PersistantCompactTokyoGraph
 		return mTrg;
 	}*/
 	// TokyoCabinet is totally happy on byte arrays.  No fun.
-	
+
 	protected byte[] makeKey(GraphId node) { return node.toString().getBytes(); }
-	
+
 	// this is probably not so good.
 	// I could just write out both ints in bytes.  That makes me cry inside, but I'd get over it.
 	protected byte[] makeKey(int fromNodeIndex, int linkIndex) {
 		return (fromNodeIndex + "#" + linkIndex).getBytes();
 	}
-	
-	
 
-	
+
+
+
 	protected Distribution getStoredDistribution(int fromNodeIndex, int linkIndex) {
 		return getStoredDistribution(makeKey(fromNodeIndex,linkIndex));
 	}
@@ -581,7 +585,7 @@ public class PersistantCompactTokyoGraph
 		return TreeDistribution.EMPTY_DISTRIBUTION;
 	}
 	protected void putStoredDistribution(int fromNodeIndex, int linkIndex, 
-			                             int[] objectIndex, float[] totalWeightSoFar) {
+			int[] objectIndex, float[] totalWeightSoFar) {
 		if (logger.isDebugEnabled()) {
 			StringBuilder sb = new StringBuilder("Adding distribution for node "+fromNodeIndex+" link "+linkIndex+":");
 			for (int i : objectIndex) sb.append("\n\t"+i);
