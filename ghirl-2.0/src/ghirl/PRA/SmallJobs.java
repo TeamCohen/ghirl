@@ -4,11 +4,12 @@ import ghirl.PRA.schema.ETGraph;
 import ghirl.PRA.schema.ETGraphPathRank;
 import ghirl.PRA.schema.Query;
 import ghirl.PRA.util.FFile;
+import ghirl.PRA.util.FSystem;
 import ghirl.PRA.util.StopWatch;
-import ghirl.PRA.util.TVector.VectorMapID;
+import ghirl.graph.ICompact;
 import ghirl.graph.PersistantCompactTokyoGraph;
+import ghirl.graph.SparseCompactGraph;
 import ghirl.util.Config;
-import ghirl.util.Distribution;
 
 public class SmallJobs {
 	
@@ -33,12 +34,34 @@ public class SmallJobs {
 		"Yeast2";
 		//"testCompactGraph";
 	
+
 	
 	public static void testPCRW()throws Exception{		
 
+		FSystem.printMemoryTime();
+		ICompact graph=getTCGraph();	//getCGraph();
+		FSystem.printMemoryTime();
+		
+		ETGraph net=new ETGraphPathRank("conf",graph);//,"YA-Py.WJ");
+		net.loadPathWeights("model");//fnWeight
+		
+		FFile.mkdirs("result"+net.p.code);
+		
+		//Walker walker= new PathWalker(graph, net);
+    StopWatch sw= new StopWatch();
+		for (Query q : net.loadQuery("scenarios.WJL")){
+			net.predict(q);
+			//System.out.println("nPart="+q.mResult.size());
+		}
+		sw.printElapsedTime();
 
+		
+		return;
+	}
+	
+	public static ICompact getTCGraph()throws Exception{		
+		PersistantCompactTokyoGraph graph;
 		ghirl.util.Config.setProperty(Config.DBDIR, "..");
-		PersistantCompactTokyoGraph graph=null;
 		if (FFile.exist("../"+DB+"_compactTokyo") ){//&& 1==2){
 			graph = new PersistantCompactTokyoGraph(DB,'r');
 		}
@@ -46,47 +69,17 @@ public class SmallJobs {
 			graph = new PersistantCompactTokyoGraph(DB,'w');
 			graph.load("../"+DB);//tests
 		}
-		
-		ETGraph net=new ETGraphPathRank("conf",graph);//,"YA-Py.WJ");
-		net.loadPathWeights("model");//fnWeight
-
-		
-		//Walker walker= new PathWalker(graph, net);
-    StopWatch sw= new StopWatch();
-		for (Query q : net.loadQuery("scenarios.WJL")){
-			net.predict(q);
-		}
-		sw.printElapsedTime();
-
-		
-		//   |entity|=212167 |link|=5561850 
-		
-		//wrong PF
-		//Time Elapsed= 96.5s		nParticl=0.0001	
-		//Time Elapsed= 94.1s		nParticl=0.001		#elements=1,076,830
-		//Time Elapsed= 31.8s	nParticl=0.003	#elements=812,793
-		//Time Elapsed= 9.1s	nParticl=0.01 	elements=342,093
-		
-		/*  ni code		
-		//nPar=0.001	#elements=3399	Time Elapsed= 0.4s
-									#elements=1609	Time Elapsed= 0.1s		
-		
-		//exact				#elements=69495	Time Elapsed= 7.4s
-									#elements=9560	Time Elapsed= 2.5s
-		*/
-		
-		//exact
-		//#elements=1,418,062	Time Elapsed= 97.6s	
-		//#elements=1418062		Time Elapsed= 102.4s
-		/*  ghirl code
-		#nPar=0.001		#elements=37640	Time Elapsed= 2.0s
-		#nPar=0.003		#elements=13837	Time Elapsed= 1.2s
-		#nPar=0.01		#elements=4844	Time Elapsed= 0.7s
-		*/
-		return;
+		return graph;
 	}
-	
-	
+	public static ICompact getCGraph()throws Exception{		
+		SparseCompactGraph graph = new SparseCompactGraph();
+		graph.load("../"+DB);
+		graph.loadMMGraphIdx();
+		return graph;
+		
+
+	}
+
 	public static void main(String args[]) {
 		try{		
 			testPCRW();

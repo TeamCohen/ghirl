@@ -1,11 +1,11 @@
 package ghirl.PRA.schema;
 
-import ghirl.graph.PersistantCompactTokyoGraph;
+import ghirl.graph.ICompact;
 
 
 public class ETGraphPathRank extends ETGraph{
 	private static final long serialVersionUID = 2008042701L; // YYYYMMDD
-	public ETGraphPathRank(String fnConf, PersistantCompactTokyoGraph g){//,String fnSchema){
+	public ETGraphPathRank(String fnConf, ICompact g){//,String fnSchema){
 		super(fnConf,g);//, fnSchema);
 	}
 	@Override public void initWeights(){

@@ -1,6 +1,5 @@
 package ghirl.PRA.schema;
 
-import ghirl.PRA.ICompact;
 import ghirl.PRA.schema.PathTree.PathNode;
 import ghirl.PRA.schema.Schema.EntType;
 import ghirl.PRA.util.CTag;
@@ -19,8 +18,7 @@ import ghirl.PRA.util.TVector.VectorD;
 import ghirl.PRA.util.TVector.VectorI;
 import ghirl.PRA.util.TVector.VectorMapID;
 import ghirl.PRA.util.TVector.VectorS;
-import ghirl.graph.Graph;
-import ghirl.graph.PersistantCompactTokyoGraph;
+import ghirl.graph.ICompact;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -36,10 +34,11 @@ public abstract class ETGraph {
 	//ETGraph schema=null;
 	public Schema schema=null;
 	
-	public PersistantCompactTokyoGraph g;
+	//public PersistantCompactTokyoGraph g;
+	public ICompact g;
 	MapSS mFeatureComments;
 	public Param p;
-	public ETGraph(String fnConf,PersistantCompactTokyoGraph g){
+	public ETGraph(String fnConf,ICompact g){
 		this.g=g;
 		//,String fnSchema){//ERGraph graph){
 		//this.graph= graph;
@@ -82,7 +81,7 @@ public abstract class ETGraph {
 		String vs[]=formular.split("-->");
 
 		/*load source*/
-		String vsQ[]=vs[0].split("\\||,");
+		String vsQ[]=vs[0].split("[\\),]");
 		vSeedET.clear(); vSeedCol.clear();
 		for (int i=0;i<vsQ.length; i+=2){
 			int iCol = Integer.parseInt(vsQ[i]);
@@ -98,7 +97,7 @@ public abstract class ETGraph {
 
 		/*load target*/
 		//String vsT[];
-		vsTarget=vs[1].split("\\||,");
+		vsTarget=vs[1].split("[\\||\\)]");
 		iColTrg=Integer.parseInt(vsTarget[0]);
 		etTrg= schema.getEntType(vsTarget[1]);
 		if (!vET.get(iColTrg).equals(etTrg))			
@@ -265,7 +264,7 @@ public abstract class ETGraph {
 		q.mResult=q.A.weightedSum(vwPath);
 		
 		if (true)//p.bDumpData)
-			dumpData( q,"result/data/"+q.name);
+			dumpData( q, "result"+p.code+"/dump/"+q.name);
 		
 		if (1==0){// basic version
 			//MapSD rlt= q.mResult.subPositive().replaceKey(graph.vEntName);
@@ -274,7 +273,9 @@ public abstract class ETGraph {
 		else{// printing important features
 			//q.mResult=q.mResult.subLargerThan(1e-3);
 			
-			BufferedWriter bw = FFile.bufferedWriter("result/"+q.name);
+			BufferedWriter bw = FFile.bufferedWriter(
+					"result"+p.code+"/"+q.name);
+			
 			for (Integer id:	q.mResult.toVectorKeySortedByValueDesc()){
 				double score= q.mResult.get(id);				
 				//if (score<1e-3) break;
@@ -625,7 +626,7 @@ public abstract class ETGraph {
 		public int maxStep;
 		public int minStep;
 		public String sIgnoredPathes;
-		public String parseRandomWalk(){
+		private String parseRandomWalk(){
 
 			sIgnoredPathes=getString("sIgnoredPathes", null);
 
@@ -696,7 +697,7 @@ public abstract class ETGraph {
 			
 
 			
-			code=taskFile+".L"+ this.maxStep;//"";
+			code=taskFile;//
 			
 			if (bBias)	
 				code+=String.format("b%.0e",scBias);	

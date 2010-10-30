@@ -1,13 +1,29 @@
 package ghirl.graph;
 
-import java.io.*;
-import java.util.*;
+import edu.cmu.minorthird.util.ProgressCounter;
+import edu.cmu.minorthird.util.StringUtil;
+import edu.cmu.minorthird.util.gui.ViewerFrame;
+import ghirl.PRA.util.TMap.MapMapSSI;
+import ghirl.PRA.util.TSet.SetI;
+import ghirl.util.CompactImmutableArrayDistribution;
+import ghirl.util.CompactImmutableDistribution;
+import ghirl.util.Distribution;
+import ghirl.util.TreeDistribution;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.LineNumberReader;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 
 import org.apache.log4j.Logger;
-
-import ghirl.util.*;
-import edu.cmu.minorthird.util.*;
-import edu.cmu.minorthird.util.gui.*;
 
 /** A compact non-text graph that can be loaded
  * from three files:
@@ -30,15 +46,34 @@ import edu.cmu.minorthird.util.gui.*;
  * <li><code>sizeFile</code>: the number of lines in the first two files.</li>
  * </ul>
  */
-public class CompactGraph implements Graph
+public class CompactGraph implements Graph, ICompact
 {
     private static final Logger log = Logger.getLogger(CompactGraph.class);
 
     protected static final Distribution EMPTY_DIST = new TreeDistribution();
 
     /** ordered list of all graph ids */
-    protected GraphId[] graphIds;
-    protected int graphIdIndex(GraphId id) { return safeLookup( graphIds,id,"graphId"); }
+    protected GraphId[] graphIds; 
+    
+    /** efficiently find node idx without sorting the nodes first */
+    protected MapMapSSI mmGraphIdx =null; //label-->name-->idx
+    public void loadMMGraphIdx(){
+    	mmGraphIdx= new MapMapSSI();
+    	int i=0;
+    	for (GraphId id: graphIds){
+    		mmGraphIdx.getC(id.getFlavor())
+    			.put(id.getShortName(), i);
+    			++i;
+    	}
+    }
+    
+    public int getNodeIdx(GraphId id) {
+    	if (mmGraphIdx!=null)
+    		return mmGraphIdx.getC(id.getFlavor())
+    			.getD( id.getShortName(), -1);
+    	else 
+    		return safeLookup( graphIds,id,"graphId"); 
+    }
 
     /** ordered list of all link labels */
     protected String[] linkLabels;
@@ -47,6 +82,20 @@ public class CompactGraph implements Graph
     /** cached walk for potentially every graph id, indexed by graph in */
     protected CompactImmutableDistribution[][] walkInfo;
 
+    
+  	public void load(String folder) 
+  	throws IOException, FileNotFoundException {
+  		if (!folder.endsWith(File.separator))
+  			folder= folder+ File.separator;
+
+  		File linkFile = new File(folder+"graphLink.pct");
+  		File nodeFile = new File(folder+"graphNode.pct");
+  		File walkFile = new File(folder+"graphRow.pct");
+  		File sizeFile = new File(folder+"graphSize.pct");
+
+  		load(sizeFile, linkFile, nodeFile, walkFile);
+  	}
+  	
     public void load(File sizeFileName,File linkFileName,File nodeFileName,File walkFileName)
         throws IOException, FileNotFoundException 
     { 
@@ -155,12 +204,6 @@ public class CompactGraph implements Graph
         return k>=0;
     }
 	
-    public GraphId getNodeId(String flavor,String shortNodeName)
-    {
-        GraphId id = new GraphId(flavor,shortNodeName);
-        int k = Arrays.binarySearch( graphIds, id );
-        return k>=0 ? graphIds[k] : null;
-    }
 
     public Iterator getNodeIterator()
     {
@@ -187,7 +230,7 @@ public class CompactGraph implements Graph
     public Set getEdgeLabels(GraphId from)
     {
         Set accum = new HashSet();
-        int fromIndex = graphIdIndex(from); if (fromIndex<0) return Collections.EMPTY_SET;
+        int fromIndex = getNodeIdx(from); if (fromIndex<0) return Collections.EMPTY_SET;
         for (int i=1; i<linkLabels.length; i++) {
 	    if (getStoredDist(fromIndex,i).size()>0) {
                 accum.add( linkLabels[i] );
@@ -198,7 +241,8 @@ public class CompactGraph implements Graph
 
     public Set followLink(GraphId from,String linkLabel)
     {
-        int fromIndex = graphIdIndex(from); if (fromIndex<0) return Collections.EMPTY_SET;
+        int fromIndex = getNodeIdx(from); 
+        if (fromIndex<0) return Collections.EMPTY_SET;
         int linkIndex = linkLabelIndex(linkLabel); if (linkIndex<0) return Collections.EMPTY_SET;
         Distribution d = getStoredDist(fromIndex,linkIndex);
         Set accum = new HashSet();
@@ -208,23 +252,7 @@ public class CompactGraph implements Graph
         return accum;
     }
 
-    public Distribution walk1(GraphId from,String linkLabel)
-    {
-        int fromIndex = graphIdIndex(from); if (fromIndex<0) return TreeDistribution.EMPTY_DISTRIBUTION;
-        int linkIndex = linkLabelIndex(linkLabel);  if (linkIndex<0) return TreeDistribution.EMPTY_DISTRIBUTION;
-        return getStoredDist( fromIndex, linkIndex );
-    }
 
-    public Distribution walk1(GraphId from)
-    {
-        Distribution accum = new TreeDistribution();
-        int fromIndex = graphIdIndex(from); if (fromIndex<0) return TreeDistribution.EMPTY_DISTRIBUTION;
-        for (int i=0; i<linkLabels.length; i++) {
-	    Distribution d = getStoredDist(fromIndex,i);
-	    if (d.size()>0) accum.addAll( 1.0, d );
-        }
-        return accum;
-    }
 
     public String getProperty(GraphId from,String prop)
     {
@@ -244,6 +272,89 @@ public class CompactGraph implements Graph
     {
         return CommandLineUtil.parseNodeOrNodeSet(queryString,this);
     }
+
+    protected HashMap<GraphId, Integer> mId2Idx=null;
+
+    protected void initId2Idx(){
+    	mId2Idx=new HashMap<GraphId, Integer>(graphIds.length);
+    	for (int i=0;i<graphIds.length; ++i)
+    		mId2Idx.put(graphIds[i], i);    		
+    }
+    
+  /*	@Override public int getNodeIdx(GraphId id){
+  		//if (mId2Idx==null)		initId2Idx();
+  		//return mId2Idx.get(from);
+  		
+      return Arrays.binarySearch( graphIds, id );
+  	}*/
+  	
+  	@Override public GraphId getNodeId(String flavor,String shortNodeName)
+    {
+        GraphId id = new GraphId(flavor,shortNodeName);
+        int k = getNodeIdx(id );
+        return k>=0 ? graphIds[k] : null;
+    }
+
+  	public Integer getNodeIdx( String flavor, String name) {
+  		int id= getNodeIdx(new GraphId(flavor,name));
+  		if (id<0){
+  			System.err.print("cannot find node="+flavor+"$"+name);
+  			return -1;
+  		}
+  		return id;
+  	}
+  	@Override public SetI getNodeIdx( String flavor, String[] vs) {//int iSec
+  		SetI m= new SetI();
+  		for (String name: vs)
+  			m.add(getNodeIdx(flavor, name));  		
+  		return m;
+  	}
+  	@Override public String getNodeName(int idx){
+  		return this.graphIds[idx].toString();
+  	}
+  	@Override public String[] getNodeName(Collection<Integer> vi){
+  		String vs[]= new String[vi.size()];
+  		int i=0;
+  		for (Integer idx: vi){
+  			vs[i]=this.getNodeName(idx);
+  			++i;
+  		}
+  		return vs;
+  	}
+
+    public Distribution walk1(GraphId from,String linkLabel)
+    {
+        int fromIndex = getNodeIdx(from); if (fromIndex<0) return TreeDistribution.EMPTY_DISTRIBUTION;
+        int linkIndex = linkLabelIndex(linkLabel);  if (linkIndex<0) return TreeDistribution.EMPTY_DISTRIBUTION;
+        return getStoredDist( fromIndex, linkIndex );
+    }
+
+    public Distribution walk1(GraphId from)  {
+      Distribution accum = new TreeDistribution();
+      int fromIndex = getNodeIdx(from); 
+      if (fromIndex<0) return TreeDistribution.EMPTY_DISTRIBUTION;
+      
+      for (int i=0; i<linkLabels.length; i++) {
+		    Distribution d = getStoredDist(fromIndex,i);
+		    if (d.size()>0) accum.addAll( 1.0, d );
+	    }
+      return accum;
+    }
+
+  	@Override public Distribution walk1(int from,int linkIndex){
+      return getStoredDist( from, linkIndex );
+  	}
+  	@Override public SetI walk2(int from,int linkLabel){
+  		Distribution d= getStoredDist(from, linkLabel);
+  		SetI m= new SetI();
+
+  		for (Iterator i=d.iterator(); i.hasNext(); ) {
+  			GraphId id = (GraphId)i.next();
+  			//double w = d.getLastWeight();
+  			m.add(getNodeIdx(id));
+  		}
+  		return m;
+  	}
 
     static public void main(String[] args)
         throws IOException, FileNotFoundException 

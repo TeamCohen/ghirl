@@ -1,12 +1,12 @@
 package ghirl.PRA.schema;
 
-import ghirl.PRA.ICompact;
 import ghirl.PRA.schema.Schema.EntType;
 import ghirl.PRA.util.MAP;
 import ghirl.PRA.util.TMap.MapID;
 import ghirl.PRA.util.TSet.SetI;
 import ghirl.PRA.util.TVector.VectorD;
 import ghirl.PRA.util.TVector.VectorMapID;
+import ghirl.graph.ICompact;
 
 import java.io.Serializable;
 

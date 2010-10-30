@@ -900,6 +900,30 @@ public class TMap<K, V>  extends  TreeMap<K, V>
 	}
 
 	
+	
+
+	public static class MapMapSSI extends TMapSX< MapSI>{
+		private static final long serialVersionUID = 2008042701L; // YYYYMMDD
+		public MapMapSSI newInstance(){
+			return new MapMapSSI();
+		}	
+
+		public MapSI newValue(){
+			return new MapSI();
+		}	
+		public MapMapSSI(){
+			super(MapSI.class);
+		}	
+		
+		@Override public MapSI getC(String x){
+			return (MapSI) super.getC(x);
+		}
+	/*	public MapMapSSI plusOn(String k1, String k2, int x){
+			getC(k1).plusOn(k2, x);
+			return this;
+		}*/
+	}
+
 
 	/**
 	 * @author nlao
@@ -1865,52 +1889,8 @@ public class TMap<K, V>  extends  TreeMap<K, V>
 			}
 			return mm;
 		}
-	}/*
-	public static class MapMapIID extends TMapMapXXD<Integer, Integer>{
-		private static final long serialVersionUID = 2008042701L; // YYYYMMDD
-		public MapMapIID newInstance(){
-			return new MapMapIID();
-		}	
-		public Integer newKey(){//needed for primitive classes, silly java
-			return 0;
-		}	
-		public MapID newValue(){
-			return new MapID();
-		}	
-		
-		public MapMapIID(){
-			super(Integer.class, Integer.class);
-		}	
-		//public void plusOn(int i, int j, Double x){		
-		//getC(i).plusOn(j,x);	}		
+	}
 
-		public MapMapIID plusOn(int i, TMapXD<Integer> m){
-			getC(i).plusOn(m);
-			return this;
-		}	
-		public MapMapIID minusOn(int i, TMapXD<Integer> m){
-			getC(i).minusOn(m);
-			return this;
-		}		
-		public MapMapIID plusOn( TMapXD<Integer> m, int j){
-			if (m==null) return this;
-			for ( Map.Entry<Integer, Double> e : m.entrySet() ) {
-				Integer k = e.getKey();
-				Double x = e.getValue();
-				getC(k).plusOn(j,x);
-			}		
-			return this;
-		}			
-		public MapMapIID minusOn( TMapXD<Integer> m, int j){
-			if (m==null) return this;
-			for ( Map.Entry<Integer, Double> e : m.entrySet() ) {
-				Integer k = e.getKey();
-				Double x = e.getValue();
-				getC(k).minusOn(j,x);
-			}		
-			return this;
-		}			
-	}*/
 	public static class MapSS extends TMapSX< String> {
 		private static final long serialVersionUID = 2008042701L; // YYYYMMDD
 		//extends TMap<String, String> {// implements IParseXML {

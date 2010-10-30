@@ -2,7 +2,6 @@ package ghirl.graph;
 
 import edu.cmu.minorthird.util.ProgressCounter;
 import edu.cmu.minorthird.util.StringUtil;
-import ghirl.PRA.ICompact;
 import ghirl.PRA.util.TSet.SetI;
 import ghirl.PRA.util.TSet.SetS;
 import ghirl.PRA.util.TVector.VectorS;
@@ -473,21 +472,16 @@ implements Graph, Closable, ICompact {
 		return null;
 	}
 	public Integer getNodeIdx( String flavor, String name) {
-		// mNodeLabel to be created
-		/*	if (!this.schema.miEntType.containsKey(flavor)){
-				System.err.println("flavor not found. name="+flavor);
-				continue;
-			}*/
 		return getNodeIdx(new GraphId(flavor,name));
 	}
-	public SetI getNodeIdx( String flavor, String[] vs) {//int iSec
+	@Override public SetI getNodeIdx( String flavor, String[] vs) {//int iSec
 		SetI m= new SetI();
 		for (String name: vs){
 			m.add(getNodeIdx(flavor, name));
 		}
 		return m;
 	}
-	public String getNodeName(int idx){
+	@Override public String getNodeName(int idx){
 		return getStoredString(node_id2string, Util.packint(idx));
 	}
 	protected String getStoredString(BDB db, byte[] key) {
@@ -505,22 +499,11 @@ implements Graph, Closable, ICompact {
 		return vs;
 	}
 
-	@Override
-	public Distribution walk1(GraphId from, String linkLabel) {
-		int fromNodeIndex = getNodeIdx(from);
-		if (fromNodeIndex < 0) return TreeDistribution.EMPTY_DISTRIBUTION;
-		int linkIndex = getStoredIndex(this.link_string2id, linkLabel.getBytes());
-		if (linkIndex < 0) return TreeDistribution.EMPTY_DISTRIBUTION;
 
-		return getStoredDistribution(fromNodeIndex, linkIndex);
-	}
 
 	@Override public Distribution walk1(int from,int linkLabel){
 		return getStoredDistribution(from, linkLabel);
 	}
-
-
-
 	@Override public SetI walk2(int from,int linkLabel){
 		Distribution d= getStoredDistribution(from, linkLabel);
 		SetI m= new SetI();
@@ -533,6 +516,15 @@ implements Graph, Closable, ICompact {
 		return m;
 	}
 
+	@Override
+	public Distribution walk1(GraphId from, String linkLabel) {
+		int fromNodeIndex = getNodeIdx(from);
+		if (fromNodeIndex < 0) return TreeDistribution.EMPTY_DISTRIBUTION;
+		int linkIndex = getStoredIndex(this.link_string2id, linkLabel.getBytes());
+		if (linkIndex < 0) return TreeDistribution.EMPTY_DISTRIBUTION;
+
+		return getStoredDistribution(fromNodeIndex, linkIndex);
+	}
 	/*	@Override public MapID walk2(int from,int linkLabel){
 
 		Distribution d=walk1(from, linkLabel);

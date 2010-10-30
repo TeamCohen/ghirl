@@ -1,6 +1,5 @@
 package ghirl.PRA.schema;
 
-import ghirl.PRA.ICompact;
 import ghirl.PRA.schema.ETGraph.ESparsityMode;
 import ghirl.PRA.schema.Schema.EntType;
 import ghirl.PRA.schema.Schema.Relation;
@@ -19,6 +18,7 @@ import ghirl.PRA.util.TVector.VectorI;
 import ghirl.PRA.util.TVector.VectorMapID;
 import ghirl.PRA.util.TVector.VectorS;
 import ghirl.graph.GraphId;
+import ghirl.graph.ICompact;
 import ghirl.util.Distribution;
 
 import java.io.BufferedWriter;

@@ -7,6 +7,7 @@ import ghirl.PRA.util.Counter;
 import ghirl.PRA.util.TMap.MapID;
 import ghirl.PRA.util.TVector.VectorMapID;
 import ghirl.graph.GraphId;
+import ghirl.graph.ICompact;
 import ghirl.graph.Walker;
 import ghirl.util.Distribution;
 

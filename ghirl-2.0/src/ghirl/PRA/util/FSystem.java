@@ -122,14 +122,16 @@ Wed, July 10, '96
 	//numerical time format
 	public static String currentTimeN() {
 		return (new SimpleDateFormat(
-				"yyyyMMdd HHmmss"))//"EEE MMM dd HH:mm:ss zzz yyyy"
+				"yyyy.MMdd.HHmmss"))//"EEE MMM dd HH:mm:ss zzz yyyy"
 			.format(new Date());
 	}
 	public static String currentTime() {
 		return (new Date()).toString();
 	}
 
-
+	public static void printMemoryTime() {
+		System.out.println(currentTime()+"\t"+memoryUsage());
+	}
 	public static String memoryUsage() {
 /*
  		long free = Runtime.getRuntime().freeMemory();
