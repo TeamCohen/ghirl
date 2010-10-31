@@ -1,8 +1,5 @@
 package ghirl.PRA;
 
-import ghirl.PRA.schema.ETGraph;
-import ghirl.PRA.schema.ETGraphPathRank;
-import ghirl.PRA.schema.Query;
 import ghirl.PRA.util.FFile;
 import ghirl.PRA.util.FSystem;
 import ghirl.PRA.util.StopWatch;
@@ -42,7 +39,7 @@ public class SmallJobs {
 		ICompact graph=getTCGraph();	//getCGraph();
 		FSystem.printMemoryTime();
 		
-		ETGraph net=new ETGraphPathRank("conf",graph);//,"YA-Py.WJ");
+		PRAModel net=new ModelPathRank("conf",graph);//,"YA-Py.WJ");
 		net.loadPathWeights("model");//fnWeight
 		
 		FFile.mkdirs("result"+net.p.code);

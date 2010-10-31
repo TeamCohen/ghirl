@@ -1,11 +1,11 @@
-package ghirl.PRA.schema;
+package ghirl.PRA;
 
 import ghirl.graph.ICompact;
 
 
-public class ETGraphPathRank extends ETGraph{
+public class ModelPathRank extends PRAModel{
 	private static final long serialVersionUID = 2008042701L; // YYYYMMDD
-	public ETGraphPathRank(String fnConf, ICompact g){//,String fnSchema){
+	public ModelPathRank(String fnConf, ICompact g){//,String fnSchema){
 		super(fnConf,g);//, fnSchema);
 	}
 	@Override public void initWeights(){

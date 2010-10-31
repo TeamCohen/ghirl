@@ -1,8 +1,8 @@
-package ghirl.PRA.schema;
+package ghirl.PRA;
 
-import ghirl.PRA.schema.ETGraph.ESparsityMode;
-import ghirl.PRA.schema.Schema.EntType;
-import ghirl.PRA.schema.Schema.Relation;
+import ghirl.PRA.PRAModel.ESparsityMode;
+import ghirl.PRA.Schema.EntType;
+import ghirl.PRA.Schema.Relation;
 import ghirl.PRA.util.CTag;
 import ghirl.PRA.util.FString;
 import ghirl.PRA.util.FSystem;
@@ -40,7 +40,7 @@ public class PathTree implements Serializable {
 
 	//public Graph graph;
 
-	private ETGraph net;
+	private PRAModel net;
 	// should we separate RW parameters from net?
 	// it should not be inside PathTree for sure
 	
@@ -52,7 +52,7 @@ public class PathTree implements Serializable {
 */
 	public boolean bReversedPath=false;
 	
-	public PathTree(	ETGraph net,EntType etSrc){
+	public PathTree(	PRAModel net,EntType etSrc){
 		this.etSrc= etSrc;
 		this.etTgt= net.etTrg;
 		this.net= net;

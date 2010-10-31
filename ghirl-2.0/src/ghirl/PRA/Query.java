@@ -1,6 +1,6 @@
-package ghirl.PRA.schema;
+package ghirl.PRA;
 
-import ghirl.PRA.schema.Schema.EntType;
+import ghirl.PRA.Schema.EntType;
 import ghirl.PRA.util.MAP;
 import ghirl.PRA.util.TMap.MapID;
 import ghirl.PRA.util.TSet.SetI;

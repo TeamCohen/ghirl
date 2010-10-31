@@ -1,8 +1,5 @@
 package ghirl.PRA;
 
-import ghirl.PRA.schema.ETGraph;
-import ghirl.PRA.schema.PathTree;
-import ghirl.PRA.schema.Query;
 import ghirl.PRA.util.Counter;
 import ghirl.PRA.util.TMap.MapID;
 import ghirl.PRA.util.TVector.VectorMapID;
@@ -92,9 +89,9 @@ public class PathWalker extends Walker {//implements CommandLineProcessor.Config
 
 
 
-	ETGraph net=null;
+	PRAModel net=null;
 	//public PathWalker(){	}
-	public PathWalker(ICompact g, ETGraph net){
+	public PathWalker(ICompact g, PRAModel net){
 		this.graph=g;
 		this.net=net;	
 

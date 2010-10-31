@@ -1,7 +1,7 @@
-package ghirl.PRA.schema;
+package ghirl.PRA;
 
-import ghirl.PRA.schema.PathTree.PathNode;
-import ghirl.PRA.schema.Schema.EntType;
+import ghirl.PRA.PathTree.PathNode;
+import ghirl.PRA.Schema.EntType;
 import ghirl.PRA.util.CTag;
 import ghirl.PRA.util.Counter;
 import ghirl.PRA.util.FFile;
@@ -27,7 +27,7 @@ import java.io.BufferedWriter;
 /** This is a PRA model
  *  It does not know about ERGraph 
  * */
-public abstract class ETGraph {
+public abstract class PRAModel {
 
 
 	//public ERGraph graph=null;
@@ -38,7 +38,7 @@ public abstract class ETGraph {
 	public ICompact g;
 	MapSS mFeatureComments;
 	public Param p;
-	public ETGraph(String fnConf,ICompact g){
+	public PRAModel(String fnConf,ICompact g){
 		this.g=g;
 		//,String fnSchema){//ERGraph graph){
 		//this.graph= graph;
@@ -502,7 +502,7 @@ public abstract class ETGraph {
 		public String code;	
 		
 		public Param() {
-			super (ETGraph.class);
+			super (PRAModel.class);
 			parse();
 		}
 		

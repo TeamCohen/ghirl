@@ -1,8 +1,8 @@
-package ghirl.PRA.schema;
+package ghirl.PRA;
 
-import ghirl.PRA.schema.PathTree.PathNode;
-import ghirl.PRA.schema.Schema.EntType;
-import ghirl.PRA.schema.Schema.Relation;
+import ghirl.PRA.PathTree.PathNode;
+import ghirl.PRA.Schema.EntType;
+import ghirl.PRA.Schema.Relation;
 import ghirl.PRA.util.TMap.MapID;
 import ghirl.PRA.util.TVector.VectorD;
 import ghirl.PRA.util.TVector.VectorMapID;
@@ -15,9 +15,9 @@ import java.util.Map;
  * @author nlao
  *
  */
-public class ETGraphRelationRank  extends ETGraph{
+public class ModelRelationRank  extends PRAModel{
 	private static final long serialVersionUID = 2008042701L; // YYYYMMDD
-	public ETGraphRelationRank(String fnConf, PersistantCompactTokyoGraph g){//,String fnSchema){
+	public ModelRelationRank(String fnConf, PersistantCompactTokyoGraph g){//,String fnSchema){
 		super(fnConf,g);//, fnSchema);
 	}
 	//public double[] wPath=null; //weights

@@ -1,4 +1,4 @@
-package ghirl.PRA.schema;
+package ghirl.PRA;
 
 import ghirl.PRA.util.CTag;
 import ghirl.PRA.util.TVector;
@@ -212,7 +212,7 @@ public class Schema {
 	// which is read after the construction of ETGraph
 	
 	
-	public void onLoadSchema(ETGraph net){
+	public void onLoadSchema(PRAModel net){
 		for (EntType et: net.vSeedET)
 			addRelation("R"+et.name, etRoot, et);
 		
