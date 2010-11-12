@@ -1384,9 +1384,10 @@ public class TVector<T> extends Vector<T>
   	public TVectorVector(Class c){
   		super( (new TVector<V>(c)).getClass());
   	}
-  	public void setRange(int i, int j, V x) {
-  		get(i).set(j, x);		
-  	}	
+  	// removed nov 12 2010 (nobody calls)
+//  	public void setRange(int i, int j, V x) {
+//  		get(i).set(j, x);		
+//  	}	
   	public V get(int i, int j) {
   		return get(i).get(j);		
   	}	

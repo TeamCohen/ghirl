@@ -43,7 +43,7 @@ import org.apache.log4j.Logger;
  * normalized to sum to one.  In <code>scripts/cvt_graph.pl</code>, this file is referred to
  * as the "row" file.</li>
  *
- * <li><code>sizeFile</code>: the number of lines in the first two files.</li>
+ * <li><code>sizeFile</code>: the number of lines in the linkfile and nodefile, respectively.</li>
  * </ul>
  */
 public class CompactGraph implements Graph, ICompact

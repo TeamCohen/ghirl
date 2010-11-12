@@ -168,18 +168,18 @@ public class TMap<K, V>  extends  TreeMap<K, V>
 				insert(k,x);
 			}
 			return this;
-		}	
-		public TMapVector<K,V> load(Vector<K> vk, Vector<V>  vx){
-			if (vk.size()!= vx.size()){
-				System.err.println("vk.size()!= vx.size()");
-				System.exit(-1);
-			}
-			this.clear();
-			for (int i=0; i<vk.size();++i) {
-				get(vk.get(i)).add(vx.get(i));
-			}
-			return this;
-		}	
+		}
+//		public TMapVector<K,V> load(Vector vk, Vector  vx){
+//			if (vk.size()!= vx.size()){
+//				System.err.println("vk.size()!= vx.size()");
+//				System.exit(-1);
+//			}
+//			this.clear();
+//			for (int i=0; i<vk.size();++i) {
+//				get(vk.get(i)).add(vx.get(i));
+//			}
+//			return this;
+//		}	
 		public TMapVector(TMap<K, V> m){
 			super(m.ck,  (new TVector<V>(m.cv)).getClass());
 			//this.ck = m.ck; 
@@ -1542,12 +1542,12 @@ public class TMap<K, V>  extends  TreeMap<K, V>
 			return (VectorD) super.subV(vi);
 		}
 		
-		public Double inner(Vector< Double> m) {
+		public Double inner(Vector m) {
 			double d=0;
 			for ( Map.Entry<Integer, Double> e : entrySet() ) {
 				Integer k = e.getKey();
 				Double v = e.getValue();
-				d+= v*m.get(k);
+				d+= v*(Double) m.get(k);
 			}
 			return d;
 		}	

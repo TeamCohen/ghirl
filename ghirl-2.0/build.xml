@@ -191,7 +191,7 @@
 			</manifest>
 		</jar>
 	</target>
-	
+	<!-- These targets are for hexastore: -->
 	<target name="jnilibs" depends="bdbstore,memstore"/>
 	
 	<target name="bbdb" depends="init" description="Compile the BB DB components (CPP)">
@@ -223,6 +223,7 @@
 			<arg value="${path.src}/ghirl/persistance/memstore.cc"/>
 		</exec>
 	</target>
+	<!-- end hexastore targets -->
 	
 	<target name="javadoc" depends="init" description="build javadoc API documentation">
 		<delete dir="${path.javadoc}"/>

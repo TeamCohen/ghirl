@@ -36,7 +36,7 @@ public class SmallJobs {
 	public static void testPCRW()throws Exception{		
 
 		FSystem.printMemoryTime();
-		ICompact graph=getTCGraph();	//getCGraph();
+		ICompact graph=getCGraph();	//getCGraph();
 		FSystem.printMemoryTime();
 		
 		PRAModel net=new ModelPathRank("conf",graph);//,"YA-Py.WJ");

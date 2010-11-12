@@ -27,7 +27,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Random;
 
-import sun.swing.SwingUtilities2.Section;
+//import sun.swing.SwingUtilities2.Section;
 
 
 /**
@@ -149,8 +149,8 @@ public class PathTree implements Serializable {
 			n.miRelCount.putAll(p.miRelCount);
 			n.miRelCount.plusOn(r0.id,1);
 		}
-		if (et.id>=0)
-			n.sec= null;//graph.vSect.get(et.id);
+//		if (et.id>=0)
+//			n.sec= null;//graph.vSect.get(et.id);
 		
 		mmvTgtStepPathNames.getC(et.id).getC(n.nStep).add(n.nameS);
 
@@ -345,7 +345,7 @@ public class PathTree implements Serializable {
 		//public TVector<PathNode> vChildren
 			//= new TVector<PathNode>(PathNode.class);
 		public TMapIX<PathNode> mRelChild= new TMapIX<PathNode>(PathNode.class);
-		public Section sec;
+//		public Section sec;
 		public MapID secM= new MapID();
 		public boolean bReachTarget=false;
 		

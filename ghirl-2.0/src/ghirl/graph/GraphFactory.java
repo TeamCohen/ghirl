@@ -99,13 +99,16 @@ public class GraphFactory {
 		options.addOptionAllSets("load", Separator.BLANK, Multiplicity.ZERO_OR_ONE);
 		OptionSet set;
 		if ((set = options.getMatchingSet()) == null || hasBadModeSetting(set)) {
+			StringBuilder optionstring = new StringBuilder();
+			for(String st : args) optionstring.append("\t").append(st).append("\n");
 			throw new IllegalArgumentException(
 					"GraphFactory Usage:"
 					+"\n\t-memorygraph [-load file1,file2,...]"
 					+"\n\t-textgraph graphName {-r|-w|-a} [-load file1,file2,...]"
 					+"\n\t-bshgraph bshFile {-r|-w|-a} [-load file1,file2,...]"
 					+"\n\t-graph graphNameOrBshFile {-r|-w|-a} [-load file1,file2,...]"
-					+"\n\n"+options.getCheckErrors());
+					+"\n\n"+options.getCheckErrors()
+					+"\n\nOn the following options:\n"+optionstring);
 		}
 		
 		if (set.getSetName().equals(GRAPH)) {
