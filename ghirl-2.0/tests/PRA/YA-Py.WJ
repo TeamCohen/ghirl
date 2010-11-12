@@ -1,5 +1,5 @@
 year,year,author,paper
-1,year|2,author-->3,paper|0,_Year
+1)year,2)author-->3)paper|0)_Year
 Yeast2
 Years.db|Abstract.db|GeneAssoc.db|GeneCitation.db|RefSGD.db|Woolford_JL.db*
 Before(year,year)|NoFB|NoBF
@@ -17,6 +17,31 @@ DHead(paper,heading)
 QHead(paper,heading)
 DmHead(paper,heading)
 QmHead(paper,heading)
+####################### comment after here #######################
+/* line #1 */	Columne titles of the scenario file
+/* line #2 */	The task formular: query entity types-->target types|constrains
+	Entity types are preceded by their column IDs (starts from 0) in the scenario file
+	Each constraint is an column id followed by a sequence of relations
+
+/* line #3 */	Name of the database
+/* line #4 */	List of DB files
+/* rest of lines until ###*/ a list of relations
+	with wheir argument entity types, and possible constraints
+	NoFB: no forward-backward application of this relation
+	NoBF: no backward-forward application of this relation
+	NoFF: no consecutive application of this relation
+	NoTwin:there is no twin relation (otherwise one will be created automatically)
+	NoDir:	it is an undirected link
+	+1:	time is shifted by 1
+
+//assume that Rx(XX,t) assigns time t to an entity XX
+//assume relation r(XX,e) is time stamped by time t
+	
+1)year,2)author-->3)paper,0)_Year
+the 1st column in the file
+									the 0th section in the query
+
+
 ####################### comment after here #######################
 Before(y,y)|NoFB|NoBF
 Journal(p,j)|NoFB|NoBF
@@ -46,31 +71,5 @@ RelateTo(gene,gene)|NoTwin
 FAuthor(paper,author)|NoBF
 LAuthor(paper,author)|NoBF
 Aspect(paper,gene,*R)
-
-####################### comment after here #######################
-/* line #1 */	Columne titles of the scenario file
-/* line #2 */	The task formular: query entity types-->target types|constrains
-	Entity types are preceded by their column IDs in the scenario file
-	Each constraint is an column id followed by a sequence of relations
-	the first column in scenario file is not counted
-/* line #3 */	Name of the database
-/* line #4 */	List of DB files
-/* rest of lines until ###*/ a list of relations
-	with wheir argument entity types, and possible constraints
-	NoFB: no forward-backward application of this relation
-	NoBF: no backward-forward application of this relation
-	NoFF: no consecutive application of this relation
-	NoTwin:there is no twin relation (otherwise one will be created automatically)
-	NoDir:	it is an undirected link
-	+1:	time is shifted by 1
-
-//assume that Rx(XX,t) assigns time t to an entity XX
-//assume relation r(XX,e) is time stamped by time t
-	
-1,year|2,author-->0,_Year>Author
-the 1st column in the file
-									the 0th section in the query
-
-
 
 

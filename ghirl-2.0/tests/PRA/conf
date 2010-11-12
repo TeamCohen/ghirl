@@ -126,7 +126,7 @@ maxWidth=0
 nSampling=2000
 
 ###particle filtering
-minParticle=0.001
+minParticle=0.01
 
 ##################DataDriven
 bDataDrivenPath=false
