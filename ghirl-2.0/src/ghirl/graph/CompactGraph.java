@@ -137,7 +137,7 @@ public class CompactGraph implements Graph, ICompact
         LineNumberReader walkIn = new LineNumberReader(new FileReader(walkFileName));
         initWalkInfo(); // template call
         while ((line = walkIn.readLine())!=null) {        
-            parts = line.split(" ");
+            parts = line.split("\\s+");
             int srcId = StringUtil.atoi(parts[0]);
             int linkId = StringUtil.atoi(parts[1]);
             int numDest = StringUtil.atoi(parts[2]);

@@ -23,9 +23,10 @@ the Java bindings for TokyoCabinet externally.  See
 for details.
 
 
-
-Troubleshooting:
-If you are building ghirl2 and seeing this error:
+===============
+Troubleshooting
+===============
+*** If you are building ghirl2 and seeing this error:
 
 > bash-3.2$ ant clean
 > Buildfile: build.xml
@@ -46,3 +47,25 @@ has been stable since November 2006.  Copy the ant-contrib JAR to the lib
 directory of your ant install, or, if using Eclipse, go to your preferences and
  do Ant -> Runtime -> Classpath -> Global Entries, click the "Add External 
 JARs..." button and select the ant-contrib JAR.
+
+*** If you are running the "verify" or other test targets in Eclipse, and you
+get tokyocabinet errors to the tune of "Wrong ELF class" (i.e. it *is* locating
+the tokyocabinet libraries, but it's expecting libraries for a different
+architecture.  This problem only occurs on dual-architecture machines)
+
+(1) Go to Window -> Preferences -> Java -> Installed JREs
+Here you want to check that you have a version of java installed of the same
+architecture as the tokyocabinet libraries. If you used a different java
+to build the tokyocabinet JNI than you normally use in Eclipse, you may have
+to add another JRE to this panel.  Once you have identified which installed
+JRE matches your tokyocabinet libraries, proceed.
+
+(2) Go to Window -> Show View -> Ant
+If it is not already there, add the GHIRL build.xml.  Right click and select
+"Run As -> External Tools Configurations...".  Select the JRE tab. Select
+the JRE that matches your tokyocabinet libraries.  This sets the JRE which is
+used to execute ant, which is the same one that is used to run junit using the
+ant targets.
+
+(3) It should work now; run your target.  If you still get a "Wrong ELF class"
+error, seek additional help.

@@ -1,6 +1,7 @@
 package ghirl.test.tdd;
 
 
+import ghirl.graph.CompactGraph;
 import ghirl.util.Config;
 import ghirl.util.GhirlToCompact;
 
@@ -38,6 +39,20 @@ public class TestGhirlToCompact {
 		if (!testdir.exists()) testdir.mkdir();
 	}
 
+	@Test
+	public void testPipeline() throws IOException {
+		File size = new File(testdir,"size"),
+			 link = new File(testdir,"link"),
+			 node = new File(testdir,"node"),
+		     row  = new File(testdir,"row"),
+		     tmp  = new File(testdir,"tmp"),
+	    	 ghirl= new File("tests/graph.txt");
+		GhirlToCompact.main(size.getPath(),link.getPath(),node.getPath(),row.getPath(),tmp.getPath(),ghirl.getPath());
+		CompactGraph cgraph = new CompactGraph();
+		cgraph.load(size, link, node, row);
+		
+	}
+	
 	@Test
 	public void test() throws IOException {
 		Config.setProperty(GhirlToCompact.PROP_SAFETYFACTOR_OPENFILES, String.valueOf(3)); 

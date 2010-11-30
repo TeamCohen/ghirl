@@ -213,7 +213,7 @@ implements Graph, Closable, ICompact {
 		LineNumberReader walkIn = new LineNumberReader(new FileReader(walkFile));
 		Set<Integer> links = null; int lastSrc=-1; int srcId = -2;
 		while((line = walkIn.readLine()) != null) {
-			parts = line.split(" ");
+			parts = line.split("\\s+");
 			srcId = Util.atoi(parts[0]);
 
 			if (srcId != lastSrc) {

@@ -12,7 +12,7 @@ import java.io.*;
 public class NodeFilter
 {
 
-	private String linkLabel,targetValue;
+	protected String linkLabel,targetValue;
 
 	/** Expression is of the form: linkLabel=target. A node V passed
 	 * the filter if some node matching the target is reachable by an
@@ -38,12 +38,12 @@ public class NodeFilter
 		Set toSet = ".".equals(linkLabel) ? Collections.singleton(id) : graph.followLink( id, linkLabel );
 		for (Iterator j=toSet.iterator(); j.hasNext(); ) {
 			GraphId toId = (GraphId)j.next();
-			if (matchesTarget(toId)) return true;
+			if (matchesTarget(graph,toId)) return true;
 		}
 		return false;
 	}
 
-	private boolean matchesTarget(GraphId toId)
+	protected boolean matchesTarget(Graph graph,GraphId toId)
 	{
 		if ("*".equals(targetValue)) return true;
 		else if (targetValue.startsWith("/") && targetValue.endsWith("/")) {
