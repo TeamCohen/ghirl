@@ -36,6 +36,7 @@ import tokyocabinet.Util;
 
 public class PersistantCompactTokyoGraph 
 implements Graph, Closable, ICompact {
+	protected static final char SPACE_WORDCHAR = '\u0020';
 	private static final Logger logger = Logger.getLogger(PersistantCompactTokyoGraph.class);
 	/** This string is appended to the fileStem to create the named location where PersistantCompactTokyoGraph stores its data. **/
 	public static final String FILECODE="_compactTokyo";
@@ -66,7 +67,8 @@ implements Graph, Closable, ICompact {
 	protected TokyoCabinetPersistance tc;
 	protected List<BDB> dbs = new ArrayList<BDB>(); 
 
-
+	/** For unit tests only **/
+	protected PersistantCompactTokyoGraph() {}
 	/**
 	 * @param fileStem
 	 * @param mode
@@ -213,8 +215,10 @@ implements Graph, Closable, ICompact {
 		LineNumberReader walkIn = new LineNumberReader(new FileReader(walkFile));
 		Set<Integer> links = null; int lastSrc=-1; int srcId = -2;
 		while((line = walkIn.readLine()) != null) {
-			parts = line.split("\\s+");
-			srcId = Util.atoi(parts[0]);
+//			parts = line.split("\\s+");
+//			int cursor = 0;
+			TokenData token = nextToken(line,0); //cursor=token.nextIndex;
+			srcId = Util.atoi(token.token); 
 
 			if (srcId != lastSrc) {
 				if (links != null) 
@@ -223,18 +227,24 @@ implements Graph, Closable, ICompact {
 				lastSrc = srcId;
 			}
 
-			int linkId = Util.atoi(parts[1]); links.add(linkId);
-			int numDest = Util.atoi(parts[2]);
+			token = nextToken(line,token.nextIndex); //cursor = token.nextIndex;
+			int linkId = Util.atoi(token.token); links.add(linkId);
+			token = nextToken(line,token.nextIndex); //cursor = token.nextIndex;
+			int numDest = Util.atoi(token.token);
 			int[] destId = new int[numDest];
 			float[] totalWeightSoFar = new float[numDest];
 			float tw = 0;
 			int k=0;
-			for (int i=3; i<parts.length; i++) {
-				String[] destWeightParts = parts[i].split(":");
-				destId[k] = Util.atoi(destWeightParts[0]);
-				tw += StringUtil.atof(destWeightParts[1]);
+//			for (int i=3; i<parts.length; i++) {
+			token = nextToken(line,token.nextIndex); //cursor = token.nextIndex;
+			while (token != null) {
+				TokenData weightToken = backToken(token.token,':',token.token.length());
+//				String[] destWeightParts = token.token.split(":");
+				destId[k] = Util.atoi(token.token.substring(0,weightToken.nextIndex));
+				tw += StringUtil.atof(weightToken.token);
 				totalWeightSoFar[k] = tw;
 				k++;
+				token = nextToken(line,token.nextIndex);
 			}
 			putStoredDistribution(srcId, linkId, destId, totalWeightSoFar);
 
@@ -250,6 +260,40 @@ implements Graph, Closable, ICompact {
 
 		cacheLabelMap();
 		report();
+	}
+	protected class TokenData {
+		public String token;
+		public int nextIndex;
+		public TokenData(String t, int n) {token=t; nextIndex=n;}
+	}
+	protected TokenData nextToken(String line, int startAt) {
+		int len = line.length();
+		int i=startAt; if (i>=len) return null;
+		StringBuilder sb = new StringBuilder();
+		//1: skip delimiter chars at the head of the string
+		for (;line.charAt(i) <= SPACE_WORDCHAR; i++) if ((i+1)>=len) return null;
+		//2: accumulate chars until we see a delim char
+		for (;i<len;i++) {
+			char c = line.charAt(i);
+			if (c > SPACE_WORDCHAR) sb.append(c);
+			else break;
+		}
+		return new TokenData(sb.toString(),i);
+	}
+	protected TokenData backToken(String line, char delim, int startAt) {
+		int len = line.length();
+		int i=startAt; if (i<=0) return null;
+		if (i>=len) i=len-1;
+		StringBuilder sb = new StringBuilder();
+		//1: skip delimiter chars at the head of the string
+		for (;line.charAt(i) == delim; i--) if ((i-1)<0) return null;
+		//2: accumulate chars until we see a delim char
+		for (;i>=0;i--) {
+			char c = line.charAt(i);
+			if (c != delim) sb.append(c);
+			else break;
+		}
+		return new TokenData(sb.reverse().toString(),i);
 	}
 
 	protected void putNode(String nodekey, int id) {

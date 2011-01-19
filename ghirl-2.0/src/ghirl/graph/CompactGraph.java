@@ -136,24 +136,30 @@ public class CompactGraph implements Graph, ICompact
         ProgressCounter wpc = new ProgressCounter("loading "+walkFileName,"lines");
         LineNumberReader walkIn = new LineNumberReader(new FileReader(walkFileName));
         initWalkInfo(); // template call
-        while ((line = walkIn.readLine())!=null) {        
+        int l=0;
+        while ((line = walkIn.readLine())!=null) {  l++;      
             parts = line.split("\\s+");
-            int srcId = StringUtil.atoi(parts[0]);
-            int linkId = StringUtil.atoi(parts[1]);
-            int numDest = StringUtil.atoi(parts[2]);
-            int[] destId = new int[numDest];
-            float[] totalWeightSoFar = new float[numDest];
-            float tw = (float)0.0;
-            int k = 0;
-            for (int i = 3; i < parts.length; i++) {
-                String[] destWeightParts = parts[i].split(":");
-                destId[k] = StringUtil.atoi(destWeightParts[0]); 
-                tw += StringUtil.atof(destWeightParts[1]);
-                totalWeightSoFar[k] = tw;
-                k++;
+            try {
+	            int srcId = StringUtil.atoi(parts[0]);
+	            int linkId = StringUtil.atoi(parts[1]);
+	            int numDest = StringUtil.atoi(parts[2]);
+	            int[] destId = new int[numDest];
+	            float[] totalWeightSoFar = new float[numDest];
+	            float tw = (float)0.0;
+	            int k = 0;
+	            for (int i = 3; i < parts.length; i++) {
+	                String[] destWeightParts = parts[i].split(":");
+	                destId[k] = StringUtil.atoi(destWeightParts[0]); 
+	                tw += StringUtil.atof(destWeightParts[1]);
+	                totalWeightSoFar[k] = tw;
+	                k++;
+	            }
+	            initWalkInfoCell(srcId,linkId,destId,totalWeightSoFar); // template call
+	            wpc.progress();
+            } catch (IllegalArgumentException e) {
+            	log.error("Improper format for line "+l+": "+line,e);
+            	throw e;
             }
-            initWalkInfoCell(srcId,linkId,destId,totalWeightSoFar); // template call
-            wpc.progress();
         }
         finishWalkInfo(); // template call
         wpc.finished();
