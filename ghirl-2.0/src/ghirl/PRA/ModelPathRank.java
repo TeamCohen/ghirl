@@ -5,8 +5,8 @@ import ghirl.graph.ICompact;
 
 public class ModelPathRank extends PRAModel{
 	private static final long serialVersionUID = 2008042701L; // YYYYMMDD
-	public ModelPathRank(String fnConf, ICompact g){//,String fnSchema){
-		super(fnConf,g);//, fnSchema);
+	public ModelPathRank(String fdPRA , ICompact g){//fnConf){
+		super(fdPRA,g);//, fnSchema);
 	}
 	@Override public void initWeights(){
 		vsFeature.clear();

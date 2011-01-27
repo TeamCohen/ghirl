@@ -17,8 +17,8 @@ import java.util.Map;
  */
 public class ModelRelationRank  extends PRAModel{
 	private static final long serialVersionUID = 2008042701L; // YYYYMMDD
-	public ModelRelationRank(String fnConf, PersistantCompactTokyoGraph g){//,String fnSchema){
-		super(fnConf,g);//, fnSchema);
+	public ModelRelationRank(String fdPRA, PersistantCompactTokyoGraph g){//,String fnSchema){
+		super(fdPRA,g);//, fnConf);
 	}
 	//public double[] wPath=null; //weights
 

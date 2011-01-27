@@ -38,7 +38,7 @@ public abstract class PRAModel {
 	public ICompact g;
 	MapSS mFeatureComments;
 	public Param p;
-	public PRAModel(String fnConf,ICompact g){
+	public PRAModel(String fnConf ,ICompact g){//, String fdPRA
 		this.g=g;
 		//,String fnSchema){//ERGraph graph){
 		//this.graph= graph;
@@ -46,14 +46,16 @@ public abstract class PRAModel {
 		//../
 		mFeatureComments= MapSS.fromFile("mFeatureComments.txt");
 		
-		Param.overwriteFrom(fnConf);
+		System.err.println("Conf file="+fnConf);
+		
+		Param.overwriteFrom(fnConf);//fdPRA+ "conf");//fnConf
 		p=new Param();		
 		
 		schema=new Schema();
 		schema.lenShortName=p.lenShortName;
 		
 		
-		loadTaskFile(p.taskFile);
+		loadTaskFile(FFile.getFilePath(fnConf)+ p.taskFile);//fdPRA+
 		schema.onLoadSchema(this);			/** now schema is ready*/
 		//System.out.println(this);		
 		
@@ -116,7 +118,7 @@ public abstract class PRAModel {
 	public  boolean loadTaskFile(String taskFile) {		
 		System.out.print("loading task="+taskFile);//p.taskFile);
 
-		BufferedReader brTask = FFile.bufferedReaderOrDie(taskFile);
+		BufferedReader brTask = FFile.bfReaderOrDie(taskFile);
 		
 		/* line #1 */	vTitle=FFile.readLine(brTask).split(",");		
 		/* line #2 */	String formular = FFile.readLine(brTask);
@@ -245,7 +247,7 @@ public abstract class PRAModel {
 	public void dumpData( Query q,String fn){
 		System.out.println("dumping Q="+q.name);
 		FFile.mkdirsTrimFile(fn);
-		BufferedWriter bw=FFile.bufferedWriter(fn);		
+		BufferedWriter bw=FFile.bfWriter(fn);		
 		FFile.writeln(bw, q.print(g));
 		
 		for (PathTree tree: this.vPTree)
@@ -262,7 +264,7 @@ public abstract class PRAModel {
 		}
 		
 		q.mResult=q.A.weightedSum(vwPath);
-		
+		/*
 		if (true)//p.bDumpData)
 			dumpData( q, "result"+p.code+"/dump/"+q.name);
 		
@@ -282,16 +284,15 @@ public abstract class PRAModel {
 				
 				MapID m=q.A.getRowM(id).multiply(vwFeature);
 				
-				FFile.write(bw, String.format(
-					"%.1e\t%s\t%s\n", score, g.getNodeName(id)
-					, m.joinE("="," ","%.1e")));
+				FFile.write(bw, String.format(		"%.1e\t%s\t%s\n"
+						, score, g.getNodeName(id)		, m.joinE("="," ","%.1e")));
 			}		
 			FFile.close(bw);
-		}
+		}*/
 	}
 
 	public boolean _loadSchema(String fnSchema) {
-		BufferedReader br = FFile.bufferedReader(fnSchema);
+		BufferedReader br = FFile.bfReader(fnSchema);
 		String line = null;
 		while ((line = FFile.readLine(br)) != null) {
 			if (line.startsWith("#"))
@@ -363,8 +364,7 @@ public abstract class PRAModel {
 
 	
 	public void dumpWeights(String id){
-		BufferedWriter bw=FFile.bufferedWriter(
-				p.code+"/weights"+id);
+		BufferedWriter bw=FFile.bfWriter(		p.code+"/weights"+id);
 		FFile.write(bw,"weight\tfeature\tcomments\n" );//\tAvg.#Signal
 		for (int i=0; i<vsFeature.size();++i){
 			String name=vsFeature.get(i);
@@ -428,7 +428,40 @@ public abstract class PRAModel {
 	}
 	
 	//TODO: this should be moved to Graph (which is currently an interface)
+	//TODO: this should be moved to the ni code base
+	public Query parseQuery(String line){
+		String vs[]= FString.split(line,",");
 
+		VectorMapID vmSeed= new VectorMapID(); 
+		for (int iCol: vSeedCol){
+			String seeds=vs[iCol];
+		
+			EntType ET=vET.get(iCol);
+			//if (ET.equals(net.etTime))	
+				//seeds= (Integer.parseInt(seeds)-1)+"";
+			//shift the time entity back
+			//TODO: (special treatment for time, might be urgly)
+			
+			SetI miEnt= g.getNodeIdx(ET.name, seeds.split(" "));
+			//dist0.get(ET.id).plusOn(miEnt, 1.0/miEnt.size());
+			MapID m= new MapID();
+			for (Integer i: miEnt)
+				m.put(i,1.0/miEnt.size());
+			vmSeed.add(m);
+		}
+		
+		String rels= vs[iColTrg];
+		SetI miRelEnt= g.getNodeIdx(etTrg.name,FString.split(rels," "));
+
+		
+		int time=-1;
+		//if (graph.p.bTimeStamped)
+			//time=Integer.parseInt(vs[p.icQueryTime]);
+		
+		String name=vs[p.icQueryName];
+		Query q= new Query(	time, name, vmSeed, etTrg, miRelEnt);
+		return q;
+	}
 	
 	public TVector<Query> loadQuery(String fn){
 		//TVector<Query>,Graph graph
@@ -437,52 +470,27 @@ public abstract class PRAModel {
 		TVector<Query> vQuery= new TVector<Query>(Query.class);
 		//vQuery.clear();
 		
-		BufferedReader br = FFile.bufferedReader(fn);
+		BufferedReader br = FFile.bfReader(fn);
 		
 		String line = null;	int n=0;
 	
-		VectorI viET=schema.getEntTypeIDs(vTitle);
-		MapIIb miET_Col =(MapIIb)viET.toMapValueId();
+		//VectorI viET=schema.getEntTypeIDs(vTitle);
+		//MapIIb miET_Col =(MapIIb)viET.toMapValueId();
 		
 		int incomplete=0;
 		int tot=0;
 		while ((line = FFile.readLine(br)) != null) {
 			++tot;
-			String vs[]= FString.split(line,",");
-
-			VectorMapID vmSeed= new VectorMapID(); 
-			for (int iCol: vSeedCol){
-				String seeds=vs[iCol];
+			Query q= parseQuery(line);
 			
-				EntType ET=vET.get(iCol);
-				//if (ET.equals(net.etTime))	
-					//seeds= (Integer.parseInt(seeds)-1)+"";
-				//shift the time entity back
-				//TODO: (special treatment for time, might be urgly)
-				
-				SetI miEnt= g.getNodeIdx(ET.name, seeds.split(" "));
-				//dist0.get(ET.id).plusOn(miEnt, 1.0/miEnt.size());
-				MapID m= new MapID();
-				for (Integer i: miEnt)
-					m.put(i,1.0/miEnt.size());
-				vmSeed.add(m);
-			}
-			
-			String rels= vs[iColTrg];
-			SetI miRelEnt= g.getNodeIdx(etTrg.name,FString.split(rels," "));
-			if (miRelEnt.size()==0){
-				++incomplete;		
+			if (q.mRel.size()==0){
 				System.out.println("incomplete scenario=" +line);
+				//return null;	}		if (q==null){
+				++incomplete;		
 				continue;
-			}			
-			
-			int time=-1;
-			//if (graph.p.bTimeStamped)
-				//time=Integer.parseInt(vs[p.icQueryTime]);
-			
-			String name=vs[p.icQueryName];
-			
-			vQuery.add(new Query(	time, name, vmSeed, etTrg, miRelEnt));
+			}
+
+			vQuery.add(q);
 		}		
 		FFile.close(br);
 		System.out.println("done loading |vQuery|="+vQuery.size()+"\n");
@@ -506,10 +514,8 @@ public abstract class PRAModel {
 			parse();
 		}
 		
-		public String taskFile;
 
 
-		
 		public int batchSize;
 		public boolean bEntBias;
 		public boolean bMultiStage;
@@ -683,10 +689,13 @@ public abstract class PRAModel {
 
 		
 
-		
+		public String taskFile;
+		public String dataFolder;
+
 		
 		public void parse(){	
 			taskFile=getString("taskFile", null);
+			dataFolder=getString("dataFolder", null);
 
 			lenShortName=getInt("lenShortName",	2);
 

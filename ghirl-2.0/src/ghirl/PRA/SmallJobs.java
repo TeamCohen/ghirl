@@ -6,7 +6,9 @@ import ghirl.PRA.util.StopWatch;
 import ghirl.graph.ICompact;
 import ghirl.graph.PersistantCompactTokyoGraph;
 import ghirl.graph.SparseCompactGraph;
+import ghirl.util.CompactImmutableArrayDistribution;
 import ghirl.util.Config;
+import ghirl.util.Distribution;
 
 public class SmallJobs {
 	
@@ -31,31 +33,6 @@ public class SmallJobs {
 		"Yeast2";
 		//"testCompactGraph";
 	
-
-	
-	public static void testPCRW()throws Exception{		
-
-		FSystem.printMemoryTime();
-		ICompact graph=getCGraph();	//getCGraph();
-		FSystem.printMemoryTime();
-		
-		PRAModel net=new ModelPathRank("conf",graph);//,"YA-Py.WJ");
-		net.loadPathWeights("model");//fnWeight
-		
-		FFile.mkdirs("result"+net.p.code);
-		
-		//Walker walker= new PathWalker(graph, net);
-    StopWatch sw= new StopWatch();
-		for (Query q : net.loadQuery("scenarios.WJL")){
-			net.predict(q);
-			//System.out.println("nPart="+q.mResult.size());
-		}
-		sw.printElapsedTime();
-
-		
-		return;
-	}
-	
 	public static ICompact getTCGraph()throws Exception{		
 		PersistantCompactTokyoGraph graph;
 		ghirl.util.Config.setProperty(Config.DBDIR, "..");
@@ -77,9 +54,53 @@ public class SmallJobs {
 
 	}
 
+	
+	public static void testPCRW()throws Exception{		
+
+		FSystem.printMemoryTime();
+		ICompact graph=getCGraph();	//getCGraph();
+		FSystem.printMemoryTime();
+		
+		PRAModel net=new ModelPathRank("conf",graph);//,"YA-Py.WJ"./ );
+		net.loadPathWeights("model");//fnWeight
+		
+		FFile.mkdirs("result"+net.p.code);
+		
+		//Walker walker= new PathWalker(graph, net);
+    StopWatch sw= new StopWatch();
+		for (Query q : net.loadQuery("scenarios.WJL")){
+			net.predict(q);
+			//System.out.println("nPart="+q.mResult.size());
+		}
+		sw.printElapsedTime();
+
+		
+		return;
+	}
+	public static void testPrediction()throws Exception{
+		ICompact graph=getCGraph();	//getCGraph();
+		
+		PRAModel net=new ModelPathRank("conf",graph);//,"YA-Py.WJ"./ );
+		net.loadPathWeights("model");//fnWeight
+		
+		
+		//Walker walker= new PathWalker(graph, net);
+		
+		Query q=net.parseQuery("2010,2009,Woolford_JL,");
+		net.predict(q);
+    
+		Distribution d=new 
+			CompactImmutableArrayDistribution(q.mResult, graph);
+		
+		System.out.println("result="+d);
+
+	}
+
 	public static void main(String args[]) {
 		try{		
-			testPCRW();
+			//System.out.print( FFile.getFilePath("/usb2/nlao/software/nies/nies/PRA/"));
+			testPrediction();
+			//testPCRW();
 
 		} catch (Exception ex) {
 			System.err.print(ex);
