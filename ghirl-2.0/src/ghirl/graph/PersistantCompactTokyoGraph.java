@@ -1,10 +1,12 @@
 package ghirl.graph;
 
+import edu.cmu.lti.algorithm.container.MapID;
+import edu.cmu.lti.algorithm.container.SetI;
+import edu.cmu.lti.algorithm.container.SetS;
+import edu.cmu.lti.algorithm.container.VectorS;
+import edu.cmu.lti.util.system.FSystem;
 import edu.cmu.minorthird.util.ProgressCounter;
 import edu.cmu.minorthird.util.StringUtil;
-import ghirl.PRA.util.TSet.SetI;
-import ghirl.PRA.util.TSet.SetS;
-import ghirl.PRA.util.TVector.VectorS;
 import ghirl.persistance.TokyoCabinetPersistance;
 import ghirl.persistance.TokyoValueIterator;
 import ghirl.util.CompactTCDistribution;
@@ -543,57 +545,7 @@ implements Graph, Closable, ICompact {
 		return vs;
 	}
 
-
-
-	@Override public Distribution walk1(int from,int linkLabel){
-		return getStoredDistribution(from, linkLabel);
-	}
-	@Override public SetI walk2(int from,int linkLabel){
-		Distribution d= getStoredDistribution(from, linkLabel);
-		SetI m= new SetI();
-
-		for (Iterator i=d.iterator(); i.hasNext(); ) {
-			GraphId id = (GraphId)i.next();
-			//double w = d.getLastWeight();
-			m.add(getNodeIdx(id));
-		}
-		return m;
-	}
-
-	@Override
-	public Distribution walk1(GraphId from, String linkLabel) {
-		int fromNodeIndex = getNodeIdx(from);
-		if (fromNodeIndex < 0) return TreeDistribution.EMPTY_DISTRIBUTION;
-		int linkIndex = getStoredIndex(this.link_string2id, linkLabel.getBytes());
-		if (linkIndex < 0) return TreeDistribution.EMPTY_DISTRIBUTION;
-
-		return getStoredDistribution(fromNodeIndex, linkIndex);
-	}
-	/*	@Override public MapID walk2(int from,int linkLabel){
-
-		Distribution d=walk1(from, linkLabel);
-		MapID mTrg= new MapID();
-		// randomly walk away from the subsample
-		for (Iterator i=d.iterator(); i.hasNext(); ) {
-			GraphId id = (GraphId)i.next();
-			double w = d.getLastWeight();
-			mTrg.plusOn(getIdxID(id), w);
-		}
-		return mTrg;
-	}
-	public VectorI walk3(int from,int linkLabel){
-
-		Distribution d=walk1(from, linkLabel);
-		VectorI mTrg= new VectorI();mTrg.ensureCapacity(d.size());
-		// randomly walk away from the subsample
-		for (Iterator i=d.iterator(); i.hasNext(); ) {
-			GraphId id = (GraphId)i.next();
-			double w = d.getLastWeight();
-			mTrg.plusOn(getIdxID(id), w);
-		}
-		return mTrg;
-	}*/
-	// TokyoCabinet is totally happy on byte arrays.  No fun.
+// TokyoCabinet is totally happy on byte arrays.  No fun.
 
 	protected byte[] makeKey(GraphId node) { return node.toString().getBytes(); }
 
@@ -640,5 +592,52 @@ implements Graph, Closable, ICompact {
 	@Override
 	public void close() {
 		tc.close(dbs);
+	}
+	
+	
+
+
+	@Override public Distribution walk1(int from,int linkLabel){
+		return getStoredDistribution(from, linkLabel);
+	}
+
+
+	@Override
+	public Distribution walk1(GraphId from, String linkLabel) {
+		int fromNodeIndex = getNodeIdx(from);
+		if (fromNodeIndex < 0) return TreeDistribution.EMPTY_DISTRIBUTION;
+		int linkIndex = getStoredIndex(this.link_string2id, linkLabel.getBytes());
+		if (linkIndex < 0) return TreeDistribution.EMPTY_DISTRIBUTION;
+
+		return getStoredDistribution(fromNodeIndex, linkIndex);
+	}
+
+	
+	
+	
+  @Override public GraphId[] getGraphIds(){
+  	return  null;
+  }
+	@Override public void setTime(int time) {
+		FSystem.dieNotImplemented();		
+	}
+	@Override public void step(int ent, int rel, SetI dist) {
+		Distribution d= getStoredDistribution(ent, rel);
+
+		for (Iterator i=d.iterator(); i.hasNext(); ) {
+			GraphId id = (GraphId)i.next();
+			//double w = d.getLastWeight();
+			dist.add(getNodeIdx(id));
+		}
+	}
+	@Override public void step(int ent, int rel, double p0, MapID dist) {
+		Distribution d= getStoredDistribution(ent, rel);
+
+		for (Iterator i=d.iterator(); i.hasNext(); ) {
+			GraphId id = (GraphId)i.next();
+			//double w = d.getLastWeight();
+			dist.plusOn(getNodeIdx(id), p0);
+		}
+		
 	}
 }

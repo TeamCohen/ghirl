@@ -1,9 +1,11 @@
 package ghirl.util;
 
+import edu.cmu.lti.algorithm.container.MapID;
+import edu.cmu.minorthird.util.StringUtil;
+import ghirl.graph.ICompact;
+
 import java.util.Arrays;
 import java.util.Iterator;
-
-import edu.cmu.minorthird.util.StringUtil;
 
 public class CompactImmutableArrayDistribution extends
 		CompactImmutableDistribution {
@@ -27,6 +29,15 @@ public class CompactImmutableArrayDistribution extends
 	{
 		super(objectIndex, totalWeightSoFar);
 		this.sortedObjectArray = sortedObjectArray;
+	}
+	
+	public CompactImmutableArrayDistribution(MapID mDist, ICompact g){
+		this(mDist.toVectorKey().toIntArray() 
+				,mDist.toVectorValue().cumulateOn().toFloatArray()
+				,g.getGraphIds());
+		//VectorI vi= mDist.toVectorKey();
+		//VectorD vd= mDist.toVectorValue().cumulateOn();		
+	
 	}
 
 	/**

@@ -1,8 +1,12 @@
 package ghirl.PRA;
 
-import ghirl.PRA.util.FFile;
-import ghirl.PRA.util.FSystem;
-import ghirl.PRA.util.StopWatch;
+import edu.cmu.lti.util.file.FFile;
+import edu.cmu.lti.util.run.Param;
+import edu.cmu.lti.util.run.StopWatch;
+import edu.cmu.lti.util.system.FSystem;
+import edu.cmu.pra.learner.Query;
+import edu.cmu.pra.model.ModelPathRank;
+import edu.cmu.pra.model.PRAModel;
 import ghirl.graph.ICompact;
 import ghirl.graph.PersistantCompactTokyoGraph;
 import ghirl.graph.SparseCompactGraph;
@@ -29,12 +33,13 @@ public class SmallJobs {
 	public static String testFile="scenarios.Woolford_JL.predict";
 	public static String TESTROOT="tests";
 	
-	public static String DB=
-		"Yeast2";
-		//"testCompactGraph";
 	
+
 	public static ICompact getTCGraph()throws Exception{		
 		PersistantCompactTokyoGraph graph;
+		FSystem.printMemoryTime();
+
+		
 		ghirl.util.Config.setProperty(Config.DBDIR, "..");
 		if (FFile.exist("../"+DB+"_compactTokyo") ){//&& 1==2){
 			graph = new PersistantCompactTokyoGraph(DB,'r');
@@ -43,26 +48,40 @@ public class SmallJobs {
 			graph = new PersistantCompactTokyoGraph(DB,'w');
 			graph.load("../"+DB);//tests
 		}
+		FSystem.printMemoryTime();
+
 		return graph;
 	}
-	public static ICompact getCGraph()throws Exception{		
+	public static String DB="Yeast2.cite";
+
+	public static ICompact getCGraph()throws Exception{
+		FSystem.printMemoryTime();
+
 		SparseCompactGraph graph = new SparseCompactGraph();
 		graph.load("../"+DB);
 		graph.loadMMGraphIdx();
+		
+		FSystem.printMemoryTime();
+
 		return graph;
 		
 
 	}
 
+	public static PRAModel loadModel(){
+		Param.overwriteFrom("cite.conf");
+		Param.overwrite("dataFolder=./");
+		PRAModel net=new ModelPathRank();//,"YA-Py.WJ"./ );graph
+		net.loadPathWeights("cite.model");//fnWeight
+		return net;
+	}
+	
 	
 	public static void testPCRW()throws Exception{		
 
-		FSystem.printMemoryTime();
+		PRAModel net=loadModel();
+
 		ICompact graph=getCGraph();	//getCGraph();
-		FSystem.printMemoryTime();
-		
-		PRAModel net=new ModelPathRank("conf",graph);//,"YA-Py.WJ"./ );
-		net.loadPathWeights("model");//fnWeight
 		
 		FFile.mkdirs("result"+net.p.code);
 		
@@ -77,12 +96,14 @@ public class SmallJobs {
 		
 		return;
 	}
+	
+
 	public static void testPrediction()throws Exception{
-		ICompact graph=getCGraph();	//getCGraph();
 		
-		PRAModel net=new ModelPathRank("conf",graph);//,"YA-Py.WJ"./ );
-		net.loadPathWeights("model");//fnWeight
+		PRAModel net=loadModel();
 		
+		ICompact g=getCGraph();	//getCGraph();
+		net.setGraph(g);
 		
 		//Walker walker= new PathWalker(graph, net);
 		
@@ -90,12 +111,12 @@ public class SmallJobs {
 		net.predict(q);
     
 		Distribution d=new 
-			CompactImmutableArrayDistribution(q.mResult, graph);
+			CompactImmutableArrayDistribution(q.mResult, g);
 		
 		System.out.println("result="+d);
 
-	}
 
+	}
 	public static void main(String args[]) {
 		try{		
 			//System.out.print( FFile.getFilePath("/usb2/nlao/software/nies/nies/PRA/"));

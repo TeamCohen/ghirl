@@ -1,10 +1,12 @@
 package ghirl.graph;
 
+import edu.cmu.lti.algorithm.container.MapID;
+import edu.cmu.lti.algorithm.container.MapMapSSI;
+import edu.cmu.lti.algorithm.container.SetI;
+import edu.cmu.lti.util.system.FSystem;
 import edu.cmu.minorthird.util.ProgressCounter;
 import edu.cmu.minorthird.util.StringUtil;
 import edu.cmu.minorthird.util.gui.ViewerFrame;
-import ghirl.PRA.util.TMap.MapMapSSI;
-import ghirl.PRA.util.TSet.SetI;
 import ghirl.util.CompactImmutableArrayDistribution;
 import ghirl.util.CompactImmutableDistribution;
 import ghirl.util.Distribution;
@@ -55,6 +57,10 @@ public class CompactGraph implements Graph, ICompact
     /** ordered list of all graph ids */
     protected GraphId[] graphIds; 
     
+    @Override public GraphId[] getGraphIds(){
+    	return  graphIds;
+    }
+  
     /** efficiently find node idx without sorting the nodes first */
     protected MapMapSSI mmGraphIdx =null; //label-->name-->idx
     public void loadMMGraphIdx(){
@@ -270,7 +276,7 @@ public class CompactGraph implements Graph, ICompact
 	return id.getShortName();
     }
     
-    public String[] getOrderedEdgeLabels() { return linkLabels; }
+    @Override public String[] getOrderedEdgeLabels() { return linkLabels; }
 
     public GraphId[] getOrderedIds() { return graphIds; }
 
@@ -350,17 +356,7 @@ public class CompactGraph implements Graph, ICompact
   	@Override public Distribution walk1(int from,int linkIndex){
       return getStoredDist( from, linkIndex );
   	}
-  	@Override public SetI walk2(int from,int linkLabel){
-  		Distribution d= getStoredDist(from, linkLabel);
-  		SetI m= new SetI();
 
-  		for (Iterator i=d.iterator(); i.hasNext(); ) {
-  			GraphId id = (GraphId)i.next();
-  			//double w = d.getLastWeight();
-  			m.add(getNodeIdx(id));
-  		}
-  		return m;
-  	}
 
     static public void main(String[] args)
         throws IOException, FileNotFoundException 
@@ -374,4 +370,40 @@ public class CompactGraph implements Graph, ICompact
             new ViewerFrame("QueryGUI", gui );
         }
     }
+
+		@Override public void setTime(int time) {
+		//	FSystem.dieNotImplemented();
+			
+		}
+
+		@Override public void step(int ent, int rel, SetI dist) {
+			// some how relations in Compact graphs are shifted in ghirl
+			// we reverse that 
+			rel+=1;
+
+			
+  		Distribution d= getStoredDist(ent, rel);
+
+  		for (Iterator i=d.iterator(); i.hasNext(); ) {
+  			GraphId id = (GraphId)i.next();
+  			//double w = d.getLastWeight();
+  			dist.add(getNodeIdx(id));
+  		}
+ 			return;
+		}
+
+		@Override public void step(int ent, int rel, double p0, MapID dist) {
+			// some how relations in Compact graphs are shifted in ghirl
+			// we reverse that 
+			rel+=1;
+
+			Distribution d= getStoredDist(ent, rel);
+
+  		for (Iterator i=d.iterator(); i.hasNext(); ) {
+  			GraphId id = (GraphId)i.next();
+  			//double w = d.getLastWeight();
+  			dist.plusOn(getNodeIdx(id), p0);	// TODO: we may want to consider link weights here
+  		}
+			return;
+		}
 }

@@ -1,6 +1,6 @@
 package ghirl.util;
 
-import ghirl.PRA.util.TMap.MapID;
+import edu.cmu.lti.algorithm.container.MapID;
 import ghirl.graph.GraphId;
 
 import java.util.Comparator;

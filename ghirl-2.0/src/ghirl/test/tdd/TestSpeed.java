@@ -1,6 +1,6 @@
 package ghirl.test.tdd;
 
-import ghirl.PRA.util.StopWatch;
+import edu.cmu.lti.util.run.StopWatch;
 import ghirl.graph.BasicWalker;
 import ghirl.graph.Closable;
 import ghirl.graph.Graph;

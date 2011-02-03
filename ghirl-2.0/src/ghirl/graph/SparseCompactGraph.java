@@ -50,7 +50,8 @@ public class SparseCompactGraph extends CompactGraph {
 			long free=r.freeMemory(), total = r.totalMemory();
 			memstring = free+" bytes of "+total+" available ("+Math.round((double)free/total*100)+"%)";
 		}
-		logger.info("Writing row "+lastSrcId+" with "+nLinks+" links: "+size+" in data; "+memstring);
+		//too much log info in the log file, removed by Ni
+		//logger.info("Writing row "+lastSrcId+" with "+nLinks+" links: "+size+" in data; "+memstring);
 		sparseWalkInfo[lastSrcId] = new SparseRow(nLinks);
 		System.arraycopy(sparseWalkBuffer.sortedLabelIds, 0, 
 				sparseWalkInfo[lastSrcId].sortedLabelIds, 0, nLinks);

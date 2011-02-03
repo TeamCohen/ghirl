@@ -1,8 +1,6 @@
 package ghirl.PRA;
 
-import ghirl.PRA.util.Counter;
-import ghirl.PRA.util.TMap.MapID;
-import ghirl.PRA.util.TVector.VectorMapID;
+import edu.cmu.pra.model.PRAModel;
 import ghirl.graph.GraphId;
 import ghirl.graph.ICompact;
 import ghirl.graph.Walker;
