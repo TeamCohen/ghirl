@@ -72,6 +72,7 @@ public class SmallJobs {
 		Param.overwriteFrom("cite.conf");
 		Param.overwrite("dataFolder=./");
 		PRAModel net=new ModelPathRank();//,"YA-Py.WJ"./ );graph
+		
 		net.loadPathWeights("cite.model");//fnWeight
 		return net;
 	}
