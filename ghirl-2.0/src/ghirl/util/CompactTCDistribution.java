@@ -34,15 +34,15 @@ public class CompactTCDistribution extends CompactImmutableDistribution implemen
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		int bytesPerInt = Integer.SIZE / Byte.SIZE;
 		baos.write(bytesPerInt);                                                // bytes per int
-		SerializationUtil.serializeInt(objectIndex.length, baos, bytesPerInt);                    // length of distribution
+		SerializationUtil.serializeInt(viObj.length, baos, bytesPerInt);                    // length of distribution
 		SerializationUtil.serializeInt(Float.floatToRawIntBits(totalWeight), baos, bytesPerInt);  // total weight of distribution
 		baos.write(ordered ? 1 : 0);                                            // whether ordered list is also stored
-		for (int i=0; i<objectIndex.length; i++)                                // objectIndex[]
-			SerializationUtil.serializeInt(objectIndex[i], baos, bytesPerInt);
-		for (int i=0; i<objectIndex.length; i++)                                // totalWeightSoFar[]
-			SerializationUtil.serializeInt(Float.floatToRawIntBits(totalWeightSoFar[i]), baos, bytesPerInt);
+		for (int i=0; i<viObj.length; i++)                                // objectIndex[]
+			SerializationUtil.serializeInt(viObj[i], baos, bytesPerInt);
+		for (int i=0; i<viObj.length; i++)                                // totalWeightSoFar[]
+			SerializationUtil.serializeInt(Float.floatToRawIntBits(tot[i]), baos, bytesPerInt);
 		if (ordered) {
-			for (int i=0; i<objectIndex.length; i++)                            // orderedIndices[]
+			for (int i=0; i<viObj.length; i++)                            // orderedIndices[]
 				SerializationUtil.serializeInt(orderedIndices[i].intValue(), baos, bytesPerInt);
 		}
 		baos.close();
@@ -56,13 +56,13 @@ public class CompactTCDistribution extends CompactImmutableDistribution implemen
 		int totalWeightBits = SerializationUtil.deserializeInt(bais, bytesPerInt);
 		this.totalWeight = Float.intBitsToFloat(totalWeightBits);
 		this.ordered = bais.read() == 1;
-		this.objectIndex = new int[length];
-		this.totalWeightSoFar = new float[length];
+		this.viObj = new int[length];
+		this.tot = new float[length];
 		for(int i=0; i<length; i++) {
-			objectIndex[i] = SerializationUtil.deserializeInt(bais, bytesPerInt);
+			viObj[i] = SerializationUtil.deserializeInt(bais, bytesPerInt);
 		}
 		for(int i=0; i<length; i++) {
-			totalWeightSoFar[i] = 
+			tot[i] = 
 				Float.intBitsToFloat(SerializationUtil.deserializeInt(bais,bytesPerInt));
 		}
 		if (ordered) {
@@ -104,15 +104,15 @@ public class CompactTCDistribution extends CompactImmutableDistribution implemen
 	}
 	private void sortObjectIndex() {
 		// first create an array with the index of the matched pair objectIndex[i], totalWeight[i]
-		orderedIndices = new Integer[objectIndex.length];
+		orderedIndices = new Integer[viObj.length];
 		for (int i=0;i<orderedIndices.length;i++) orderedIndices[i]=i;
 		Arrays.sort(orderedIndices,new Comparator<Integer>() {
 			public int compare(Integer index1, Integer index2) {
 				float w1, w2;
-				if (index1 > 0) w1 = totalWeightSoFar[index1] - totalWeightSoFar[index1-1];
-				else w1 = totalWeightSoFar[0];
-				if (index2 > 0) w2 = totalWeightSoFar[index2] - totalWeightSoFar[index2-1];
-				else w2 = totalWeightSoFar[0];
+				if (index1 > 0) w1 = tot[index1] - tot[index1-1];
+				else w1 = tot[0];
+				if (index2 > 0) w2 = tot[index2] - tot[index2-1];
+				else w2 = tot[0];
 				return ((Float)w1).compareTo(w2);
 			}
 		});
@@ -121,12 +121,12 @@ public class CompactTCDistribution extends CompactImmutableDistribution implemen
         private int i;
         public MyOrderedIterator() { this.i = 0; }
         public void remove() { throw new UnsupportedOperationException("can't remove!"); }
-        public boolean hasNext() { return i<objectIndex.length; }
+        public boolean hasNext() { return i<viObj.length; }
         public Object next() {
         	int ind = orderedIndices[ i ];
-            Object o = getObject( objectIndex[ind ]);
+            Object o = getObject( viObj[ind ]);
             //System.out.println("getting weight of "+o+" in MyOtherIterator");
-            theLastWeight = ind > 0 ? totalWeightSoFar[ind] - totalWeightSoFar[ind-1] : totalWeightSoFar[0];
+            theLastWeight = ind > 0 ? tot[ind] - tot[ind-1] : tot[0];
             i++;
             return o;
         }

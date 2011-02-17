@@ -10,9 +10,12 @@ import edu.cmu.pra.model.PRAModel;
 import ghirl.graph.ICompact;
 import ghirl.graph.PersistantCompactTokyoGraph;
 import ghirl.graph.SparseCompactGraph;
+import ghirl.graph.WeightedTextGraph;
 import ghirl.util.CompactImmutableArrayDistribution;
 import ghirl.util.Config;
 import ghirl.util.Distribution;
+
+import java.util.Iterator;
 
 public class SmallJobs {
 	
@@ -110,13 +113,28 @@ public class SmallJobs {
 		
 		Query q=net.parseQuery("2010,2009,Woolford_JL,");
 		net.predict(q);
-    
+
+		System.out.println("q="+q.mResult);
+
 		Distribution d=new 
-			CompactImmutableArrayDistribution(q.mResult, g);
+			CompactImmutableArrayDistribution(q.mResult, g);		
+		System.out.println("d="+d.toMapID());
 		
-		System.out.println("result="+d);
-
-
+		WeightedTextGraph wtg=new WeightedTextGraph(d,g);
+		Distribution r = wtg.getNodeDist();
+		System.out.println("r="+r.toMapID());	
+		
+		int j=1;
+		Iterator i = r.orderedIterator();
+		for (Object o=null; i.hasNext(); ++j) {
+				o = i.next();
+				String id = o.toString().trim();
+				double score = r.getLastWeight();
+				System.out.println(id+"  "+score);
+		}
+		
+		
+		return;
 	}
 	public static void main(String args[]) {
 		try{		

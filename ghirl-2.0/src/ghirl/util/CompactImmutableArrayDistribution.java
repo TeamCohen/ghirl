@@ -2,6 +2,7 @@ package ghirl.util;
 
 import edu.cmu.lti.algorithm.container.MapID;
 import edu.cmu.minorthird.util.StringUtil;
+import ghirl.graph.GraphId;
 import ghirl.graph.ICompact;
 
 import java.util.Arrays;
@@ -10,8 +11,8 @@ import java.util.Iterator;
 public class CompactImmutableArrayDistribution extends
 		CompactImmutableDistribution {
 
-	/** array of GraphId elements in sorted order */
-	protected Object[] sortedObjectArray;
+	/** array of GraphId elements not in sorted order */
+	protected Object[] vObject;
 	
 	/**
 	 * Create a new distribution from a paired list of object weights and indices 
@@ -20,51 +21,54 @@ public class CompactImmutableArrayDistribution extends
 	 * their positions in the sortedObjectArray.
 	 * @param totalWeightSoFar - parallel array of the cumulative weight of all objects 
 	 * in the distribution up to the corresponding point in the objectIndex array.
-	 * @param sortedObjectArray - sorted array that contains at least all objects in the distribution (and
+	 * @param vObject - not sorted array that contains at least all objects in the distribution (and
 	 * may contain all objects in the graph)
 	 * 
 	 * No local copies are made of the arrays, but the arrays are never modified.
 	 */
-	public CompactImmutableArrayDistribution(int[] objectIndex, float[] totalWeightSoFar, Object[] sortedObjectArray)
+	public CompactImmutableArrayDistribution(int[] objectIndex, float[] totalWeightSoFar, Object[] vObject)
 	{
 		super(objectIndex, totalWeightSoFar);
-		this.sortedObjectArray = sortedObjectArray;
+		this.vObject = vObject;
 	}
 	
+	ICompact g=null;
 	public CompactImmutableArrayDistribution(MapID mDist, ICompact g){
 		this(mDist.toVectorKey().toIntArray() 
 				,mDist.toVectorValue().cumulateOn().toFloatArray()
-				,g.getGraphIds());
-		//VectorI vi= mDist.toVectorKey();
-		//VectorD vd= mDist.toVectorValue().cumulateOn();		
-	
+				,null);//g.getGraphIds());
+		this.g=g;
 	}
 
 	/**
 	 * @param dist - is a distribution of objects
-	 * @param sortedObjectArray - sorted array that contains all objects in the distribution
+	 * @param vObj - not sorted array that contains all objects in the distribution
 	 */
-	public CompactImmutableArrayDistribution(Distribution dist, Object[] sortedObjectArray)
+	public CompactImmutableArrayDistribution(Distribution dist, Object[] vObj)
 	{
 		super( new int[dist.size()], new float[dist.size()]);
-		this.sortedObjectArray = sortedObjectArray;
+		this.vObject = vObj;
 		totalWeight = 0;
 		int k = 0;
 		for (Iterator i=dist.iterator(); i.hasNext(); ) {
 			Object o = i.next();
 			totalWeight += dist.getLastWeight();
-			objectIndex[ k ] = Arrays.binarySearch(sortedObjectArray, o);
-			if (objectIndex[ k ]<0) throw new IllegalStateException("Can't have a nonexistant object "+o+" in objectindex"+
-					" k="+k+", "+objectIndex[k]+" in "+StringUtil.toString(sortedObjectArray));
-			totalWeightSoFar[ k ] = totalWeight;
+			viObj[ k ] = Arrays.binarySearch(vObj, o);
+			if (viObj[ k ]<0) throw new IllegalStateException("Can't have a nonexistant object "+o+" in objectindex"+
+					" k="+k+", "+viObj[k]+" in "+StringUtil.toString(vObj));
+			tot[ k ] = totalWeight;
 			k++;
 		}
 	}
 	
 	protected int getIndex(Object obj) {
-		return Arrays.binarySearch(sortedObjectArray,obj);
+		if (g!=null)
+			return g.getNodeIdx((GraphId)obj);
+		return Arrays.binarySearch(vObject,obj);
 	}
 	protected Object getObject(int index) {
-		return sortedObjectArray[index];
+		if (g!=null)
+			return g.getGraphIds()[index];
+		return vObject[index];
 	}
 }

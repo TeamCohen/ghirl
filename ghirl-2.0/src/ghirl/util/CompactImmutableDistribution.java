@@ -1,19 +1,22 @@
 package ghirl.util;
 
 import java.util.*;
+
+import edu.cmu.lti.algorithm.container.MapID;
 import edu.cmu.minorthird.util.StringUtil;
 
 /**
- * A distribution that takes up minimal space, but cannot be added to or changed.
+ * A distribution that takes up minimal space, 
+ * but cannot be added to or changed.
  */
 public abstract class CompactImmutableDistribution extends Distribution
 {
 
 	// parallel arrays
 	/** objectIndex[k] is index of object in sortedObjectArray */
-	protected int[] objectIndex; 
+	protected int[] viObj; 
 	/** totalWeightSoFar[k] is cumulative weight of all objects pointed to be objectIndex[0]...objectIndex[k] */
-	protected float[] totalWeightSoFar; 
+	protected float[] tot; 
 	/** same as totalWeightSoFar[ totalWeightSoFar.length-1 ]; */
 	protected float totalWeight;
 
@@ -21,8 +24,8 @@ public abstract class CompactImmutableDistribution extends Distribution
 	protected CompactImmutableDistribution() {}
 	public CompactImmutableDistribution(int[] objectIndex, float[] totalWeightSoFar) {
 
-		this.totalWeightSoFar = totalWeightSoFar;
-		this.objectIndex = objectIndex;
+		this.tot = totalWeightSoFar;
+		this.viObj = objectIndex;
 		if (totalWeightSoFar.length>0) 
 			this.totalWeight = totalWeightSoFar[totalWeightSoFar.length - 1];
 	}
@@ -32,7 +35,7 @@ public abstract class CompactImmutableDistribution extends Distribution
 
 	public int sizeInBytes()
 	{
-		return (Integer.SIZE*objectIndex.length + Float.SIZE*totalWeightSoFar.length + Float.SIZE)/8;
+		return (Integer.SIZE*viObj.length + Float.SIZE*tot.length + Float.SIZE)/8;
 	}
 
 	/** Not supported in this implementation.
@@ -53,19 +56,19 @@ public abstract class CompactImmutableDistribution extends Distribution
 	 */
 	public double getWeight(Object obj)
 	{
-            int index = getIndex(obj); //Arrays.binarySearch(sortedObjectArray,obj);
-            if (index<0) return 0;
-            if (objectIndex[0] == index) {
-            	theLastWeight = totalWeightSoFar[0];
-            	return theLastWeight;
-            }
-            for (int k=1; k<objectIndex.length; k++) {
-            	if (objectIndex[k] == index) {
-                	theLastWeight = totalWeightSoFar[k] - totalWeightSoFar[k-1];
-                	return theLastWeight;
-            	}
-            }
-            return 0;
+    int index = getIndex(obj); //Arrays.binarySearch(sortedObjectArray,obj);
+    if (index<0) return 0;
+    if (viObj[0] == index) {
+    	theLastWeight = tot[0];
+    	return theLastWeight;
+    }
+    for (int k=1; k<viObj.length; k++) {
+    	if (viObj[k] == index) {
+        	theLastWeight = tot[k] - tot[k-1];
+        	return theLastWeight;
+    	}
+    }
+    return 0;
 	}
 
 	/** Return an iterator over all objects.
@@ -78,20 +81,26 @@ public abstract class CompactImmutableDistribution extends Distribution
 	private class MyIterator implements Iterator
 	{
 		int index = 0;
-		public boolean hasNext() { return index < objectIndex.length; }
-		public void remove() { throw new UnsupportedOperationException("can't remove"); }
+		public boolean hasNext() { 
+			return index < viObj.length; 
+		}
+		
+		public void remove() { 
+			throw new UnsupportedOperationException("can't remove"); 
+		}
+		
 		public Object next() { 
-                    Object result = getObject(objectIndex[index]); 
-                    if (index==0) theLastWeight = totalWeightSoFar[0];
-                    else theLastWeight = totalWeightSoFar[index]-totalWeightSoFar[index-1];
-                    index++;
-                    return result;
+      Object result = getObject(viObj[index]); 
+      if (index==0) theLastWeight = tot[0];
+      else theLastWeight = tot[index]-tot[index-1];
+      index++;
+      return result;
 		}
 	}
 
 	public int size()
 	{
-		return objectIndex.length;
+		return viObj.length;
 	}
 
 	public double getLastWeight()
@@ -107,29 +116,45 @@ public abstract class CompactImmutableDistribution extends Distribution
 	public Object sample(Random rand)
 	{
 		float r = (float)rand.nextDouble()*totalWeight;
-		int find = Arrays.binarySearch( totalWeightSoFar, r );
+		int find = Arrays.binarySearch( tot, r );
 		if (find < 0) {
 			// find = -insertionPoint-1 
 			int insertionPoint = -(find+1);
-			return getObject( objectIndex[insertionPoint] );
+			return getObject( viObj[insertionPoint] );
 		} else {
-			return getObject( objectIndex[find] );
+			return getObject( viObj[find] );
 		}
 	}
 
 	public String toString()
 	{
-		double[] wts = new double[totalWeightSoFar.length];
-		if (totalWeightSoFar.length>=1) {
-			wts[0] = totalWeightSoFar[0];
-			for (int i=1; i<totalWeightSoFar.length; i++) {
-				wts[i] = totalWeightSoFar[i]-totalWeightSoFar[i-1];
+		double[] wts = new double[tot.length];
+		if (tot.length>=1) {
+			wts[0] = tot[0];
+			for (int i=1; i<tot.length; i++) {
+				wts[i] = tot[i]-tot[i-1];
 			}
 		}
 		return 
-		"[cid tot "+getTotalWeight()+" wts: "+StringUtil.toString(wts)+" idx: "+StringUtil.toString(objectIndex)
+		"[cid tot "+getTotalWeight()+" wts: "+StringUtil.toString(wts)+" idx: "+StringUtil.toString(viObj)
 		//+" obj: "+StringUtil.toString(sortedObjectArray)+"]";
 		;
+	}
+	
+  public MapID toMapID(){
+  	MapID m= new MapID();
+		if (tot.length>=1) {
+			for (int i=0; i<tot.length; i++) {
+				double w=(i==0)? tot[0]:
+					tot[i]-tot[i-1];
+				m.put(viObj[i], w);
+			}
+		}
+		return m;
+  }
+	public String print(){
+		return toMapID().toString();
+
 	}
 
 	// it's ok to share all structure since the distribution is immutable
