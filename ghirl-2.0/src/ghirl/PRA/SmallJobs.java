@@ -4,6 +4,7 @@ import edu.cmu.lti.util.file.FFile;
 import edu.cmu.lti.util.run.Param;
 import edu.cmu.lti.util.run.StopWatch;
 import edu.cmu.lti.util.system.FSystem;
+import edu.cmu.pra.CTag;
 import edu.cmu.pra.learner.Query;
 import edu.cmu.pra.model.ModelPathRank;
 import edu.cmu.pra.model.PRAModel;
@@ -76,7 +77,7 @@ public class SmallJobs {
 		Param.overwrite("dataFolder=./");
 		PRAModel net=new ModelPathRank();//,"YA-Py.WJ"./ );graph
 		
-		net.loadPathWeights("cite.model");//fnWeight
+		net.loadModel("cite.model");//fnWeight
 		return net;
 	}
 	
@@ -95,7 +96,7 @@ public class SmallJobs {
 			net.predict(q);
 			//System.out.println("nPart="+q.mResult.size());
 		}
-		sw.printElapsedTime();
+		sw.stopAndPrint();
 
 		
 		return;
@@ -115,6 +116,8 @@ public class SmallJobs {
 		net.predict(q);
 
 		System.out.println("q="+q.mResult);
+
+		System.out.println("path width="+q.A.getVI(CTag.size));
 
 		Distribution d=new 
 			CompactImmutableArrayDistribution(q.mResult, g);		

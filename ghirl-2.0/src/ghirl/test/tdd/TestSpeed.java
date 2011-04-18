@@ -139,7 +139,7 @@ Task loading graph/17-mar-2010/go_info.ghirl: 126272 lines(s) in 18.73 sec
 		}
 		
 		System.out.println("nTest="+nTest);
-		sw.printElapsedTime();
+		sw.stopAndPrint();
 		
 		((Closable)g).close();
 		return;
