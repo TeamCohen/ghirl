@@ -179,7 +179,7 @@ public class TextGraph implements Graph, TextGraphExtensions, Closable
 	}
 	
 	protected void setInnerGraph(Graph g) { this.innerGraph = g; }
-	protected Graph getInnerGraph() { return this.innerGraph; }
+	public Graph getInnerGraph() { return this.innerGraph; }
 
 	protected TextGraph() {}
 

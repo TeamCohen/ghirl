@@ -124,7 +124,11 @@ public class GraphLoader
 		pc.finished();
 	}
 
-	/** Process a single line from the file. */ 
+	/**
+	 * Process a single line from the file.
+	 * @param line
+	 * @return True if the line was a valid graph statement, false otherwise.
+	 */
 	public boolean loadLine(String line)
 	{
 		if (line.startsWith("#") || line.trim().length()==0) return true;

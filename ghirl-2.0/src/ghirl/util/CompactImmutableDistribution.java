@@ -13,11 +13,11 @@ public abstract class CompactImmutableDistribution extends Distribution
 {
 
 	// parallel arrays
-	/** objectIndex[k] is index of object in sortedObjectArray */
+	/** viObj[k] is index of object in sortedObjectArray */
 	protected int[] viObj; 
-	/** totalWeightSoFar[k] is cumulative weight of all objects pointed to be objectIndex[0]...objectIndex[k] */
+	/** tot[k] is cumulative weight of all objects pointed to be objectIndex[0]...objectIndex[k] */
 	protected float[] tot; 
-	/** same as totalWeightSoFar[ totalWeightSoFar.length-1 ]; */
+	/** same as tot[ tot.length-1 ]; */
 	protected float totalWeight;
 
 	/** Only for clever extensions. */

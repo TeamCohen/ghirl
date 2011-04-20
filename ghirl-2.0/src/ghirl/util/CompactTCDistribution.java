@@ -121,7 +121,10 @@ public class CompactTCDistribution extends CompactImmutableDistribution implemen
         private int i;
         public MyOrderedIterator() { this.i = 0; }
         public void remove() { throw new UnsupportedOperationException("can't remove!"); }
-        public boolean hasNext() { return i<viObj.length; }
+        public boolean hasNext() { 
+        	// TODO: I'd had orderedIndices.length here; are we sure viObj is correct? -katie
+        	return i<viObj.length; 
+        }
         public Object next() {
         	int ind = orderedIndices[ i ];
             Object o = getObject( viObj[ind ]);

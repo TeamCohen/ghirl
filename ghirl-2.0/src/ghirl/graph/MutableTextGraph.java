@@ -191,7 +191,7 @@ public class MutableTextGraph extends TextGraph implements MutableGraph {
 	}
 	
 	protected void setInnerGraph(Graph g) { this.innerGraph = (MutableGraph) g; }
-	protected Graph getInnerGraph() { return this.innerGraph; }
+	public Graph getInnerGraph() { return this.innerGraph; }
 	
 	public String toString() 
 	{ 
