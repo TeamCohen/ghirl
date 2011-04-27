@@ -8,15 +8,11 @@ import edu.cmu.pra.CTag;
 import edu.cmu.pra.learner.Query;
 import edu.cmu.pra.model.ModelPathRank;
 import edu.cmu.pra.model.PRAModel;
+import ghirl.graph.CompactGraph;
 import ghirl.graph.ICompact;
 import ghirl.graph.PersistantCompactTokyoGraph;
 import ghirl.graph.SparseCompactGraph;
-import ghirl.graph.WeightedTextGraph;
-import ghirl.util.CompactImmutableArrayDistribution;
 import ghirl.util.Config;
-import ghirl.util.Distribution;
-
-import java.util.Iterator;
 
 public class SmallJobs {
 	
@@ -56,30 +52,8 @@ public class SmallJobs {
 
 		return graph;
 	}
-	public static String DB="Yeast2.cite";
 
-	public static ICompact getCGraph()throws Exception{
-		FSystem.printMemoryTime();
 
-		SparseCompactGraph graph = new SparseCompactGraph();
-		graph.load("../"+DB);
-		graph.loadMMGraphIdx();
-		
-		FSystem.printMemoryTime();
-
-		return graph;
-		
-
-	}
-
-	public static PRAModel loadModel(){
-		Param.overwriteFrom("cite.conf");
-		Param.overwrite("dataFolder=./");
-		PRAModel net=new ModelPathRank();//,"YA-Py.WJ"./ );graph
-		
-		net.loadModel("cite.model");//fnWeight
-		return net;
-	}
 	
 	
 	public static void testPCRW()throws Exception{		
@@ -102,7 +76,45 @@ public class SmallJobs {
 		return;
 	}
 	
+	
+	
+	public static PRAModel loadModel(){
+		Param.overwriteFrom("conf");//cite.conf
+		Param.overwrite("dataFolder=./");
+		PRAModel net=new ModelPathRank();//,"YA-Py.WJ"./ );graph
+		
+		net.loadModel("model.cite");//"cite.model"
+		return net;
+	}
+	public static String DB="Yeast2.txtLink";//"Yeast2.cite";
 
+	public static ICompact getCGraph()throws Exception{
+		FSystem.printMemoryTime();
+
+		SparseCompactGraph graph = new SparseCompactGraph();
+		graph.load("../"+DB);
+		graph.loadMMGraphIdx();
+		
+				
+		FSystem.printMemoryTime();
+		
+		augamentGraph(graph);
+		return graph;
+		
+
+	}
+
+	public static void augamentGraph(CompactGraph graph ){
+		// 
+		/*int idxA=graph.getNodeIdx("author", "Woolford_JL");
+		SetI m=graph.getNodeIdx("paper"
+			, "3282992 2673535 3058476 2179050".split(" "));
+		graph.AddExtraLinks("Read", idxA, m);*/
+		
+		graph.AddExtraLinks("CRead"
+			, "author", "Woolford_JL"
+			,"paper"	, "3282992 2673535 3058476 2179050".split(" "));
+	}
 	public static void testPrediction()throws Exception{
 		
 		PRAModel net=loadModel();
@@ -113,12 +125,13 @@ public class SmallJobs {
 		//Walker walker= new PathWalker(graph, net);
 		
 		Query q=net.parseQuery("2010,2009,Woolford_JL,");
+		
 		net.predict(q);
 
-		System.out.println("q="+q.mResult);
+		//System.out.println("q="+q.mResult);
 
 		System.out.println("path width="+q.A.getVI(CTag.size));
-
+/*
 		Distribution d=new 
 			CompactImmutableArrayDistribution(q.mResult, g);		
 		System.out.println("d="+d.toMapID());
@@ -135,7 +148,7 @@ public class SmallJobs {
 				double score = r.getLastWeight();
 				System.out.println(id+"  "+score);
 		}
-		
+		*/
 		
 		return;
 	}

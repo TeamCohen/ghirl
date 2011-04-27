@@ -1,13 +1,14 @@
 package ghirl.graph;
 
+import edu.cmu.lti.algorithm.container.SetI;
+import ghirl.util.CompactImmutableArrayDistribution;
+import ghirl.util.CompactImmutableDistribution;
+import ghirl.util.Distribution;
+
 import java.util.Arrays;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.Priority;
-
-import ghirl.util.CompactImmutableArrayDistribution;
-import ghirl.util.CompactImmutableDistribution;
-import ghirl.util.Distribution;
 
 public class SparseCompactGraph extends CompactGraph {
 	private static final Logger logger = Logger.getLogger(SparseCompactGraph.class);
@@ -95,4 +96,5 @@ public class SparseCompactGraph extends CompactGraph {
 			return Integer.SIZE*n/8 + 4*n+ size;
 		}
 	}
+
 }

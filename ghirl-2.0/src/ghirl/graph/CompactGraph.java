@@ -3,7 +3,7 @@ package ghirl.graph;
 import edu.cmu.lti.algorithm.container.MapID;
 import edu.cmu.lti.algorithm.container.MapMapSSI;
 import edu.cmu.lti.algorithm.container.SetI;
-import edu.cmu.lti.util.system.FSystem;
+import edu.cmu.lti.algorithm.container.TMapMapIIX;
 import edu.cmu.minorthird.util.ProgressCounter;
 import edu.cmu.minorthird.util.StringUtil;
 import edu.cmu.minorthird.util.gui.ViewerFrame;
@@ -397,13 +397,43 @@ public class CompactGraph implements Graph, ICompact
 			// we reverse that 
 			rel+=1;
 
+			// TODO: we may want to consider link weights here
 			Distribution d= getStoredDist(ent, rel);
 
   		for (Iterator i=d.iterator(); i.hasNext(); ) {
   			GraphId id = (GraphId)i.next();
   			//double w = d.getLastWeight();
-  			dist.plusOn(getNodeIdx(id), p0);	// TODO: we may want to consider link weights here
-  		}
+  			dist.plusOn(getNodeIdx(id), p0);	
+    	}
+  		
+  		SetI m=mExtraLinks.getC(rel).get(ent);
+  		if (m!=null)
+  			for (int idx: m)
+    			dist.plusOn(idx, p0);	
 			return;
 		}
+		
+		
+		//relation-->idx1-->set of idx2
+		public TMapMapIIX<SetI> mExtraLinks= new TMapMapIIX<SetI> (SetI.class);
+		public void AddExtraLinks(int iRel, int idx1, SetI mIdx2 ){
+		//	mExtraLinks.getC(iRel).put(idx1, mIdx2);
+			mExtraLinks.getC(iRel).getC(idx1).addAll(mIdx2);
+		}
+		
+		public void AddExtraLinks(String sLinkType
+				,String flavor1, String name1
+				,String flavor2, String[] vName2){
+
+			//int iR= linkLabelIndex(sLinkType);
+			int iR=-1;//TODO: remove linear search
+			for (int i=0; i<linkLabels.length; ++i)
+				if (linkLabels[i].equals(sLinkType))
+					iR=i;
+			
+			int idxA=getNodeIdx(flavor1, name1);
+			SetI m=getNodeIdx(flavor2,vName2);
+			AddExtraLinks(iR, idxA, m);
+		}
+
 }
