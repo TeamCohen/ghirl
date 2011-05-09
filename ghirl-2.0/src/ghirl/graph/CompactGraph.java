@@ -23,7 +23,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 import org.apache.log4j.Logger;
 
@@ -83,7 +85,12 @@ public class CompactGraph implements Graph, ICompact
 
     /** ordered list of all link labels */
     protected String[] linkLabels;
-    protected int linkLabelIndex(String label) { return safeLookup( linkLabels,label,"link label"); }
+    protected Map<String,Integer> linkMap;
+    protected int linkLabelIndex(String label) { 
+    	Integer i = linkMap.get(label);
+    	if (i==null) return -1;
+    	return i;
+    }
 
     /** cached walk for potentially every graph id, indexed by graph in */
     protected CompactImmutableDistribution[][] walkInfo;
@@ -123,8 +130,10 @@ public class CompactGraph implements Graph, ICompact
         LineNumberReader linkIn = new LineNumberReader(new FileReader(linkFileName));
         int id = 0;
         linkLabels[0] = "";   //null id
+        linkMap = new TreeMap<String,Integer>();
         while ((line = linkIn.readLine())!=null) {
             linkLabels[++id] = line;
+            linkMap.put(line, id);
         }
         linkIn.close();
 

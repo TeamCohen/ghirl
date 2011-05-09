@@ -2,6 +2,7 @@ package ghirl.graph;
 
 import java.io.Console;
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.Set;
 
 import ghirl.graph.Graph;
@@ -67,7 +68,16 @@ public class InteractiveTextUI {
 					console.printf("%s not found as a graph node.\n", input);
 					continue;
 				}
+				if (d.size() > 1) {
+					console.printf("Found %d nodes (taking the first).\n", d.size());
+					for (Iterator it = d.iterator(); it.hasNext(); ) { GraphId qnode = (GraphId) it.next();
+						console.printf("\t%s\n", qnode.toString());
+					}
+				}
 				GraphId node = (GraphId) d.iterator().next();
+				if (node.getFlavor().equals(TextGraph.TEXT_TYPE)) {
+					console.printf("%s: %s\n", node.toString(), graph.getTextContent(node));
+				}
 				Set<String> edges = graph.getEdgeLabels(node);
 				for (String edge : edges) {
 					Set<GraphId> destinations = graph.followLink(node, edge);
