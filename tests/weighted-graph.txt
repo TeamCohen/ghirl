@@ -1,0 +1,47 @@
+###################################################################
+# Sample of graph format 
+###################################################################
+
+#create ordinary graph nodes named 'william' and 'person'
+#and connect them via an edge labeled 'isa'
+edge isa william person 0.1
+#repeat for some more people and relationships
+edge isa vitor person 0.1
+edge isa einat person 0.1
+edge advises william einat 1
+edge advises william vitor 1
+edge fatherOf william josh 1
+edge fatherOf william charlie 1
+edge wrote einat dateExtractor 1
+edge isa minorthird sw 0.1
+edge wrote william minorthird 1
+edge wrote william secondstring 1
+
+#create some 'text' nodes, which contain small strings of text
+node TEXT$m3ac modules for inferring names and ontological relationships etc
+node TEXT$lswac lego star wars
+node TEXT$sent1 my favorite author is Tom Clancy
+
+#create some relationships involving these nodes
+edge acronym minorthird TEXT$m3ac 1
+edge acronym lsw TEXT$lswac 1
+edge wrote charlie TEXT$sent1 1
+
+#create some FILE nodes. the file names could 
+#be paths here.
+node FILE$msg1.txt
+node FILE$msg2.txt
+node FILE$msg3.txt
+
+#create some relationships involving files
+edge authored josh FILE$msg1.txt 1
+edge authored charlie FILE$msg2.txt 1
+edge authored william FILE$msg3.txt 1
+
+#create a minorthird 'labels' node that annotates the single file
+#msg2.txt.  This will incidentally create some additional nodes
+#associated with the annotations. For implementation reasons: in the
+#labels.txt file, the documentId argument is always replaced by the
+#string 'somefile' (note that the file annotated is specified below).
+
+node LABELS$labels1.txt FILE$msg2.txt
