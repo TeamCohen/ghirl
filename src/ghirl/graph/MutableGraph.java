@@ -9,8 +9,11 @@ public interface MutableGraph extends Graph
     /** Create a new node that lives in this Graph. */
     public GraphId createNode(String flavor,String shortName,Object content);
 
-    /** Add an edge to the graph. */
+    /** Add an edge to the graph with unit weight. */
     public void addEdge(String label,GraphId from,GraphId to);
+    
+    /** Add a weighted edge to the graph. */
+    public void addEdge(String label, GraphId from, GraphId to, double wt);
 
     /** Set a property of a node. */
     public void setProperty(GraphId from,String prop,String val);

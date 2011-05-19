@@ -72,6 +72,10 @@ public class PersistantGraphHexastore extends PersistantGraph {
 		hs.add_Edge(from.toString(), linkLabel, to.toString());
 		cacheEdgeLabel(linkLabel);
 	}
+	@Override
+	public void addEdge(String label, GraphId from, GraphId to, double wt) {
+		throw new UnsupportedOperationException(this.getClass().getName()+" does not support weighted edges.");
+	}
 
 	@Override
 	public boolean contains(GraphId id) {

@@ -91,6 +91,10 @@ public class PersistantGraphSleepycat extends PersistantGraph
 		//catch (ClassCastException ex) { ex.printStackTrace(); }
 		cacheEdgeLabel(linkLabel);
 	}
+	@Override
+	public void addEdge(String label, GraphId from, GraphId to, double wt) {
+		throw new UnsupportedOperationException(this.getClass().getName()+" does not support weighted edges.");
+	}
 
 	public Set followLink(GraphId from,String linkLabel)
 	{

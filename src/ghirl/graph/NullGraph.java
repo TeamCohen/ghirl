@@ -55,6 +55,8 @@ public class NullGraph implements Graph, MutableGraph {
 
 	@Override
 	public void addEdge(String label, GraphId from, GraphId to) { }
+	@Override
+	public void addEdge(String label, GraphId from, GraphId to, double wt) { }
 
 	@Override
 	public GraphId createNode(String flavor, String shortName) { return new GraphId(flavor,shortName); }

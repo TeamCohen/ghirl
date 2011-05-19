@@ -64,19 +64,18 @@ while (<>) {
 	$IsNode{$nodeName}++;
     }
     if (/^edge/) {
-	#format could be 'edge:count rel fromNode toNode'
+	#format could be 'edge rel fromNode toNode wt'
 	#or just 'edge rel fromNode toNode'
-	my($keywordAndCount,$linkLabel,$nodeName1,$nodeName2) = split;
-	my($keyword,$count) = split(/:/,$keywordAndCount);
-	$count = 1 unless defined($count);
+	my($keyword,$linkLabel,$nodeName1,$nodeName2,$weight) = split;
+	$weight = 1 unless defined($weight);
 	$nodeName1 = normalizeNodeName($nodeName1);
 	$nodeName2 = normalizeNodeName($nodeName2);
 	$IsNode{$nodeName1}++;
 	$IsNode{$nodeName2}++;
 	$IsLabel{$linkLabel}++;
 	$IsLabel{$linkLabel."Inverse"}++;
-	print TF $nodeName1," ",$linkLabel," $count ",$nodeName2,"\n";
-	print TF $nodeName2," ",$linkLabel,"Inverse $count ",$nodeName1,"\n",
+	print TF $nodeName1," ",$linkLabel," $weight ",$nodeName2,"\n";
+	print TF $nodeName2," ",$linkLabel,"Inverse $weight ",$nodeName1,"\n",
     }
     print "- pass $pass finished $ctr lines\n" if ++$ctr % 100000 == 0;
 }
@@ -118,13 +117,13 @@ my $lastLabel = '';
 my @Dsts = ();
 while (<SFT>) {
 #    print "- pass $pass finished $ctr lines\n" if ++$ctr % 100000 == 0;
-    my($src,$label,$count,$dst) = split;
+    my($src,$label,$weight,$dst) = split;
     if ($src ne $lastSrc || $label ne $lastLabel) {
 	flushEdges($lastSrc,$lastLabel,@Dsts)
 	    if $lastSrc;
 	@Dsts = ()
     }
-    push(@Dsts,($NodeId{$dst}.':'.$count));
+    push(@Dsts,($NodeId{$dst}.':'.$weight));
     $lastSrc = $src;
     $lastLabel = $label;
     print "- pass $pass finished $ctr lines\n" if ++$ctr % 100000 == 0;

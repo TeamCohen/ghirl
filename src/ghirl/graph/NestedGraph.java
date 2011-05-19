@@ -95,6 +95,10 @@ public class NestedGraph implements MutableGraph {
 	    {
 	        outer.addEdge(linkLabel,from,to);
 	    }
+		@Override
+		public void addEdge(String label, GraphId from, GraphId to, double wt) {
+			outer.addEdge(label, from, to, wt);
+		}
 
 	    public Set followLink(GraphId from,String linkLabel) 
 	    {

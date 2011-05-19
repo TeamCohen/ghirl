@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.TreeMap;
 
 import ml.options.OptionSet;
 import ml.options.Options;
@@ -80,7 +81,20 @@ public class GraphFactory {
 		GRAPH="graph",
 		TEXTGRAPH="textgraph",
 		MEMORYGRAPH="memorygraph",
-		BSHGRAPH="bshgraph";
+		BSHGRAPH="bshgraph",
+		COMPACTGRAPH="compactgraph";
+	private static final String USAGE = "GraphFactory Usage:"
+		+"\n\t-memorygraph [-load file1,file2,...]"
+		+"\n\t-textgraph graphName {-r|-w|-a} [-load file1,file2,...]"
+		+"\n\t-bshgraph bshFile {-r|-w|-a} [-load file1,file2,...]"
+		+"\n\t-graph graphNameOrBshFile {-r|-w|-a} [-load file1,file2,...]";
+	private static TreeMap<String,GraphHelper> helpers = new TreeMap<String,GraphHelper>();
+	static {
+		helpers.put(TEXTGRAPH, new TextGraphBuilder());
+		helpers.put(MEMORYGRAPH, new MemoryGraphBuilder());
+		helpers.put(BSHGRAPH, new BshGraphBuilder());
+		helpers.put(COMPACTGRAPH, new CompactGraphBuilder());
+	}
 	private static final GraphFactory instance = new GraphFactory();
 	public static Graph makeGraph(String ... args) {
 		return instance.fromOptions(args);
@@ -94,6 +108,8 @@ public class GraphFactory {
 			.addOption(TEXTGRAPH,Separator.BLANK); addMode(s);
 		s = options.addSet(BSHGRAPH,0)
 			.addOption(BSHGRAPH,Separator.BLANK); addMode(s);
+		options.addSet(COMPACTGRAPH,0)
+			.addOption(COMPACTGRAPH);
 		options.addSet(MEMORYGRAPH,0)
 			.addOption(MEMORYGRAPH);
 		options.addOptionAllSets("load", Separator.BLANK, Multiplicity.ZERO_OR_ONE);
@@ -102,32 +118,27 @@ public class GraphFactory {
 			StringBuilder optionstring = new StringBuilder();
 			for(String st : args) optionstring.append("\t").append(st).append("\n");
 			throw new IllegalArgumentException(
-					"GraphFactory Usage:"
-					+"\n\t-memorygraph [-load file1,file2,...]"
-					+"\n\t-textgraph graphName {-r|-w|-a} [-load file1,file2,...]"
-					+"\n\t-bshgraph bshFile {-r|-w|-a} [-load file1,file2,...]"
-					+"\n\t-graph graphNameOrBshFile {-r|-w|-a} [-load file1,file2,...]"
+					USAGE
 					+"\n\n"+options.getCheckErrors()
 					+"\n\nOn the following options:\n"+optionstring);
 		}
+		GraphHelper gh = null;
 		
 		if (set.getSetName().equals(GRAPH)) {
 			try {
-				Graph g = makeGraphHelper(set,TEXTGRAPH);
-				return g;
+				return helpers.get(TEXTGRAPH).make(set, TEXTGRAPH);
 			} catch(IOException e) {
 				try {
-					Graph g = makeGraphHelper(set,BSHGRAPH);
-					return g;
+					return helpers.get(BSHGRAPH).make(set, BSHGRAPH);
 				} catch (IOException e1) {
 					System.err.println("Tried textgraph and bshgraph; both failed:");
 					e.printStackTrace();
 					e1.printStackTrace();
 				}
 			}
-		} else {
+		}  else {
 			try {
-				return makeGraphHelper(set,set.getSetName());
+				return helpers.get(set.getSetName()).make(set, set.getSetName());
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -150,7 +161,7 @@ public class GraphFactory {
 		}
 		return false;
 	}
-	private char getMode(OptionSet set) {
+	private static char getMode(OptionSet set) {
 		String name = set.getSetName();
 		if (! name.equals(MEMORYGRAPH)) {
 			if (set.isSet("r")) return 'r';
@@ -160,45 +171,86 @@ public class GraphFactory {
 		return 'r';
 	}
 	
-	private Graph makeGraphHelper(OptionSet set, String pseudonym) throws IOException {
-		Graph g=null; char mode = 'w';
-		if (TEXTGRAPH.equals(pseudonym)) {
-			String graphName = set.getOption(set.getSetName()).getResultValue(0);
-			mode = getMode(set);
-			if ('r'==mode) g = new TextGraph(graphName);
-			else           g = new MutableTextGraph(graphName,mode);
-		} else if (BSHGRAPH.equals(pseudonym)) {
-			String bshname = set.getOption(set.getSetName()).getResultValue(0);
-			mode = getMode(set);
-			if ('r'==mode) g = BshUtil.toObject(bshname, Graph.class);
-			else           g = BshUtil.toObject(bshname, MutableGraph.class);
-		} else if (MEMORYGRAPH.equals(pseudonym)) {
-			g = new BasicGraph();
-		}
-		if (g == null) throw new IllegalStateException("Specified options did not result in a graph?");
-		
-		if (set.isSet("load") && mode != 'r') {
-			GraphLoader loader = new GraphLoader((MutableGraph)g);
-			for (String filename : set.getOption("load").getResultValue(0).split(",")) {
-				File file = new File(filename);
-				if (!file.exists()) {
-					file = new File(Config.getProperty(Config.DBDIR)
-							        +File.separator+filename);
-					if (!file.exists()) 
-						throw new FileNotFoundException("Could not load file "+filename+"; file not found.");
-				}
-				((MutableGraph)g).melt();
-				loader.load(file);
-			}
-			((MutableGraph)g).freeze();
-		}
-		return g;
-	}
-	
 	public static void main(String[] args) {
 		Graph g = makeGraph(args);
 		logger.info("Closing graph...");
 		if (g instanceof Closable) ((Closable)g).close();
 		logger.info("Closed.");
+	}
+	
+	/** Graph helpers: Each helper knows how to construct and load a particular kind of graph.
+	 * Since Text, Bsh, and Memory graphs all load similarly, we can extract that behavior to 
+	 * the abstract class.
+	 * @author krivard
+	 *
+	 */
+	public abstract static class GraphHelper {
+		public abstract Graph constructGraph(OptionSet set, String pseudonym) throws IOException;
+		public void loadGraph(Graph g, OptionSet set) throws IOException {
+			if (set.isSet("load") && getMode(set) != 'r') {
+				GraphLoader loader = new GraphLoader((MutableGraph)g);
+				for (String filename : set.getOption("load").getResultValue(0).split(",")) {
+					File file = new File(filename);
+					if (!file.exists()) {
+						file = new File(Config.getProperty(Config.DBDIR)
+								        +File.separator+filename);
+						if (!file.exists()) 
+							throw new FileNotFoundException("Could not load file "+filename+"; file not found.");
+					}
+					((MutableGraph)g).melt();
+					loader.load(file);
+				}
+				((MutableGraph)g).freeze();
+			}
+		}
+		public Graph make(OptionSet set, String pseudonym) throws IOException {
+			Graph g = constructGraph(set, pseudonym);
+			loadGraph(g, set);
+			return g;
+		}
+	}
+	public static class TextGraphBuilder extends GraphHelper {
+		public Graph constructGraph(OptionSet set, String pseudonym) throws IOException {
+			String graphName = set.getOption(set.getSetName()).getResultValue(0);
+			char mode = getMode(set);
+			if ('r'==mode) return new TextGraph(graphName);
+			else		   return new MutableTextGraph(graphName,mode);
+		}
+	}
+	public static class BshGraphBuilder extends GraphHelper {
+		public Graph constructGraph(OptionSet set, String pseudonym) throws IOException {
+			String bshname = set.getOption(set.getSetName()).getResultValue(0);
+			char mode = getMode(set);
+			if ('r'==mode) return BshUtil.toObject(bshname, Graph.class);
+			else           return BshUtil.toObject(bshname, MutableGraph.class);
+		}
+	}
+	public static class MemoryGraphBuilder extends GraphHelper {
+		public Graph constructGraph(OptionSet set, String pseudonym) throws IOException {
+			return new BasicGraph();
+		}
+	}
+	
+	/** CompactGraphBuilder has a special loading procedure that doesn't use a GraphLoader. */
+	public static class CompactGraphBuilder extends GraphHelper {
+		public Graph constructGraph(OptionSet set, String pseudonym) throws IOException {
+			return new CompactGraph();
+		}
+		public void loadGraph(Graph g, OptionSet set) throws IOException {
+			if (!set.isSet("load")) return;
+			if (!(g instanceof ICompact)) throw new IllegalStateException("Graph passed to CompactGraphBuilder.loadGraph() not of type ICompact (really messed up)");
+			ICompact c = (ICompact) g;
+			String loadOption = set.getOption("load").getResultValue(0);
+			String[] parts = loadOption.split(",");
+			if (parts.length == 1) {
+				c.load(parts[0]);
+			} else if (parts.length == 4) {
+				c.load( new File(parts[0]),
+						new File(parts[1]),
+						new File(parts[2]),
+						new File(parts[3]));
+			} else throw new IllegalStateException(USAGE+"\n\n-load option for compact graphs must take one or four comma-separated files; you had "+parts.length+":"
+					+"\n\t"+loadOption);
+		}
 	}
 }

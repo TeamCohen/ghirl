@@ -400,9 +400,17 @@ public class MutableTextGraph extends TextGraph implements MutableGraph {
 	public void addEdge(String linkLabel,GraphId from,GraphId to)
 	{
 		if (isFrozen()) {
-			throw new IllegalStateException("adding edge "+linkLabel+" "+from+" -> "+to+" to frozen graph "+this);
+			throw new IllegalStateException("Can't add edge "+linkLabel+" "+from+" -> "+to+" to frozen graph "+this);
 		}
 		innerGraph.addEdge(linkLabel,from,to);
+	}
+	
+	@Override
+	public void addEdge(String label, GraphId from, GraphId to, double wt) {
+		if (isFrozen()) {
+			throw new IllegalStateException("Can't add edge "+label+":"+wt+" "+from+" -> "+to+" to frozen graph "+this);
+		}
+		innerGraph.addEdge(label,from,to,wt);
 	}
 
 	/** Create a new node in the graph of flavor LABELs with short

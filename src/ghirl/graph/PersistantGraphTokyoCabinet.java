@@ -69,6 +69,10 @@ public class PersistantGraphTokyoCabinet extends PersistantGraph {
 		if (!ne) logger.error("Problem adding edge "+linkLabel+" "+from.toString()+" "+to.toString()+": "
 				+BDB.errmsg(nodeEdges.ecode()));
 	}
+	@Override
+	public void addEdge(String label, GraphId from, GraphId to, double wt) {
+		throw new UnsupportedOperationException(this.getClass().getName()+" does not support weighted edges.");
+	}
 
 	@Override
 	public void freeze() {

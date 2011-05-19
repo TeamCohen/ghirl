@@ -1,5 +1,9 @@
 package ghirl.graph;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+
 import edu.cmu.pra.graph.IGraph;
 import ghirl.util.Distribution;
 
@@ -12,14 +16,13 @@ public interface ICompact extends Graph, IGraph{
    * Decide not to touch this now --Ni*/
   public Distribution walk1(int from,int linkLabel);
   
-  
-/*	public SetI walk2(int from,int linkLabel);
- 
-	public SetI getNodeIdx( String flavor, String[] vs);
-  
-  public String getNodeName(int idx);
-  public String[] getNodeName(Collection<Integer> vi);
-*/
   public int getNodeIdx(GraphId from);	
   public GraphId[] getGraphIds();
+  
+  /** Loads the graph from the compact format files specified. See CompactGraph for format details. */
+  public void load(File size, File link, File node, File row) 
+  	throws IOException, FileNotFoundException;
+  
+  public void load(String dir) 
+	throws IOException, FileNotFoundException;
 }

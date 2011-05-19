@@ -20,11 +20,13 @@ import ghirl.util.Config;
  * <li>A blank line, or anything starting with a "#".  These
  * are comments. 
  *
- * <li>A line of the form "edge relation id1 id2".  This creates an
- * edge labeled 'relation' between the node labeled 'id1' and 'id2'.
- * If nodes id1 or id2 have not yet been created they will be created
- * <i>iff they are primitive nodes.</i> FILE and TEXT nodes need to be
- * explicitly declared with one of commands below.
+ * <li>A line of the form "edge relation id1 id2 [weight]".  This creates an
+ * edge labeled 'relation' between the node labeled 'id1' and 'id2', with the
+ * optional weight (any double value).
+ * If nodes id1 or id2 have not yet been created they will be created, but
+ * only use this functionality for primitive nodes. FILE and TEXT nodes 
+ * should be explicitly declared with one of commands below to properly
+ * initialize their document content.
  *
  * <li>A declaration of a FILE node, which is of the form
  * "node FILE$location".  Here "location" should be the name
@@ -149,8 +151,14 @@ public class GraphLoader
 			GraphId from = lookupNode(parts[2]);  // id of field 1
 			log.debug("Looking up field 2 "+parts[3]);
 			GraphId to = lookupNode(parts[3]);    // id of field 2
-			log.debug("Adding edge");
-			addEdge(linkLabel, from, to);
+			if (parts.length>4) {
+				double wt = Double.parseDouble(parts[4]);
+				log.debug("Adding edge");
+				addEdge(linkLabel,from,to,wt);
+			} else {
+				log.debug("Adding edge");
+				addEdge(linkLabel, from, to);
+			}
 			return true;
 		}
 		
@@ -161,6 +169,14 @@ public class GraphLoader
 		graph.addEdge( linkLabel, from, to );
 		if (invertLinks) graph.addEdge( linkLabel+"Inverse", to, from );
 		// also, check if an 'isa' rule is applied
+		applyIsaRules(linkLabel, from, to);
+	}
+	protected void addEdge(String label, GraphId from, GraphId to, double wt) {
+		graph.addEdge(label, from, to, wt);
+		if (invertLinks) graph.addEdge(label+"Inverse", to, from, wt);
+		applyIsaRules(label, from, to);
+	}
+	protected void applyIsaRules(String linkLabel, GraphId from, GraphId to) {
 		if (isaRules.keySet().contains(linkLabel)){
 			Map indexType = (Map)isaRules.get(linkLabel);
 			for (Iterator i=indexType.keySet().iterator(); i.hasNext();){

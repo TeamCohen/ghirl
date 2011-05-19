@@ -1,5 +1,6 @@
 package ghirl.graph;
 
+import static org.junit.Assert.*;
 import edu.cmu.lti.algorithm.container.MapID;
 import edu.cmu.lti.algorithm.container.MapMapSSI;
 import edu.cmu.lti.algorithm.container.SetI;
@@ -28,16 +29,17 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import org.apache.log4j.Logger;
+import org.junit.Test;
 
 /** A compact non-text graph that can be loaded
- * from three files:
+ * from four files:
  *<ul>
  * <li> <code>nodeNameFile</code>: each line is the name of a node, where the 'integer
  *  id' of a node is line number, starting from one.  Lines are sorted
- *  lexigraphically.</li>
+ *  lexicographically.</li> 
  * 
  * <li><code>linkNameFile</code>: each line is the name of a link label, where the
- *  'integer id' is the line number.</li>
+ *  'integer id' is the line number. Lines are sorted lexicographically.</li>
  *
  * <li><code>walkFile</code>: each line has the form: 
  *<pre>
@@ -109,6 +111,13 @@ public class CompactGraph implements Graph, ICompact
   		load(sizeFile, linkFile, nodeFile, walkFile);
   	}
   	
+  	@Test
+  	public void stringOrderingTest() {
+  		assertTrue("".compareTo("a") < 0);
+  		assertTrue("$".compareTo("a$a") < 0);
+  		assertTrue("$".compareTo("A$A") < 0);
+  	}
+  	
     public void load(File sizeFileName,File linkFileName,File nodeFileName,File walkFileName)
         throws IOException, FileNotFoundException 
     { 
@@ -131,19 +140,39 @@ public class CompactGraph implements Graph, ICompact
         int id = 0;
         linkLabels[0] = "";   //null id
         linkMap = new TreeMap<String,Integer>();
-        while ((line = linkIn.readLine())!=null) {
+        int linkcount=-1;
+        for (linkcount=0; (line = linkIn.readLine())!=null; linkcount++) {
             linkLabels[++id] = line;
             linkMap.put(line, id);
+            if (line.compareTo(linkLabels[id-1])<0) {
+            	log.warn("Link file "+linkFileName+" must be in lexicographical order. Line "+linkcount+" '"
+            			+line+"' should fall before previous line '"+linkLabels[id-1]+"'");
+            }
         }
         linkIn.close();
+        if (linkcount != numLinks) {
+        	log.warn("Size file has "+numLinks+" for the number of link types but "
+        			+linkcount+" link types found in link file "+linkFileName
+        			+". This could cause null pointer exceptions later; please fix!");
+        }
 
         ProgressCounter npc = new ProgressCounter("loading "+nodeFileName,"lines");
         LineNumberReader nodeIn = new LineNumberReader(new FileReader(nodeFileName));
         id = 0;
         graphIds[0] = GraphId.fromString("");   //for null id
-        while ((line = nodeIn.readLine())!=null) {
+        int nodecount=-1;
+        for (nodecount=0; (line = nodeIn.readLine())!=null; nodecount++) {
             graphIds[++id] = GraphId.fromString(line);
             npc.progress();
+            if (graphIds[id].compareTo(graphIds[id-1])<0) {
+            	log.warn("Node file "+nodeFileName+"  must be in lexicographical order. Line "+nodecount+" '"
+            			+graphIds[id].toString()+"' should fall before previous line '"+graphIds[id-1].toString()+"'");
+            }
+        }
+        if (nodecount != numNodes) {
+        	log.warn("Size file has "+numNodes+" for the number of node names but "
+        			+nodecount+" node names found in node file "+nodeFileName
+        			+". This could cause null pointer exceptions later; please fix!");
         }
         npc.finished();
         nodeIn.close();

@@ -32,7 +32,11 @@ public interface Walkable
     /** want a more efficient interface 
      * Usually I prefer abstract class then interface
      * since I can implement a default behavior for all the subclasses.
-     * Decide not to touch this now --Ni*/
+     * Decide not to touch this now --Ni
+     * 
+     * Ni: Keeping this as an interface allows us to combine multiple
+     * behavior patterns, since Java does not support multiple inheritance.
+     * Put default behavior in a "BasicX" or "AbstractX" class. -Katie */
    // public Distribution walk1(int from,int linkLabel);
     
     /*@Override public abstract  Distribution walk1(int from,int linkLabel){

@@ -8,14 +8,14 @@ import ghirl.util.*;
 public class BasicGraph implements MutableGraph 
 {
 	/** Set of nodes */
-	private Set<GraphId> nodeSet = new HashSet<GraphId>();  // set of nodes
+	protected Set<GraphId> nodeSet = new HashSet<GraphId>();  // set of nodes
 	/** Maps id to edge labels */
-	private Map<GraphId,Set<String>> labelMap = new HashMap<GraphId,Set<String>>(); // maps id => edge labels
+	protected Map<GraphId,Set<String>> labelMap = new HashMap<GraphId,Set<String>>(); // maps id => edge labels
 	/** Maps edgeKey(id,label) to destinations */
-	private Map<String,Set<GraphId>> edgeMap = new HashMap<String,Set<GraphId>>();  // maps edgeKey(id,label)=>HashSet<destinations>
+	protected Map<String,Set<GraphId>> edgeMap = new HashMap<String,Set<GraphId>>();  // maps edgeKey(id,label)=>HashSet<destinations>
 	/** Maps edgeKey(node prop) to properties */
-	private Map<GraphId,Properties> nodeProps = new HashMap<GraphId,Properties>(); // maps edgeKey(node,prop)=>properties
-	private boolean isFrozen = false;
+	protected Map<GraphId,Properties> nodeProps = new HashMap<GraphId,Properties>(); // maps edgeKey(node,prop)=>properties
+	protected boolean isFrozen = false;
 	
 	public void freeze() 
 	{ 
@@ -27,7 +27,7 @@ public class BasicGraph implements MutableGraph
 		isFrozen=false; 
 	}
 
-	private void checkMelted()
+	protected void checkMelted()
 	{
 		if (isFrozen) throw new IllegalStateException("graph is frozen!");
 	}
@@ -151,11 +151,16 @@ public class BasicGraph implements MutableGraph
 	// for handling edges
 	//
 
-	private String edgeKey(GraphId from,String linkLabel) 
+	protected String edgeKey(GraphId from,String linkLabel) 
 	{ 
 		return from.getFlavor()+":"+from.getShortName()+"#"+linkLabel; 
 	}
 
-	private Set safeSet(Set set) { return set==null ? Collections.EMPTY_SET : set; }
+	protected Set safeSet(Set set) { return set==null ? Collections.EMPTY_SET : set; }
+
+	@Override
+	public void addEdge(String label, GraphId from, GraphId to, double wt) {
+		throw new UnsupportedOperationException(this.getClass().getName()+" does not support weighted edges.");
+	}
 
 }
