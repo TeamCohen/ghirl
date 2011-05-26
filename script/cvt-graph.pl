@@ -203,12 +203,18 @@ sub sortTmpfileLargefileHandling {
 #    system("rm -r $tmpdir");
 }
 
+sub makeSafe {
+    ($safe = $_) =~ s/([\?\$'\(\)])/\\$1/g;
+    return $safe;
+}
+
 sub splitFiles {
     my ($tmpdir, $pren, @splitinfo) = @_;
     my %this_pass = ();
     foreach my $key (@splitinfo) {
-	($safekey = $key) =~ s/\?/\\\?/g;
-	($safekey = $key) =~ s/\$/\\\$/g;
+#                                 ? $' ( )    get escaped here:
+	($safekey = $key) =~ s/([\?\$'\(\)])/\\$1/g;
+#	$safekey = makeSafe($key);
 	$cmd = "mv $tmpdir/$safekey $tmpdir/.tmp";
 	#print "$cmd\n";
 	print "Moving $key to $tmpdir/.tmp\n";
@@ -230,8 +236,8 @@ sub splitFile {
     while(<FILE>) {
 	chop;
 	my $pre = substr($_, 1, $pren);
-	if (/^TEXT/) {
-	    $pre = substr($_, 0, $pren+5);
+	unless (/^$/) {
+	    $pre = substr($_, 0, $pren+index($_,"\$"));
 	}
 	unless(defined($preinfo{$pre})) {
 	    open($tmpname,">$tempfiles/$pre");
@@ -253,8 +259,10 @@ sub mergePrefixFiles {
 	print ":$key";
 	#print ".";
 	close($preinfo{$key});
-	($safekey = $key) =~ s/\?/\\\?/g;
-	($safekey = $key) =~ s/\$/\\\$/g;
+	($safekey = $key) =~ s/([\?\$'\(\)])/\\$1/g;
+#	$safekey = makeSafe($key);
+#	($safekey = $key) =~ s/\?/\\\?/g;
+#	($safekey = $key) =~ s/\$/\\\$/g;
 # silly shell; don't include *all* the files
 	open(SPREF, "sort $tmpdir/$safekey|") or die "Can't sort prefix file $safekey $!";
 	while (<SPREF>) { print TT $_; }
