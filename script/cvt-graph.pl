@@ -197,9 +197,10 @@ sub sortTmpfileLargefileHandling {
 	@remaining = getLargeFiles($max_size,%info);
 	undef %info;
     }
-    print "Done splitting at pass $pass. Beginning sort and merge:\n";
+    print "Done splitting at pass $pass. Beginning sort, merge, and dedupe:\n";
     #foreach my $key (sort(keys(%preinfo))) { print "\t$key\n"; }
     mergePrefixFiles("$filename",$tmpdir,%preinfo);
+    system("uniq $filename > $filename.uniq ; mv $filename.uniq $filename");
 #    system("rm -r $tmpdir");
 }
 
@@ -264,7 +265,7 @@ sub mergePrefixFiles {
 #	($safekey = $key) =~ s/\?/\\\?/g;
 #	($safekey = $key) =~ s/\$/\\\$/g;
 # silly shell; don't include *all* the files
-	open(SPREF, "sort $tmpdir/$safekey|") or die "Can't sort prefix file $safekey $!";
+	open(SPREF, "LC_ALL=C sort $tmpdir/$safekey|") or die "Can't sort prefix file $safekey $!";
 	while (<SPREF>) { print TT $_; }
 	close(SPREF);
     }
