@@ -25,9 +25,9 @@ public class TestWeightedGraphFormat {
 		
 		Distribution einat = g.walk1(GraphId.fromString("$einat"));
 		assertEquals(3,einat.size());
-		assertTrue(2.1-einat.getTotalWeight() < EPSILON);
-		assertTrue(0.1-einat.getWeight(GraphId.fromString("$person")) < EPSILON);
-		assertTrue(1.0-einat.getWeight(GraphId.fromString("$william")) < EPSILON);
+		assertTrue(Math.abs(2.6-einat.getTotalWeight()) < EPSILON);
+		assertTrue(Math.abs(1.1-einat.getWeight(GraphId.fromString("$person"))) < EPSILON);
+		assertTrue(Math.abs(0.5-einat.getWeight(GraphId.fromString("$william"))) < EPSILON);
 		
 	}
 }

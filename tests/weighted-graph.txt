@@ -7,7 +7,7 @@
 edge isa william person
 #repeat for some more people and relationships
 edge isa vitor person
-edge isa einat person
+edge isa einat person 1.1
 edge advises william einat 0.5
 edge advises william vitor 0.5
 edge fatherOf william josh
