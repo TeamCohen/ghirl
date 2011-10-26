@@ -3,6 +3,7 @@ package ghirl.graph;
 import ghirl.util.*;
 
 import java.util.*;
+import java.util.regex.Pattern;
 import java.io.*;
 
 /**
@@ -13,6 +14,7 @@ public class NodeFilter
 {
 
 	protected String linkLabel,targetValue;
+	protected Pattern pattern=null;
 
 	/** Expression is of the form: linkLabel=target. A node V passed
 	 * the filter if some node matching the target is reachable by an
@@ -31,6 +33,9 @@ public class NodeFilter
 		if (parts.length!=2) throw new IllegalArgumentException("bad filter expression: "+expression);
 		linkLabel = parts[0];
 		targetValue = parts[1];
+		if (targetValue.startsWith("/") && targetValue.endsWith("/")) {
+			pattern=Pattern.compile(targetValue.substring(1,targetValue.length()-1));
+		}
 	}
 
 	public boolean accept(Graph graph,GraphId id) 
@@ -46,10 +51,12 @@ public class NodeFilter
 	protected boolean matchesTarget(Graph graph,GraphId toId)
 	{
 		if ("*".equals(targetValue)) return true;
-		else if (targetValue.startsWith("/") && targetValue.endsWith("/")) {
+		else if (pattern != null) {
+			return pattern.matcher(toId.toString()).matches();
+		/*else if (targetValue.startsWith("/") && targetValue.endsWith("/")) {
 			String pattern = targetValue.substring(1,targetValue.length()-1);
 			//System.out.println("matching '"+toId.toString()+"' to /"+pattern+"/");
-			return toId.toString().matches(pattern);
+			return toId.toString().matches(pattern);*/
 		} else {
 			return toId.toString().equals(targetValue);
 		}
@@ -59,6 +66,17 @@ public class NodeFilter
 	{
 		Distribution result = new TreeDistribution();
 		for (Iterator i=nodeDist.iterator(); i.hasNext(); ) {
+			GraphId fromId = (GraphId)i.next();
+			double w = nodeDist.getLastWeight();
+			if (accept(graph,fromId)) result.add( w, fromId );
+		}
+		return result;
+	}
+	
+	public Distribution filterTop(Graph graph,Distribution nodeDist, int max) {
+		Distribution result = new TreeDistribution();
+		int n=0;
+		for (Iterator i=nodeDist.orderedIterator(true); i.hasNext() && n < max; n++) {
 			GraphId fromId = (GraphId)i.next();
 			double w = nodeDist.getLastWeight();
 			if (accept(graph,fromId)) result.add( w, fromId );

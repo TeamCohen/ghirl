@@ -82,11 +82,15 @@ public class GraphFactory {
 		TEXTGRAPH="textgraph",
 		MEMORYGRAPH="memorygraph",
 		BSHGRAPH="bshgraph",
-		COMPACTGRAPH="compactgraph";
+		COMPACTGRAPH="compactgraph",
+		COMPACTTOKYO="compacttokyo";
+		
 	private static final String USAGE = "GraphFactory Usage:"
 		+"\n\t-memorygraph [-load file1,file2,...]"
 		+"\n\t-textgraph graphName {-r|-w|-a} [-load file1,file2,...]"
 		+"\n\t-bshgraph bshFile {-r|-w|-a} [-load file1,file2,...]"
+		+"\n\t-compactgraph [-load size,link,node,row]"
+		+"\n\t-compacttokyo graphName {-r|-w|-a} [-load size,link,node,row]"
 		+"\n\t-graph graphNameOrBshFile {-r|-w|-a} [-load file1,file2,...]";
 	private static TreeMap<String,GraphHelper> helpers = new TreeMap<String,GraphHelper>();
 	static {
@@ -94,6 +98,7 @@ public class GraphFactory {
 		helpers.put(MEMORYGRAPH, new MemoryGraphBuilder());
 		helpers.put(BSHGRAPH, new BshGraphBuilder());
 		helpers.put(COMPACTGRAPH, new CompactGraphBuilder());
+		helpers.put(COMPACTTOKYO, new PersistantCompactTokyoGraphBuilder());
 	}
 	private static final GraphFactory instance = new GraphFactory();
 	public static Graph makeGraph(String ... args) {
@@ -108,8 +113,11 @@ public class GraphFactory {
 			.addOption(TEXTGRAPH,Separator.BLANK); addMode(s);
 		s = options.addSet(BSHGRAPH,0)
 			.addOption(BSHGRAPH,Separator.BLANK); addMode(s);
-		options.addSet(COMPACTGRAPH,0)
-			.addOption(COMPACTGRAPH);
+		s = options.addSet(COMPACTGRAPH,0)
+			.addOption(COMPACTGRAPH)
+			.addOption("class",Separator.BLANK,Multiplicity.ZERO_OR_ONE); addMode(s);
+		s = options.addSet(COMPACTTOKYO,0)
+			.addOption(COMPACTTOKYO, Separator.BLANK); addMode(s);
 		options.addSet(MEMORYGRAPH,0)
 			.addOption(MEMORYGRAPH);
 		options.addOptionAllSets("load", Separator.BLANK, Multiplicity.ZERO_OR_ONE);
@@ -234,10 +242,25 @@ public class GraphFactory {
 	/** CompactGraphBuilder has a special loading procedure that doesn't use a GraphLoader. */
 	public static class CompactGraphBuilder extends GraphHelper {
 		public Graph constructGraph(OptionSet set, String pseudonym) throws IOException {
-			return new CompactGraph();
+			if (!set.isSet("class")) return new CompactGraph();
+			String classname="";
+			try {
+				classname = set.getOption("class").getResultValue(0);
+				Class clazz = Class.forName(classname);
+				Object o = clazz.newInstance();
+				if (o instanceof Graph) return (Graph) o;
+				logger.error(classname+" not a valid CompactGraph class name. Valid classes have a null constructor and implement ICompact and Graph.");
+			} catch (ClassNotFoundException e) {
+				logger.error(e);
+			} catch (InstantiationException e) {
+				logger.error(e);
+			} catch (IllegalAccessException e) {
+				logger.error(e);
+			}
+			return null;
 		}
 		public void loadGraph(Graph g, OptionSet set) throws IOException {
-			if (!set.isSet("load")) return;
+			if (!set.isSet("load") || set.isSet("r")) return;
 			if (!(g instanceof ICompact)) throw new IllegalStateException("Graph passed to CompactGraphBuilder.loadGraph() not of type ICompact (really messed up)");
 			ICompact c = (ICompact) g;
 			String loadOption = set.getOption("load").getResultValue(0);
@@ -251,6 +274,14 @@ public class GraphFactory {
 						new File(parts[3]));
 			} else throw new IllegalStateException(USAGE+"\n\n-load option for compact graphs must take one or four comma-separated files; you had "+parts.length+":"
 					+"\n\t"+loadOption);
+		}
+	}
+	
+	public static class PersistantCompactTokyoGraphBuilder extends CompactGraphBuilder {
+		public Graph constructGraph(OptionSet set, String pseudonym) throws IOException {
+			String graphName = set.getOption(set.getSetName()).getResultValue(0);
+			char mode = getMode(set);
+			return new PersistantCompactTokyoGraph(graphName, mode);
 		}
 	}
 }

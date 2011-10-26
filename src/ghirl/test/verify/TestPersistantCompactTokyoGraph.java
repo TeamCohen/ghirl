@@ -27,15 +27,20 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestPersistantCompactTokyoGraph {
+	private static final Logger logger = Logger.getLogger(TestPersistantCompactTokyoGraph.class);
 	protected static String DBNAME = "testPersistantSparseCompactGraph";
 	protected static String TESTROOT = "tests";
 	protected static String COMPACTSRC = "tests/TestCompactTextGraph";
+	
+	protected String getCompactDir() {
+		return COMPACTSRC;
+	}
 	
 	protected static Graph graph;
 	@BeforeClass
 	public static void setUp() throws Exception {
 		ghirl.util.Config.setProperty(Config.DBDIR,TESTROOT);
-		graph = load();
+		graph = load(new TestPersistantCompactTokyoGraph());
 	}
 
 	@AfterClass
@@ -65,6 +70,7 @@ public class TestPersistantCompactTokyoGraph {
 	@Test
 	public void testEdgeLabels() {
 		Set<String> s = (Set<String>) graph.getEdgeLabels(GraphId.fromString("$william"));
+		logger.info("Printing edge labels:");
 		for(String link : s)  {
 			System.out.println(link);
 			assertNotNull(link);
@@ -80,7 +86,7 @@ public class TestPersistantCompactTokyoGraph {
 	}
 	
 	
-	public static Graph load() throws Exception {
+	public static Graph load(TestPersistantCompactTokyoGraph t) throws Exception {
 		Logger.getRootLogger().setLevel(Level.INFO);
 		TextGraph graph = (TextGraph) GraphFactory.makeGraph("-bshgraph","tests/compact-persistant-sparse-loader.bsh");
 		
@@ -89,7 +95,7 @@ public class TestPersistantCompactTokyoGraph {
 		
 		
 		PersistantCompactTokyoGraph cgraph = new PersistantCompactTokyoGraph(DBNAME,'w');
-		cgraph.load(COMPACTSRC);//size, link, node, walk);
+		cgraph.load(t.getCompactDir());//size, link, node, walk);
 		graph = new TextGraph(DBNAME, cgraph);
 		return graph;
 	}	

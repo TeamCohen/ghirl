@@ -14,7 +14,7 @@ public class SparseCompactGraph extends CompactGraph {
 	private static final Logger logger = Logger.getLogger(SparseCompactGraph.class);
 	/** One row for each graphId */
 	private SparseRow[] sparseWalkInfo;
-	/** Buffer for load-time only allows for the maximum number of link labels. */
+	/** Buffer (for load-time only) allows for the maximum number of link labels. */
 	private SparseRow sparseWalkBuffer;
 	/** Carries load-time state */
 	private int lastSrcId=-1, nLinks=-1;
@@ -25,7 +25,7 @@ public class SparseCompactGraph extends CompactGraph {
         sparseWalkBuffer = new SparseRow(linkLabels.length);
     }
 	@Override
-    protected void initWalkInfoCell(int srcId, int linkId, int[]destId, float[] totalWeightSoFar) {
+    protected void addWalkInfoDistribution(int srcId, int linkId, int[]destId, float[] totalWeightSoFar) {
 		if (srcId != lastSrcId) { 
 			if (lastSrcId != -1) finishWalkInfo();
 			lastSrcId = srcId; nLinks = 0;
@@ -42,17 +42,19 @@ public class SparseCompactGraph extends CompactGraph {
 	// pipeline (MxN CompactGraph doesn't need to know on a per-node basis)
 	// and I wasn't ready to do that just yet.
 	@Override
-	protected void finishWalkInfo() { 
-		int size=0;
-		String memstring="";
-		if (logger.isEnabledFor(Priority.INFO)) {
-			size = sparseWalkBuffer.sizeInBytes(nLinks);
+	protected void finishWalkInfo() {
+		if (logger.isDebugEnabled()) {
+			StringBuilder sb=new StringBuilder();
+			for (int i=0;i<nLinks;i++) {
+				sb.append(sparseWalkBuffer.sortedLabelIds[i]).append(":").append(sparseWalkBuffer.destinations[i].size()).append(" ");
+			}
 			Runtime r = Runtime.getRuntime();
 			long free=r.freeMemory(), total = r.totalMemory();
-			memstring = free+" bytes of "+total+" available ("+Math.round((double)free/total*100)+"%)";
+			String memstring = free+" bytes free of "+total+" available ("+Math.round((double)free/total*100)+"%)";
+			logger.debug("Writing row "+lastSrcId+" with "+nLinks+" links: ("+sb.toString()+"). "+memstring);
 		}
 		//too much log info in the log file, removed by Ni
-		//logger.info("Writing row "+lastSrcId+" with "+nLinks+" links: "+size+" in data; "+memstring);
+		//...set log4j.logger.ghirl.graph.SparseCompactGraph=INFO or greater. That's what a logging system is for.
 		sparseWalkInfo[lastSrcId] = new SparseRow(nLinks);
 		System.arraycopy(sparseWalkBuffer.sortedLabelIds, 0, 
 				sparseWalkInfo[lastSrcId].sortedLabelIds, 0, nLinks);
@@ -63,7 +65,8 @@ public class SparseCompactGraph extends CompactGraph {
 	@Override
     protected Distribution getStoredDist(int fromNodeIndex,int linkIndex)
     {
-        Distribution result = sparseWalkInfo[fromNodeIndex].get(linkIndex);
+        if (logger.isDebugEnabled()) logger.debug("Getting distribution for node "+fromNodeIndex+" link "+linkIndex);
+		Distribution result = sparseWalkInfo[fromNodeIndex].get(linkIndex);
         if (result == null) {
             return EMPTY_DIST;
         } else {
@@ -80,6 +83,9 @@ public class SparseCompactGraph extends CompactGraph {
 		}
 		public CompactImmutableDistribution get(int labelIndex) {
 			int i = Arrays.binarySearch(sortedLabelIds, labelIndex);
+			if (logger.isDebugEnabled()) {
+				logger.debug("Link "+labelIndex+" is at sparse index "+i);
+			}
 			if (i<0) return null;
 			return destinations[i];
 		}
@@ -87,6 +93,7 @@ public class SparseCompactGraph extends CompactGraph {
 			if (index > destinations.length) 
 				logger.error("Attempt to write past the end of this sparse row (index "+index+", length "+destinations.length);
 			sortedLabelIds[index] = linkLabelId;
+			if (index > 0) assert (sortedLabelIds[index] > sortedLabelIds[index-1]) : "Link labels must be sorted! Tried to add label id "+sortedLabelIds[index]+" after id "+sortedLabelIds[index-1]+" at index "+index;
 			destinations[index] = cid;
 		}
 		public int sizeInBytes() { return sizeInBytes(sortedLabelIds.length); }

@@ -52,7 +52,7 @@ import org.junit.Test;
  * <li><code>sizeFile</code>: the number of lines in the linkfile and nodefile, respectively.</li>
  * </ul>
  */
-public class CompactGraph implements Graph, ICompact
+public class CompactGraph extends AbstractCompactGraph implements Graph, ICompact
 {
     private static final Logger log = Logger.getLogger(CompactGraph.class);
 
@@ -78,11 +78,15 @@ public class CompactGraph implements Graph, ICompact
     }
     
     public int getNodeIdx(GraphId id) {
+    	int idx=-1;
     	if (mmGraphIdx!=null)
-    		return mmGraphIdx.getC(id.getFlavor())
+    		idx = mmGraphIdx.getC(id.getFlavor())
     			.getD( id.getShortName(), -1);
     	else 
-    		return safeLookup( graphIds,id,"graphId"); 
+    		idx= safeLookup( graphIds,id,"graphId"); 
+
+		if (log.isDebugEnabled()) log.debug("Idx for node "+id.toString()+" is "+idx);
+		return idx;
     }
 
     /** ordered list of all link labels */
@@ -90,27 +94,16 @@ public class CompactGraph implements Graph, ICompact
     protected Map<String,Integer> linkMap;
     protected int linkLabelIndex(String label) { 
     	Integer i = linkMap.get(label);
-    	if (i==null) return -1;
-    	return i;
+    	if (i==null) i = -1;
+
+		if (log.isDebugEnabled()) log.debug("Id for link "+label+" is "+i);
+		return i;
     }
 
     /** cached walk for potentially every graph id, indexed by graph in */
     protected CompactImmutableDistribution[][] walkInfo;
 
     
-  	public void load(String folder) 
-  	throws IOException, FileNotFoundException {
-  		if (!folder.endsWith(File.separator))
-  			folder= folder+ File.separator;
-
-  		File linkFile = new File(folder+"graphLink.pct");
-  		File nodeFile = new File(folder+"graphNode.pct");
-  		File walkFile = new File(folder+"graphRow.pct");
-  		File sizeFile = new File(folder+"graphSize.pct");
-
-  		load(sizeFile, linkFile, nodeFile, walkFile);
-  	}
-  	
   	@Test
   	public void stringOrderingTest() {
   		assertTrue("".compareTo("a") < 0);
@@ -118,110 +111,50 @@ public class CompactGraph implements Graph, ICompact
   		assertTrue("$".compareTo("A$A") < 0);
   	}
   	
-    public void load(File sizeFileName,File linkFileName,File nodeFileName,File walkFileName)
-        throws IOException, FileNotFoundException 
-    { 
-        String line;
-        String[] parts;
-
-        // read the statistics on the array sizes
-        LineNumberReader sizeIn = new LineNumberReader(new FileReader(sizeFileName));
-        line = sizeIn.readLine();
-        parts = line.split(" ");
-        int numLinks = StringUtil.atoi(parts[0]);
-        int numNodes = StringUtil.atoi(parts[1]);
-        sizeIn.close();
-        
-        log.info("creating compact graph with "+numLinks+" links and "+numNodes+" nodes");
+    
+    /********************* Template methods for the local data implementation  */
+    protected void initLoad(int numLinks, int numNodes) {
         linkLabels = new String[numLinks + 1];
         graphIds = new GraphId[numNodes + 1];
-
-        LineNumberReader linkIn = new LineNumberReader(new FileReader(linkFileName));
-        int id = 0;
+    }
+    
+    protected void initLinks() {
         linkLabels[0] = "";   //null id
         linkMap = new TreeMap<String,Integer>();
-        int linkcount=-1;
-        for (linkcount=0; (line = linkIn.readLine())!=null; linkcount++) {
-            linkLabels[++id] = line;
-            linkMap.put(line, id);
-            if (line.compareTo(linkLabels[id-1])<0) {
-            	log.warn("Link file "+linkFileName+" must be in lexicographical order. Line "+linkcount+" '"
-            			+line+"' should fall before previous line '"+linkLabels[id-1]+"'");
-            }
-        }
-        linkIn.close();
-        if (linkcount != numLinks) {
-        	log.warn("Size file has "+numLinks+" for the number of link types but "
-        			+linkcount+" link types found in link file "+linkFileName
-        			+". This could cause null pointer exceptions later; please fix!");
-        }
-
-        ProgressCounter npc = new ProgressCounter("loading "+nodeFileName,"lines");
-        LineNumberReader nodeIn = new LineNumberReader(new FileReader(nodeFileName));
-        id = 0;
-        graphIds[0] = GraphId.fromString("");   //for null id
-        int nodecount=-1;
-        for (nodecount=0; (line = nodeIn.readLine())!=null; nodecount++) {
-            graphIds[++id] = GraphId.fromString(line);
-            npc.progress();
-            if (graphIds[id].compareTo(graphIds[id-1])<0) {
-            	log.warn("Node file "+nodeFileName+"  must be in lexicographical order. Line "+nodecount+" '"
-            			+graphIds[id].toString()+"' should fall before previous line '"+graphIds[id-1].toString()+"'");
-            }
-        }
-        if (nodecount != numNodes) {
-        	log.warn("Size file has "+numNodes+" for the number of node names but "
-        			+nodecount+" node names found in node file "+nodeFileName
-        			+". This could cause null pointer exceptions later; please fix!");
-        }
-        npc.finished();
-        nodeIn.close();
-
-        ProgressCounter wpc = new ProgressCounter("loading "+walkFileName,"lines");
-        LineNumberReader walkIn = new LineNumberReader(new FileReader(walkFileName));
-        initWalkInfo(); // template call
-        int l=0;
-        while ((line = walkIn.readLine())!=null) {  l++;      
-            parts = line.split("\\s+");
-            try {
-	            int srcId = StringUtil.atoi(parts[0]);
-	            int linkId = StringUtil.atoi(parts[1]);
-	            int numDest = StringUtil.atoi(parts[2]);
-	            int[] destId = new int[numDest];
-	            float[] totalWeightSoFar = new float[numDest];
-	            float tw = (float)0.0;
-	            int k = 0;
-	            for (int i = 3; i < parts.length; i++) {
-	                String[] destWeightParts = parts[i].split(":");
-	                destId[k] = StringUtil.atoi(destWeightParts[0]); 
-	                tw += StringUtil.atof(destWeightParts[1]);
-	                totalWeightSoFar[k] = tw;
-	                k++;
-	            }
-	            initWalkInfoCell(srcId,linkId,destId,totalWeightSoFar); // template call
-	            wpc.progress();
-            } catch (IllegalArgumentException e) {
-            	log.error("Improper format for line "+l+": "+line,e);
-            	throw e;
-            }
-        }
-        finishWalkInfo(); // template call
-        wpc.finished();
-        walkIn.close();
     }
-    /** Finish initialization of immutable walk info cache */
-    protected void finishWalkInfo() {}
+    
+    protected void addLink(int id, String link) {
+        linkLabels[id] = link;
+        linkMap.put(link, id);
+    }
+    
+    protected void initNodes() {
+        graphIds[0] = GraphId.fromString("");   //for null id
+    }
+    
+    protected void addNode(int id, String node) {
+        graphIds[id] = GraphId.fromString(node);
+    }
+  	
     /** Initialize walk info cache */
     protected void initWalkInfo() {
         walkInfo = new CompactImmutableDistribution[ graphIds.length ][ linkLabels.length ];
     }
     /** Add one node:link record to the walk info cache */
-    protected void initWalkInfoCell(int srcId, int linkId, int[]destId, float[] totalWeightSoFar) {
+    protected void addWalkInfoDistribution(int srcId, int linkId, int[]destId, float[] totalWeightSoFar) {
         walkInfo[srcId][linkId] = 
             new CompactImmutableArrayDistribution(destId,totalWeightSoFar,graphIds);
     }
+    protected void putWalkInfoLinks(int src, Set<Integer> links) {}
+    
+    /** Finish initialization of immutable walk info cache */
+    protected void finishWalkInfo() {}
 
-    final protected int safeLookup( Object[] array, Object o, String whatItIs)
+    protected void finishLoad() {}
+
+    /************************ End template definitions ********************/
+
+    protected int safeLookup( Object[] array, Object o, String whatItIs)
     {
         int k = Arrays.binarySearch( array, o );
 //        if (k<0) {
@@ -229,7 +162,6 @@ public class CompactGraph implements Graph, ICompact
 //        }
         return k;
     }
-
     // change 6/22 kmr: this method was marked final, but I don't think
     // that's what we meant to do -- "final" just means the method cannot
     // be overridden in a subclass, not that the method is inlined or
@@ -282,9 +214,9 @@ public class CompactGraph implements Graph, ICompact
         Set accum = new HashSet();
         int fromIndex = getNodeIdx(from); if (fromIndex<0) return Collections.EMPTY_SET;
         for (int i=1; i<linkLabels.length; i++) {
-	    if (getStoredDist(fromIndex,i).size()>0) {
-                accum.add( linkLabels[i] );
-	    }
+		    if (getStoredDist(fromIndex,i).size()>0) {
+	                accum.add( linkLabels[i] );
+		    }
         }
         return accum;
     }
@@ -409,7 +341,7 @@ public class CompactGraph implements Graph, ICompact
         }
     }
 
-		@Override public void setTime(int time) {
+		public void setTime(int time) {
 		//	FSystem.dieNotImplemented();
 			
 		}

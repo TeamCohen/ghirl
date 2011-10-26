@@ -4,7 +4,9 @@
 #old format: each line is one of:
 #
 # node nodeName
-# edge relation nodeName1 nodeName2
+# edge relation nodeName1 nodeName2 [weight]
+#
+#where weight is optional (defaults to 1)
 #
 #new format has four files: 
 #
@@ -67,7 +69,7 @@ while (<>) {
 	#format could be 'edge rel fromNode toNode wt'
 	#or just 'edge rel fromNode toNode'
 	my($keyword,$linkLabel,$nodeName1,$nodeName2,$weight) = split;
-	$weight = 1 unless defined($weight);
+	$weight = 1 unless (defined($weight) && $weight ne "");
 	$nodeName1 = normalizeNodeName($nodeName1);
 	$nodeName2 = normalizeNodeName($nodeName2);
 	$IsNode{$nodeName1}++;

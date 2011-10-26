@@ -48,6 +48,7 @@ public class InteractiveTextUI {
 		
 		Console console = System.console(); String input;
 		while ( !(input = console.readLine("> ")).equals("q")) {
+			if (input.equals("")) continue;
 			if (input.equals("?")) {
 				console.printf("\t?\tThis help screen\n"
 						+"\tq\tQuit\n"
@@ -71,22 +72,24 @@ public class InteractiveTextUI {
 					console.printf("*** %s: %s\n", node.toString(), graph.getTextContent(node));
 				}
 				Set<String> edges = graph.getEdgeLabels(node);
-				for (String edge : edges) {
-					Set<GraphId> destinations = graph.followLink(node, edge);
+				for (String edge : edges) { 
+					Distribution destinations = graph.walk1(node, edge);
+//					Set<GraphId> destinations = graph.followLink(node, edge);
 					int ndests = destinations.size();
 					if (ndests == 1) {
-						GraphId destination = destinations.iterator().next();
+						GraphId destination = (GraphId) destinations.iterator().next();
 						console.printf("%s: %s\n",edge,makeGraphIdDesc(destination, graph));
 						continue;
 					}
 					console.printf("%s: %d nodes\n", edge,ndests);
 					int i=0;
-					for (GraphId destination : destinations) {
+					for (Iterator it = destinations.orderedIterator();it.hasNext();) { 
+						GraphId destination = (GraphId) it.next();
 						if (i>=10) {
 							console.printf("\t...and %d others\n",ndests-10);
 							break;
 						}
-						console.printf("\t%s\n",makeGraphIdDesc(destination, graph));
+						console.printf("\t%g\t%s\n",destinations.getLastWeight(),makeGraphIdDesc(destination, graph));
 						i++;
 					}	 
 				}
