@@ -1,12 +1,11 @@
 package ghirl.graph;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 import edu.cmu.lti.algorithm.container.MapID;
+import edu.cmu.lti.algorithm.container.MapMapIIX;
 import edu.cmu.lti.algorithm.container.MapMapSSI;
 import edu.cmu.lti.algorithm.container.SetI;
-import edu.cmu.lti.algorithm.container.TMapMapIIX;
-import edu.cmu.minorthird.util.ProgressCounter;
-import edu.cmu.minorthird.util.StringUtil;
+import edu.cmu.lti.algorithm.container.VectorI;
 import edu.cmu.minorthird.util.gui.ViewerFrame;
 import ghirl.util.CompactImmutableArrayDistribution;
 import ghirl.util.CompactImmutableDistribution;
@@ -15,11 +14,8 @@ import ghirl.util.TreeDistribution;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.LineNumberReader;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -277,7 +273,7 @@ public class CompactGraph extends AbstractCompactGraph implements Graph, ICompac
         return k>=0 ? graphIds[k] : null;
     }
 
-  	public Integer getNodeIdx( String flavor, String name) {
+  	public int getNodeIdx( String flavor, String name) {
   		int id= getNodeIdx(new GraphId(flavor,name));
   		if (id<0){
   			System.err.print("cannot find node="+flavor+"$"+name);
@@ -285,23 +281,9 @@ public class CompactGraph extends AbstractCompactGraph implements Graph, ICompac
   		}
   		return id;
   	}
-  	@Override public SetI getNodeIdx( String flavor, String[] vs) {//int iSec
-  		SetI m= new SetI();
-  		for (String name: vs)
-  			m.add(getNodeIdx(flavor, name));  		
-  		return m;
-  	}
+
   	@Override public String getNodeName(int idx){
   		return this.graphIds[idx].toString();
-  	}
-  	@Override public String[] getNodeName(Collection<Integer> vi){
-  		String vs[]= new String[vi.size()];
-  		int i=0;
-  		for (Integer idx: vi){
-  			vs[i]=this.getNodeName(idx);
-  			++i;
-  		}
-  		return vs;
   	}
 
     public Distribution walk1(GraphId from,String linkLabel)
@@ -340,56 +322,9 @@ public class CompactGraph extends AbstractCompactGraph implements Graph, ICompac
             new ViewerFrame("QueryGUI", gui );
         }
     }
-
-		public void setTime(int time) {
-		//	FSystem.dieNotImplemented();
-			
-		}
-
-		@Override public void step(int ent, int rel, SetI dist) {
-			// some how relations in Compact graphs are shifted in ghirl
-			// we reverse that 
-			rel+=1;
-
-			
-  		Distribution d= getStoredDist(ent, rel);
-
-  		for (Iterator i=d.iterator(); i.hasNext(); ) {
-  			GraphId id = (GraphId)i.next();
-  			//double w = d.getLastWeight();
-  			dist.add(getNodeIdx(id));
-  		}
- 			return;
-		}
-
-		@Override public void step(int ent, int rel, double p0, MapID dist) {
-			// some how relations in Compact graphs are shifted in ghirl
-			// we reverse that 
-			rel+=1;
-
-			// TODO: we may want to consider link weights here
-			Distribution d= getStoredDist(ent, rel);
-
-  		for (Iterator i=d.iterator(); i.hasNext(); ) {
-  			GraphId id = (GraphId)i.next();
-  			//double w = d.getLastWeight();
-  			dist.plusOn(getNodeIdx(id), p0);	
-    	}
-  		
-  		SetI m=mExtraLinks.getC(rel).get(ent);
-  		if (m!=null)
-  			for (int idx: m)
-    			dist.plusOn(idx, p0);	
-			return;
-		}
-		
 		
 		//relation-->idx1-->set of idx2
-		public TMapMapIIX<SetI> mExtraLinks= new TMapMapIIX<SetI> (SetI.class);
-		public void AddExtraLinks(int iRel, int idx1, SetI mIdx2 ){
-		//	mExtraLinks.getC(iRel).put(idx1, mIdx2);
-			mExtraLinks.getC(iRel).getC(idx1).addAll(mIdx2);
-		}
+		public MapMapIIX<SetI> extra_links_= new MapMapIIX<SetI> (SetI.class);
 		
 		public void AddExtraLinks(String sLinkType
 				,String flavor1, String name1
@@ -402,8 +337,39 @@ public class CompactGraph extends AbstractCompactGraph implements Graph, ICompac
 					iR=i;
 			
 			int idxA=getNodeIdx(flavor1, name1);
-			SetI m=getNodeIdx(flavor2,vName2);
-			AddExtraLinks(iR, idxA, m);
+			
+			SetI set = extra_links_.getC(iR).getC(idxA);
+
+			for (String name: vName2)	set.add(getNodeIdx(flavor2, name));
 		}
 
+  	public VectorI getEdges(int node, int relation, WrapInt num_edges) {
+      Distribution dist=  getStoredDist( node, relation );
+      MapID map =  dist.toMapID();
+      num_edges.value = map.size();
+      return map.toVectorKey();
+  	}
+  	
+  	public MapID getWeightedEdges(int node, int relation) {
+  		return getStoredDist(node, relation).toMapID();
+  	}
+  	public int getNodeId(String typed_name) {
+  		String[] vs = typed_name.split("\\$");
+  		return getNodeIdx(vs[0], vs[1]);
+  	}
+    public int getEdgeType(String type) {
+    	return linkMap.get(type);
+    }
+    public String getEdgeTypeName(int idx) {
+    	return linkLabels[idx];
+    }
+    
+    public SetI getNodeOutlinkTypes(int node) {
+    	SetI set = new SetI();
+    	for (int i = 0; i< walkInfo[node].length; ++i) {
+    		if (walkInfo[node][i] == null) continue;
+    		set.add(i);
+    	}
+    	return set;
+    }
 }

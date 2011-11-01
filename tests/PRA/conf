@@ -1,174 +1,187 @@
+#####################	edu.cmu.lti.util.run.Tunner 
+num_processes=5
+	# number of working processes for tuning parameters in parallel (default=4)
+tunner_mode=sweep
+	# the type of parameter tuning (default=sweep)
+num_avarage=1
+	# we do experiments N times and average the scores (default=1)
+split_summary=false
+starting_id=0
+print_std_dev=false
+	# also print the standard deviations of the evaluation measures
+cmd=perl ../../go.4G.pl
+	# the command used to run an experiment during parameter tuning
+
+##################### edu.cmu.lti.util.run.Learner
+num_threads=1
 task=sCV
-	#		train	// train using trainFile
-	#	, test	//test using testFile
-	#	, STT	//train test by splitting trainFile
-	#	, TT	//train test using trainFile, testFile
-	#	, sCV	//cross validation using trainFile
-	#	, CV	//cross validation using trainFile
-	#	, sLOO	//self leave-on-out cross validation using trainFile
-	#	, LOO	//leave one out cross validation using trainFile
-	#	, predict	// without knowing the ground truth
-id=a
-nFold=5
+	# decide the type of task to perform (default=sCV)
+	train	// train using trainFile
+	, test	//test using testFile
+	, STT		//train test by splitting trainFile
+	, TT		//train test using trainFile, testFile
+	, CV		//cross validation using trainFile
+	, sCV		//self cross validation using trainFile
+	, sLOO	//self leave-on-out cross validation using trainFile
+	, LOO		//leave one out cross validation using trainFile
+	, predict	// without knowing the ground truth
+id=0
+	# add a postfix the result folder
+num_CV_folds=3
+	# number of fold for cross validations 	(default=5)
+train_rate=0.8
+	# the ratio when splitting data into train and test sets (default=0.8)
+time_field=0
+	# the column id of query time in the data files
 
-#####################	Tunner
-nWorkingThread=8
-modTunner=sweep
-	#sweep=0
-vParam=L1b,L2b
-vDParam=
-	#trainFile
-nAvarage=1
-maxNRun=500
-bSplitSummary=false
-startingID=0
-bPrintSD=false
-memoryCode=.3000
-
-
-################## Learner########################################
-dataForm=alchemy
-	#	alchemy	binary
-dataFolder=../data/
-taskFile=YA-Py.WJ
-	#YA-Py.WJ
-	#	Y-J	YGW-P	YGW-J GW-J YA-Phy
-
-icQueryTime=0
-	#column id
-icQueryName=0
-	#column id
-
-trainRate=0.8
-
-trainFile=scenarios.Woolford_JL
-testFile=scenarios.Woolford_JL.predict
-
-modelFile=weights
-#modelFile=..\run\YA-Phy\P3\_Q1e-03\log_Sqr_L2=1e-03\a\weights
-
-#fixQuery=15082791
-################## learning	########################################
-rankMode=P
-	# P:PathRank, 
-	# R:RelationRank
-bBias=false
-scBias=0.003
-sIgnoredPathes=y(_Yea)p
-
-################## entity bias
-bEntBias=false
-
-################## entity rank
-bEntityRank=false
-maxE0Step=4
-thSig=0.5
-e0Gap=3
-	# formerly known as e0TimeDownSample
-bMergeE0=true
+output_folder=./
+train_samples=../queries/<target_relation>
+	# data file used for training
+test_samples=./test_queries/<target_relation>
+	# data file used for test
 
 
-##################### Loss function ##########################################
-lossMode=log
-	#	none, log, exp, hinge
-
-L1=0.00001
-L2=0.00001
-
-bPairwise=false
-negaMode=Sqr
-		all		//use all negative samples
-		, topK	//take top K*rNega samples ranked by plain weighting
-		, exp		// take 2^x: 1,2,4,8,16,32,...th negative samples
-		,expX	// take a^x:
-
-		, Sqr		// take x^2: 0,1,4,9,16,25,...th negative samples
-		,Tri	// take x^3: 0,1,8,27,64,125,...th negative samples
-		,poly	// take x^a:
-		,expX	// take a^x
-rNega=10
-dPoly=8
-dExp=1.5
-
-################## random walk	####################################
-maxStep=3
-bTimeStamped=true
-
-etTime=year
-rTime=Year
-
-bDisturb=false
-
-##################scaling
-bRWRenormalize=false
-RWDampening=1.0
-	0.8
-lenShortName=4
-##################sparsity control
-sMode=Q
-		T//Trucation
-		,P,Q// particle filtering
-		,S// Sampling
-		,R//Relative truncation
-		,B//Beam truncation
-		,N//none
+##################### edu.cmu.pra.LearnerPRA
+#target_relation=_competeswith
+	# (optional) what relation we are training for
+	#  professionistypeofprofession _competeswith athleteplayssport
+	
+graph_folder=/usr1/nlao/run/ghirl/graphs/yeast-aug11-mips_compact/
+	# where is the graph
+model=model
+	# a weight file can be loaded for prediction
+model_folder=./models/
+prediction_folder=./predictions/
+top_prediction_results=5
+	
+#subgraph_store=
+	# subgraphs that can be loaded/unloaded
 		
-###trucation
-truncate=0.001
+rank_mode=Path
+	# the loss function during training (default=P)
+	Path	//PathRank: each relation path has a weight
+	Rel	//RelationRank: each relation has a weight
+loss_mode=log
+	#	the loss function (default=log)
+	none //no training
+	,log // log loss
+	,exp	//exp loss
+	,hinge	//hinge loss
+L1=0.001
+	#L1 regularization 
+L2=0.001
+	#L2 regularization 
+pairwise_loss=false
+	# optimizing partial ordering or relevance (default=false)
+	false	//optimizing relevance
+	true	//optimizing partial ordering
+negative_mode=Sqr
+	# how to select negative entities
+	all		//use all negative samples
+	,topK	//take top K*rNega samples ranked by plain weighting
+	,expX	// take a^x:
+	, Sqr		// take x^2: 0,1,4,9,16,25,...th negative samples
+	,Tri	// take x^3: 0,1,8,27,64,125,...th negative samples
+	,poly	// take x^a:
+	,expX	// take a^x
+negative_weight=10
+	# the weight shared by all negative samples
+cache_data=true
+inspect_data=false
 
-###relative truncation
-alphaRT=0.5
+################## edu.cmu.pra.model.PRAModel	########################################
+max_step=3
+	# max length of relation paths
+bias=true
+	# add a bias term in the scoring function. can improve log-likelihood (default=true)
+bias_value=1
+	# value of the bias feature. can control its regularization (default=0.1)
 
-###beam truncation
-maxWidth=0
+num_fields=3
 
-###sampling
-nSampling=2000
+#blocked_paths=1,a(_Author)p(Cites)p
+	# some paths are not allowed in the path tree: idSeed,path;idSeed,path;...
+	# a(_Author)p(Cites)p   _Author>Cites
+#and_paths=0,w(hasSynset)s
+	# the targets have to be in the result of this path
+	# 0,wordPOS(hasSynset)synset
+#not_paths=1,a(_Author)p
+	# the targets cannot be in the result of this path
+	#a(_Author)p		_Author
 
-###particle filtering
-minParticle=0.01
+no_cost_relations=
+	# promoted relations which have no cost
+min_feature_suport=5
+min_feature_accuracy=0.01
 
-##################DataDriven
-bDataDrivenPath=false
-nDataDrivenSample=200
+################## edu.cmu.pra.model.EntityRank
+entity_rank=false
+	# whether to use entity rank or not
+min_ER_steps=3
+	# max length of entity rank paths (default=3)
+ER_time_gap=2
+	# only generates entity rank one for every N years, in order to save memory (default=1)
 
-rMinQSupport=0.3
-rDull=0.3
+################## edu.cmu.pra.graph.Graph
+timed_graph=false
+	# whether the graph contains time information
+time_type=year
+	# the entity type which represent time (assuming which can be parsed as integers)
+time_relation=Year
+	# the relation type that connect time entities to other entities
 
+################## edu.cmu.pra.graph.Walker
+RW_mode=Particle
+	# how to keep the random walk distributions sparse (default=Q)
+	Truncate, 	//Truncation
+	Beem, 		//Beam
+	LowVarWalker, // Sampling (low variance)
+	Walker, 	// Sampling
+	Particle, 	//particle filtering
+	LowVarParticle, //particle filtering (low variance)
+	Exact, 		//none
+	
+truncate=0.003
+	# absolute truncation
+beam_width=1000
+	#beam truncation
+num_walkers=1000
+	#sampling
+min_particle=0.0001
+	#particle filtering
 
+blocked_field=0
+	# the field in query file which leads to the target node
+	
+RW_renormalize=false
+damping_factor=1.0
+	
 ##################### Optimization  #####################
-maxItTrain=500
-epsCvg=0.001
-	# 0.002
-updateMode=oLBFGS
-	#	SMD	SGD
+max_train_iteration=100
 
-##################### LBFGS
+epsCvg=0.00001
+	# 0.002
 maxLinfStep=10000
 maxL1Step=20000
 	20	100
 stepAdapt=0.1
-nStable=2
-
-##################### SGD 
-pSGD0=0.001
-	# dft=5		0.5
-	#scale the step
-pSGDPT=2	
-spSGDGB=0.1
-
-#bWeightAvg=false
+num_stable=2
 
 #################### Visualization#####################
-namingFile=naming.5w.txt
-maxRow=500
-bPrintEachIter=false
-bErrHistogram=false
 
-dbgTree=0
-bDetailedScores=false
-bDumpData=false
+feature_comments=../../mFeatureComments.read
+	# add explanations to selected relation paths
+	
+LBFGS_history=false
 
-	#bDumpTestData=true
-	#bPrintResults=true
 
+#################### edu.cmu.lti.util.run.Reporter #####################
+publish_folder=/afs/cs.cmu.edu/user/nlao/www/demo/wk/
+run_name=test/
+result_filter=max_step=3,negative_weight=10
+
+col1_values=athleteplaysforteam,athleteplaysinleague,athleteplayssport,stadiumlocatedincity,teamhomestadium,teamplaysincity,teamplaysinleague,teamplayssport,_athleteplaysforteam,_headquarteredin,_journalistwritesforpublication,_producesproduct,_competeswith,hasofficeincity,journalistwritesforpublication,professionistypeofprofession,teamwontrophy,worksfor
+
+col1=target_relation
+col2=nSampling
+valueCol=mrr,MAP,tRW,tCV

@@ -94,8 +94,8 @@ public class PathWalker extends Walker {//implements CommandLineProcessor.Config
 		this.net=net;	
 
 		//seems useless
-		setNumLevels(net.p.maxStep);		
-		setNumSteps(net.p.nSampling); 
+		setNumLevels(net.p.max_step);		
+		setNumSteps(net.walker_.p.num_walkers); 
 		//setSamplingPolicy();
 	}
 	

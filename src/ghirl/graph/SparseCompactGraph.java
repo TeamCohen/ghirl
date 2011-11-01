@@ -65,6 +65,10 @@ public class SparseCompactGraph extends CompactGraph {
 	@Override
     protected Distribution getStoredDist(int fromNodeIndex,int linkIndex)
     {
+		if (fromNodeIndex == -1 || linkIndex==-1) {
+			logger.error("fromNodeIndex=" + fromNodeIndex + " linkIndex=" + linkIndex);
+			return EMPTY_DIST;
+		}
         if (logger.isDebugEnabled()) logger.debug("Getting distribution for node "+fromNodeIndex+" link "+linkIndex);
 		Distribution result = sparseWalkInfo[fromNodeIndex].get(linkIndex);
         if (result == null) {
