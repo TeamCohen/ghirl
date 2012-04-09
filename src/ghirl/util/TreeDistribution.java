@@ -179,7 +179,6 @@ public class TreeDistribution extends Distribution
 		//System.out.println("before removal:\n"+toDebugString());
 		root = treeRemove(obj, root);
 		//checkReducedTree("removing",obj);
-		numberOfElements--;
 		return theRemovedObject;
 	}
 
@@ -211,6 +210,9 @@ public class TreeDistribution extends Distribution
 				root.updateWeights();
 				return root;
 			} else {
+			        // we're definitely removing something, so record that
+                                numberOfElements--;
+                            
 				// easy cases first...
 				if (root.left==null) return root.right;
 				else if (root.right==null) return root.left;
